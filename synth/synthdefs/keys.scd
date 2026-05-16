@@ -18,7 +18,7 @@ SynthDef(\keys, { |out=0, amp=0.4, freq=220, cutoff=2600, sus=0.9, drive=1.0, vi
 	var sig  = (body + tine * 0.18);
 	// firm low-pass so chords are never super bright (was up to 9 kHz)
 	sig = LPF.ar(sig, (cutoff * (0.40 + v * 0.55)).clip(280, 4200));
-	// ~50% between the pre-raise (0.72) and post-raise (1.15) level
-	sig = (sig * (1 + drive * 0.4)).softclip * 0.93;
+	// midpoint level, then +20% now that the chords sit an octave lower
+	sig = (sig * (1 + drive * 0.4)).softclip * 1.12;
 	Out.ar(out, Pan2.ar(sig * env * amp, pan));
 }).add;

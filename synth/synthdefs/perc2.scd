@@ -30,5 +30,5 @@ SynthDef(\perc2, { |out=0, amp=0.5, freq=220, decay=0.18, drive=1.0,
 	var wB   = ((t - 0.5) * 2.2).clip(0, 1);
 	var sig  = (gl * wG) + (shk * wS) + (body * wB);
 	sig = (sig * (1 + drive * 0.5)).tanh;
-	Out.ar(out, Pan2.ar(LeakDC.ar(sig) * env * amp, pan));
+	Out.ar(out, Pan2.ar(LeakDC.ar(sig) * env * amp * 0.7, pan));  // -30%
 }).add;
