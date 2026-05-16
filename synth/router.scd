@@ -39,17 +39,20 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	{ \hat };
 };
 
-// --- audio graph: instruments -> per-track FX bus -> \fx -> out 0 ---
-// three independent FX chains so each track can have its own genre-dependent
-// space (e.g. dry tight drums, huge delay on the leads).
-~instGrp  = Group.new(Server.default);
-~fxBuses  = IdentityDictionary.new;
-~fxSynths = IdentityDictionary.new;
+// --- audio graph: instruments -> per-track FX bus -> \fx -> MASTER -> 0 ---
+// three independent FX chains, then a glue compressor + brickwall on the
+// summed master mix.
+~instGrp   = Group.new(Server.default);
+~masterBus = Bus.audio(Server.default, 2);
+~fxBuses   = IdentityDictionary.new;
+~fxSynths  = IdentityDictionary.new;
 [\drums, \bass, \mel].do { |g|
 	~fxBuses[g] = Bus.audio(Server.default, 2);
 	~fxSynths[g] = Synth.tail(Server.default, \fx,
-		[\in, ~fxBuses[g].index, \out, 0]);
+		[\in, ~fxBuses[g].index, \out, ~masterBus.index]);
 };
+~master = Synth.tail(Server.default, \master,
+	[\in, ~masterBus.index, \out, 0]);
 // which FX bus each role feeds
 ~busFor = IdentityDictionary.new;
 [\kick, \snare, \hat, \ohat, \clap, \rim, \perc].do { |r| ~busFor[r] = \drums };

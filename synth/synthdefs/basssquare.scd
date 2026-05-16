@@ -6,9 +6,14 @@ SynthDef(\bassSquare, { |out=0, amp=0.8, freq=45, cutoff=600, res=0.2, drive=1.2
 	var aEnv = EnvGen.kr(Env.perc(0.003, decay, 1, -4), t_trig);
 	var fE   = EnvGen.kr(Env.perc(0.004, decay * 0.6, 1, -4), t_trig);
 	var f    = Lag.ar(K2A.ar(freq.clip(20, 700)), glide.clip(0, 0.4));
-	var osc  = Pulse.ar(f, 0.48) + (Saw.ar(f) * 0.4) + (SinOsc.ar(f) * sub);
-	var cf   = (cutoff * (0.4 + v) * (1 + fenv * 7 * fE)).clip(90, 6500);
-	var sig  = RLPF.ar(osc, cf, (1 - res).clip(0.05, 0.9));
-	sig = (sig * (1 + drive * 0.6)).tanh;
-	Out.ar(out, Pan2.ar(sig * (aEnv * 0.75 + 0.25) * gEnv * amp, pan));
+	// Deep, round, RECESSED bass (electro/broken_house/minneapolis_funk/
+	// minimal_techno all share this). No saw at all (it was the buzz), the
+	// filter env barely opens to a low ceiling, almost no drive, a hard top
+	// roll-off and a clearly lower level -> felt, not buzzy.
+	var osc  = (Pulse.ar(f, 0.46) * 0.8) + (SinOsc.ar(f) * (sub + 0.25));
+	var cf   = (cutoff * (0.28 + v * 0.5) * (1 + fenv * 1.2 * fE)).clip(60, 1000);
+	var sig  = RLPF.ar(osc, cf, (1 - res).clip(0.30, 0.85));
+	sig = (sig * (1 + drive * 0.1)).tanh;
+	sig = LPF.ar(sig, 1100);
+	Out.ar(out, Pan2.ar(sig * (aEnv * 0.75 + 0.25) * gEnv * amp * 0.5, pan));
 }).add;
