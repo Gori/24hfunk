@@ -3,7 +3,8 @@
 SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=0.12,
 		wave=0.4, cutoff=4600, decay=0.45, gate=1, maxSustain=6, drive=1.2, pan=0|
 	var v      = amp.clip(0.05, 1.0);
-	var env    = EnvGen.kr(Env.adsr(0.005, 0.12, 0.55, decay, curve: -3), gate, doneAction: 2);
+	// plucky: percussive env so each FM note plucks and decays (tight rhythm)
+	var env    = EnvGen.kr(Env.perc(0.002, (decay * 1.4).clip(0.06, 0.8), 1, -4.5), gate, doneAction: 2);
 	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain, 0.2], \lin), doneAction: 2);
 	var vib    = SinOsc.kr(5.5) * 0.008 * EnvGen.kr(Env([0, 0, 1], [0.18, 0.6]));
 	var f      = freq * (1 + vib);

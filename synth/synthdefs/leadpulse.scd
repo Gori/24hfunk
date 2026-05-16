@@ -3,7 +3,8 @@
 SynthDef(\leadPulse, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=0.12,
 		wave=0.4, cutoff=4600, decay=0.45, gate=1, maxSustain=6, drive=1.2, pan=0|
 	var v      = amp.clip(0.05, 1.0);
-	var env    = EnvGen.kr(Env.adsr(0.004, 0.10, 0.5, decay, curve: -3), gate, doneAction: 2);
+	// plucky: tight chip-pluck percussive env (no sustain) for crisp rhythm
+	var env    = EnvGen.kr(Env.perc(0.002, (decay * 1.3).clip(0.05, 0.7), 1, -5), gate, doneAction: 2);
 	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain, 0.2], \lin), doneAction: 2);
 	var vib    = SinOsc.kr(6.0) * 0.009 * EnvGen.kr(Env([0, 0, 1], [0.14, 0.5]));
 	var f      = freq * (1 + vib);

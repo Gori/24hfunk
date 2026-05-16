@@ -561,9 +561,9 @@ class CannedSource:
                 if (ap % 12) not in scset:
                     ap -= 1
                 D(max(0.0, s - 0.5), beat * 0.09, ap, vel * 0.7, CH_LEAD)
-            D(s, beat * 0.22 * du, pit, vel, CH_LEAD)
-            if rnd.random() < st["harm"] * 0.4:        # sparse soft harmony
-                D(s, beat * 0.22 * du, pit - rnd.choice([3, 4, 7]),
+            D(s, beat * 0.14 * du, pit, vel, CH_LEAD)  # short gate -> tight
+            if rnd.random() < st["harm"] * 0.3:        # sparse soft harmony
+                D(s, beat * 0.14 * du, pit - rnd.choice([3, 4, 7]),
                   vel * 0.6, CH_LEAD)
             prev = pit
 
