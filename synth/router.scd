@@ -11,6 +11,7 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~chanMap[0] = \bass;
 ~chanMap[1] = \lead;
 ~chanMap[2] = \keys;                          // comp/pad — self-terminating
+~chanMap[3] = \perc2;                         // dedicated percussion layer
 ~chanMap[9] = \drums;                        // pitch-routed to kick/snare/hat
 ~gated     = Set[\bass, \lead];              // ROLES that hold a gate (need noteoff)
 // role -> actual SynthDef (genre picks variants via /synth/map). Default = self.
@@ -46,7 +47,7 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~masterBus = Bus.audio(Server.default, 2);
 ~fxBuses   = IdentityDictionary.new;
 ~fxSynths  = IdentityDictionary.new;
-[\drums, \bass, \mel].do { |g|
+[\drums, \bass, \mel, \perc].do { |g|
 	~fxBuses[g] = Bus.audio(Server.default, 2);
 	~fxSynths[g] = Synth.tail(Server.default, \fx,
 		[\in, ~fxBuses[g].index, \out, ~masterBus.index]);
@@ -56,11 +57,12 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // which FX bus each role feeds
 ~busFor = IdentityDictionary.new;
 [\kick, \snare, \hat, \ohat, \clap, \rim, \perc].do { |r| ~busFor[r] = \drums };
-~busFor[\bass] = \bass;
-~busFor[\lead] = \mel;
-~busFor[\keys] = \mel;
+~busFor[\bass]  = \bass;
+~busFor[\lead]  = \mel;
+~busFor[\keys]  = \mel;
+~busFor[\perc2] = \perc;                      // dedicated percussion FX bus
 ~fxParams = IdentityDictionary.new;
-[\drums, \bass, \mel].do { |g| ~fxParams[g] = IdentityDictionary.new };
+[\drums, \bass, \mel, \perc].do { |g| ~fxParams[g] = IdentityDictionary.new };
 
 // --- tempo / beat clock ---
 ~bpm   = 78;
@@ -94,7 +96,7 @@ OSCdef(\noteon, { |msg|
 		freq = pitch.midicps;
 		if(role == \drums) { role = ~drumFor.(pitch) };
 		def = ~roleMap[role] ? role;                 // genre-chosen variant
-		if(#[\kick, \snare, \hat, \ohat, \clap, \rim, \perc].includes(role)) {
+		if(#[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \perc2].includes(role)) {
 			Synth(def, ~argsFor.(role, freq, vel), ~instGrp);   // one-shot
 		} {
 			if(~monoFor[ch] == role) {
@@ -150,9 +152,10 @@ OSCdef(\param, { |msg|
 	// fx targets: fxDrums / fxBass / fxMel  (also accept plain "fx" -> all)
 	var fxg = (synth == \fxDrums).if(\drums,
 		{ (synth == \fxBass).if(\bass,
-			{ (synth == \fxMel).if(\mel, { nil }) }) });
+			{ (synth == \fxMel).if(\mel,
+				{ (synth == \fxPerc).if(\perc, { nil }) }) }) });
 	if(synth == \fx) {
-		[\drums, \bass, \mel].do { |g|
+		[\drums, \bass, \mel, \perc].do { |g|
 			~fxParams[g][param] = value; ~fxSynths[g].set(param, value) };
 	} {
 		if(fxg.notNil) {

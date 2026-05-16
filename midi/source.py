@@ -11,6 +11,7 @@ from typing import List, Protocol, Tuple
 CH_BASS = 0
 CH_LEAD = 1
 CH_KEYS = 2          # comp / pad harmonic voice (self-terminating synth)
+CH_PERC = 3          # dedicated percussion layer (shaker / glitch / organic)
 CH_DRUMS = 9
 KICK, SNARE, HAT = 36, 38, 42
 

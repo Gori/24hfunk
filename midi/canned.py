@@ -13,7 +13,8 @@ from __future__ import annotations
 
 import random
 
-from midi.source import CH_BASS, CH_LEAD, CH_KEYS, CH_DRUMS, Note, Phrase
+from midi.source import (CH_BASS, CH_LEAD, CH_KEYS, CH_PERC, CH_DRUMS,
+                          Note, Phrase)
 
 KICK, RIM, SNARE, CLAP, HAT, OHAT, PERC = 36, 37, 38, 39, 42, 46, 75
 
@@ -282,6 +283,79 @@ _LEAD_RHYTHM = {
     ],
 }
 
+# Dedicated percussion layer, per genre. Designed AGAINST each genre's
+# existing kick/snare/hat groove so it fills gaps, never clashes.
+#   mode : "none" (no perc at all) | "spice" (rare rhythmic seasoning,
+#          often whole bars skipped) | "lots" (a real percussion part)
+#   tone : perc2 character — ~0.1 glitch electronic, ~0.45 shaker,
+#          ~0.9 organic African-ish drum
+#   steps: 16th positions it MAY hit (chosen on the off-beats / gaps)
+#   pitch: organic drum pitches it cycles (mostly matters when tone high)
+#   syn  : perc2 synth params for the genre (decay/drive/crush)
+_PERC = {
+    # ---- LOTS: percussion is a real, characterful part ----
+    "afro_rnb":     {"mode": "lots", "tone": 0.9,  "prob": 1.0,
+                     "steps": [2, 3, 6, 7, 10, 11, 14, 15],
+                     "pitch": [50, 57, 45, 53],
+                     "syn": {"decay": 0.17, "drive": 1.3, "crush": 0.2}},
+    "roots_reggae": {"mode": "lots", "tone": 0.72, "prob": 0.85,
+                     "steps": [2, 6, 10, 14, 3, 11], "pitch": [48, 55, 52],
+                     "syn": {"decay": 0.16, "drive": 1.0, "crush": 0.25}},
+    "funk":         {"mode": "lots", "tone": 0.66, "prob": 0.8,
+                     "steps": [2, 6, 7, 10, 14], "pitch": [53, 48, 57],
+                     "syn": {"decay": 0.13, "drive": 1.3, "crush": 0.3}},
+    "uk_garage":    {"mode": "lots", "tone": 0.45, "prob": 0.85,
+                     "steps": [0, 2, 4, 6, 8, 10, 12, 14], "pitch": [72],
+                     "syn": {"decay": 0.08, "drive": 1.0, "crush": 0.3}},
+    "broken_house": {"mode": "lots", "tone": 0.42, "prob": 0.8,
+                     "steps": [2, 6, 10, 14, 3, 11], "pitch": [72],
+                     "syn": {"decay": 0.09, "drive": 1.0, "crush": 0.3}},
+    # ---- NONE: spacious / minimal genres own the space ----
+    "dub":            {"mode": "none"},
+    "neon_dub":       {"mode": "none"},
+    "dub_techno":     {"mode": "none"},
+    "minimal_techno": {"mode": "none"},
+    # ---- SPICE: rare rhythmic seasoning (default for the rest) ----
+    "minneapolis_funk": {"mode": "spice", "tone": 0.6,  "prob": 0.5,
+                         "steps": [4, 12, 7], "pitch": [55, 50],
+                         "syn": {"decay": 0.12, "drive": 1.1, "crush": 0.3}},
+    "electro_funk":  {"mode": "spice", "tone": 0.18, "prob": 0.45,
+                      "steps": [6, 14, 11], "pitch": [60],
+                      "syn": {"decay": 0.07, "drive": 1.2, "crush": 0.6}},
+    "electro":       {"mode": "spice", "tone": 0.1,  "prob": 0.4,
+                      "steps": [6, 14], "pitch": [60],
+                      "syn": {"decay": 0.06, "drive": 1.3, "crush": 0.75}},
+    "detroit_techno": {"mode": "spice", "tone": 0.3, "prob": 0.4,
+                       "steps": [6, 14, 10], "pitch": [60],
+                       "syn": {"decay": 0.08, "drive": 1.1, "crush": 0.5}},
+    "synthwave":     {"mode": "spice", "tone": 0.15, "prob": 0.35,
+                      "steps": [14, 6], "pitch": [60],
+                      "syn": {"decay": 0.07, "drive": 1.0, "crush": 0.55}},
+    "eighties_hiphop": {"mode": "spice", "tone": 0.22, "prob": 0.4,
+                        "steps": [10, 14], "pitch": [60],
+                        "syn": {"decay": 0.08, "drive": 1.1, "crush": 0.5}},
+    "jazz":          {"mode": "spice", "tone": 0.6,  "prob": 0.3,
+                      "steps": [10, 6], "pitch": [64, 59],
+                      "syn": {"decay": 0.12, "drive": 0.8, "crush": 0.2}},
+    "lofi":          {"mode": "spice", "tone": 0.55, "prob": 0.35,
+                      "steps": [6, 14], "pitch": [57, 52],
+                      "syn": {"decay": 0.13, "drive": 0.9, "crush": 0.4}},
+    "rnb":           {"mode": "spice", "tone": 0.65, "prob": 0.35,
+                      "steps": [10, 6], "pitch": [55, 50],
+                      "syn": {"decay": 0.13, "drive": 0.9, "crush": 0.25}},
+    "indie_rnb":     {"mode": "spice", "tone": 0.7,  "prob": 0.28,
+                      "steps": [14, 6], "pitch": [52, 57],
+                      "syn": {"decay": 0.15, "drive": 0.8, "crush": 0.25}},
+    "steppers_dub":  {"mode": "spice", "tone": 0.5,  "prob": 0.32,
+                      "steps": [6, 14], "pitch": [55],
+                      "syn": {"decay": 0.14, "drive": 1.0, "crush": 0.3}},
+    "dub_garage":    {"mode": "spice", "tone": 0.4,  "prob": 0.4,
+                      "steps": [6, 14, 10], "pitch": [72],
+                      "syn": {"decay": 0.1, "drive": 1.0, "crush": 0.35}},
+}
+_PERC_DEF = {"mode": "spice", "tone": 0.45, "prob": 0.35, "steps": [6, 14],
+             "pitch": [60], "syn": {"decay": 0.1, "drive": 1.0, "crush": 0.4}}
+
 
 class CannedSource:
     name = "canned"
@@ -325,7 +399,14 @@ class CannedSource:
         self.bar = 0
 
     def synth_params(self) -> dict:
-        return SYNTH_PARAMS.get(self.genre, SYNTH_PARAMS["funk"])
+        # copy (do not mutate the module table) + inject the genre's perc2
+        # character so the percussion synth is tuned per genre
+        sp = dict(SYNTH_PARAMS.get(self.genre, SYNTH_PARAMS["funk"]))
+        pf = _PERC.get(self.genre, _PERC_DEF)
+        syn = dict(pf.get("syn", _PERC_DEF["syn"]))
+        syn["tone"] = float(pf.get("tone", _PERC_DEF["tone"]))
+        sp["perc2"] = syn
+        return sp
 
     def instrument_map(self) -> dict:
         # per-genre instrument variants (roles omitted use the default def)
@@ -346,6 +427,8 @@ class CannedSource:
                        "delayTime": b("delayTime"), "width": b("width") * 0.5},
             "fxMel": {"reverb": b("reverb") * 1.05, "delay": b("delay") * 1.1,
                       "delayTime": b("delayTime"), "width": b("width")},
+            "fxPerc": {"reverb": b("reverb") * 0.55, "delay": b("delay") * 0.5,
+                       "delayTime": b("delayTime"), "width": b("width") * 0.9},
         }
         ov = _FX_SIG.get(self.genre)
         if ov:
@@ -426,6 +509,9 @@ class CannedSource:
         # the spikier genres) — body without density, keeps the space.
         if self.on["lead"] and self.genre not in ("neon_dub", "electro"):
             self._pad(D, rnd, beat, ctones)
+
+        # dedicated percussion layer (per-genre: none / rare spice / lots)
+        self._perc(D, rnd, beat, e)
 
         # cap ONLY ornaments — the kick/snare backbone & bass "one" are core
         if len(orn) > max(0, cap - len(core)):
@@ -521,6 +607,30 @@ class CannedSource:
             for p in self._voicelead(ctones[:4], 64):
                 D(0, beat * 3.4, p, 0.52 + rnd.uniform(-0.04, 0.06), CH_KEYS)
 
+    def _perc(self, D, rnd, beat, e):
+        # Dedicated percussion layer, dropped into the groove's GAPS (its
+        # steps are off-beats, chosen per genre vs the kick/snare pattern).
+        # none -> nothing; spice -> rare seasoning (whole bars often skipped);
+        # lots -> a real, characterful part.
+        pf = _PERC.get(self.genre, _PERC_DEF)
+        mode = pf.get("mode", "spice")
+        if mode == "none":
+            return
+        steps = pf.get("steps", _PERC_DEF["steps"])
+        pitches = pf.get("pitch", [60])
+        if mode == "lots":
+            base_p = (0.60 + 0.32 * e) * pf.get("prob", 1.0)
+            vlo, vhi = 0.34, 0.50
+        else:                                    # spice: seasoning, not a part
+            if rnd.random() > 0.5:               # skip whole bars often
+                return
+            base_p = (0.10 + 0.14 * e) * pf.get("prob", 1.0)
+            vlo, vhi = 0.22, 0.34
+        for idx, s in enumerate(steps):
+            if rnd.random() < base_p:
+                D(s, beat * 0.12, pitches[idx % len(pitches)],
+                  rnd.uniform(vlo, vhi), CH_PERC, "perc")
+
     def _motif(self, D, rnd, beat, sc, ctones):
         # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
         # intentional syncopation/space) carries a fixed per-section CONTOUR
@@ -537,9 +647,10 @@ class CannedSource:
         shape = _CONTOURS[cseed.randrange(len(_CONTOURS))]
         base = cseed.choice((0, 0, 1, 2))
         nN = len(self.motif)
-        degs = [(base + shape[i % len(shape)]) % cN for i in range(nN)]
-        peak = max(range(nN), key=lambda i: degs[i])
         answer = (self.bar % 2) == 1
+        rot = 1 if answer else 0                    # answer = varied consequent
+        degs = [(base + shape[(i + rot) % len(shape)]) % cN for i in range(nN)]
+        peak = max(range(nN), key=lambda i: degs[i])
         scset = {(self.root + d) % 12 for d in sc}
         prev = None
         for i, (ti, s, du) in enumerate(self.motif):
@@ -549,6 +660,8 @@ class CannedSource:
             elif answer and i == nN - 2 and cN > 1:
                 deg = 1                                # ...approached via 3rd
             pit = ctones[deg] + 12
+            if i == peak and not answer:
+                pit += 12                          # melodic apex an octave up
             d2p = 1.0 - abs(i - peak) / max(1, nN - 1)
             vel = (0.42 + 0.20 * d2p + (0.05 if s % 4 == 0 else 0.0)
                    + rnd.uniform(-0.03, 0.04))
