@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+.run/
+.env
+.DS_Store
+*.log
+
+.claude/
+*.egg-info/

@@ -1,0 +1,79 @@
+// bridge/server.js — HTTP (static visualizer) + WS (/live) + OSC-in from SC.
+require('dotenv').config();
+const path = require('path');
+const http = require('http');
+const express = require('express');
+const { WebSocketServer } = require('ws');
+const { startOscIn } = require('./osc_in');
+const stateMod = require('./state');
+
+const HTTP_PORT = parseInt(process.env.BRIDGE_HTTP_PORT || '8080', 10);
+const VIS_OSC_PORT = parseInt(process.env.VIS_OSC_PORT || '57130', 10);
+
+const app = express();
+app.use(express.json({ limit: '256kb' }));
+app.use(express.static(path.join(__dirname, '..', 'visualizer')));
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server, path: '/live' });
+
+function broadcast(obj) {
+  const data = JSON.stringify(obj);
+  for (const client of wss.clients) {
+    if (client.readyState === 1) client.send(data);
+  }
+}
+
+wss.on('connection', (ws) => {
+  ws.send(JSON.stringify(stateMod.snapshot()));
+});
+
+// director (or fake-section.py) pushes a SectionState here
+app.post('/section', (req, res) => {
+  const section = req.body;
+  if (!section || typeof section !== 'object') {
+    return res.status(400).json({ error: 'expected SectionState JSON body' });
+  }
+  stateMod.setSection(section);
+  broadcast({ type: 'section', section });
+  res.json({ ok: true });
+});
+
+// LLM scribe pushes the long demoscene scrolltext here
+app.post('/scroll', (req, res) => {
+  const text = req.body && req.body.text;
+  if (typeof text !== 'string' || !text.trim()) {
+    return res.status(400).json({ error: 'expected { text }' });
+  }
+  stateMod.setScroll(text);
+  broadcast({ type: 'scroll', text: text.trim() });
+  res.json({ ok: true });
+});
+
+// smoke test: synthesize a note-on without SC
+app.post('/test/noteon', (req, res) => {
+  const b = req.body || {};
+  const note = {
+    type: 'noteon',
+    ch: b.ch | 0,
+    pitch: (b.pitch ?? 60) | 0,
+    vel: typeof b.vel === 'number' ? b.vel : 0.8,
+    phase: typeof b.phase === 'number' ? b.phase : 0,
+    t: Date.now(),
+  };
+  stateMod.pushNote(note);
+  broadcast(note);
+  res.json({ ok: true, note });
+});
+
+app.get('/healthz', (_req, res) => res.json({ ok: true }));
+app.get('/state', (_req, res) => res.json(stateMod.snapshot()));
+
+startOscIn(VIS_OSC_PORT, broadcast);
+
+server.listen(HTTP_PORT, () => {
+  console.log(`[bridge] http+ws on http://localhost:${HTTP_PORT}  (ws path /live)`);
+});
+
+// periodic heartbeat so the client can detect a dead bridge
+setInterval(() => broadcast({ type: 'heartbeat', t: Date.now() }), 5000);

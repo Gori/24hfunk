@@ -1,0 +1,25 @@
+[project]
+name = "str"
+version = "0.1.0"
+description = "Hermetic local pipeline streaming AI-generated audiovisuals (Milestone 1: local preview)"
+requires-python = ">=3.11"
+dependencies = [
+    "python-osc>=1.9.0",
+    "pydantic>=2.0",
+    "torch>=2.2",
+    "transformers>=4.40",
+    "huggingface_hub>=0.23",
+    "mlx>=0.15",
+    "mlx-lm>=0.15",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+# only needed for STR_MIDI_SOURCE=midillm (the canned source needs neither)
+midillm = [
+    "mido==1.3.3",
+    "anticipation @ git+https://github.com/jthickstun/anticipation.git",
+]
+
+[tool.setuptools]
+packages = ["midi", "director"]

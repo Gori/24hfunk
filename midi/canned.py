@@ -1,0 +1,542 @@
+"""Funk groove engine — research-backed funk + a real music-theory harmony
+layer (chords, voice-leading, walking bass, comping, motif leads).
+
+SPACE is articulation/syncopation/dynamics/micro-timing, not just few notes.
+Harmony: per-genre chord progressions with real qualities (maj7/min7/dom9/
+dom7#9/min7b5/dim7/sus...), chord-aware bass (root/5/oct + chromatic approach;
+jazz = walking quarters), comped voicings on off-beats, and a per-section
+melodic MOTIF (guide tones, repeated with call-and-response variation).
+
+Class stays `CannedSource` / name="canned" so the worker import is unchanged.
+"""
+from __future__ import annotations
+
+import random
+
+from midi.source import CH_BASS, CH_LEAD, CH_KEYS, CH_DRUMS, Note, Phrase
+
+KICK, RIM, SNARE, CLAP, HAT, OHAT, PERC = 36, 37, 38, 39, 42, 46, 75
+
+_PC = {
+    "c": 0, "c#": 1, "db": 1, "d": 2, "d#": 3, "eb": 3, "e": 4, "f": 5,
+    "f#": 6, "gb": 6, "g": 7, "g#": 8, "ab": 8, "a": 9, "a#": 10, "bb": 10,
+    "b": 11,
+}
+MAJOR = [0, 2, 4, 5, 7, 9, 11]
+NAT_MINOR = [0, 2, 3, 5, 7, 8, 10]
+DORIAN = [0, 2, 3, 5, 7, 9, 10]
+PHRYGIAN = [0, 1, 3, 5, 7, 8, 10]
+
+# chord quality -> intervals from the chord root (chromatic)
+CHORD = {
+    "maj": [0, 4, 7], "min": [0, 3, 7], "dim": [0, 3, 6], "sus4": [0, 5, 7],
+    "maj7": [0, 4, 7, 11], "min7": [0, 3, 7, 10], "dom7": [0, 4, 7, 10],
+    "min7b5": [0, 3, 6, 10], "dim7": [0, 3, 6, 9], "min6": [0, 3, 7, 9],
+    "maj9": [0, 4, 7, 11, 14], "min9": [0, 3, 7, 10, 14],
+    "dom9": [0, 4, 7, 10, 14], "dom7#9": [0, 4, 7, 10, 15],
+    "dom7b9": [0, 4, 7, 10, 13], "min11": [0, 3, 7, 10, 14, 17],
+}
+
+GENRES = ("electro_funk", "idm", "synthwave", "neon_dub", "broken_house",
+          "lofi", "electro", "eighties_hiphop", "jazz", "funk",
+          "minneapolis_funk")
+
+# scale (for melody/passing) + chord progression as (scale_degree, quality)
+# pairs + swing(0..0.5 of 16th) + snare_drag_s + kick_push_s + hat_jit_s +
+# chaos_s + note cap
+PROFILE = {
+    "electro_funk": (DORIAN,
+        [(0, "min9"), (0, "min9"), (3, "dom9"), (4, "dom7#9")],
+        0.34, 0.026, -0.006, 0.006, 0.0, 70),
+    "idm": (PHRYGIAN,
+        [(0, "min7"), (5, "maj7"), (1, "min7b5"), (6, "dom7")],
+        0.10, 0.010, 0.0, 0.010, 0.030, 64),
+    "synthwave": (NAT_MINOR,
+        [(0, "min9"), (5, "maj7"), (3, "maj7"), (4, "dom9")],
+        0.07, 0.014, -0.003, 0.004, 0.0, 70),
+    "neon_dub": (NAT_MINOR,
+        [(0, "min9"), (0, "min9"), (3, "min7"), (3, "min7")],
+        0.30, 0.040, 0.008, 0.006, 0.0, 36),
+    "broken_house": (DORIAN,
+        [(0, "min9"), (3, "maj7"), (4, "dom9"), (0, "min9")],
+        0.42, 0.012, 0.0, 0.005, 0.0, 70),
+    "lofi": (DORIAN,
+        [(1, "min7"), (4, "dom9"), (0, "maj7"), (5, "min7")],
+        0.42, 0.034, 0.004, 0.008, 0.0, 44),
+    "electro": (PHRYGIAN,
+        [(0, "min7"), (0, "min7"), (5, "maj7"), (6, "dom7")],
+        0.06, 0.006, -0.004, 0.004, 0.0, 64),
+    "eighties_hiphop": (DORIAN,
+        [(0, "min9"), (0, "min9"), (3, "dom9"), (0, "min9")],
+        0.30, 0.030, 0.0, 0.008, 0.0, 40),
+    "jazz": (DORIAN,
+        [(1, "min7"), (4, "dom9"), (0, "maj7"), (5, "dom7b9")],   # ii V I VI
+        0.46, 0.030, 0.0, 0.006, 0.0, 60),
+    "funk": (DORIAN,
+        [(0, "dom7#9"), (0, "dom7#9"), (0, "min7"), (0, "dom7#9")],  # 1-chord vamp
+        0.36, 0.024, -0.005, 0.006, 0.0, 72),
+    "minneapolis_funk": (DORIAN,
+        [(0, "min9"), (3, "maj9"), (4, "dom9"), (0, "min9")],
+        0.30, 0.014, -0.004, 0.005, 0.0, 70),
+}
+
+SYNTH_PARAMS = {
+    "electro_funk": {"kick": {"drive": 2.4, "click": 0.5, "decay": 0.28}, "snare": {"snap": 0.8, "tone": 0.5, "crush": 0.06}, "hat": {"metal": 0.6, "cutoff": 10000, "decay": 0.035}, "ohat": {"metal": 0.6, "cutoff": 9200, "decay": 0.24}, "clap": {"decay": 0.18, "tone": 1.05}, "rim": {"decay": 0.04}, "perc": {"decay": 0.11}, "bass": {"drive": 1.3, "cutoff": 780, "res": 0.18, "fenv": 0.5, "sub": 0.85, "glide": 0.01}, "lead": {"detune": 0.1, "wave": 0.35, "cutoff": 5400, "drive": 1.4, "decay": 0.16}, "fx": {"reverb": 0.2, "delay": 0.18, "delayTime": 0.33, "width": 0.7}},
+    "idm": {"kick": {"drive": 3.2, "click": 0.65, "decay": 0.2}, "snare": {"snap": 0.9, "tone": 0.34, "crush": 0.5}, "hat": {"metal": 0.72, "cutoff": 11500, "decay": 0.026}, "ohat": {"metal": 0.72, "cutoff": 10200, "decay": 0.18}, "clap": {"decay": 0.15, "tone": 1.2}, "rim": {"decay": 0.035}, "perc": {"decay": 0.09}, "bass": {"drive": 1.5, "cutoff": 600, "res": 0.2, "fenv": 0.4, "sub": 0.9, "glide": 0.0}, "lead": {"detune": 0.05, "wave": 0.7, "cutoff": 7400, "drive": 1.8, "decay": 0.1}, "fx": {"reverb": 0.3, "delay": 0.28, "delayTime": 0.27, "width": 0.85}},
+    "synthwave": {"kick": {"drive": 2.2, "click": 0.38, "decay": 0.3}, "snare": {"snap": 0.62, "tone": 0.52, "crush": 0.0}, "hat": {"metal": 0.4, "cutoff": 8400, "decay": 0.045}, "ohat": {"metal": 0.4, "cutoff": 7900, "decay": 0.28}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.045}, "perc": {"decay": 0.13}, "bass": {"drive": 1.2, "cutoff": 680, "res": 0.16, "fenv": 0.4, "sub": 0.78, "glide": 0.0}, "lead": {"detune": 0.2, "wave": 0.15, "cutoff": 6800, "drive": 1.1, "decay": 0.24}, "fx": {"reverb": 0.36, "delay": 0.25, "delayTime": 0.375, "width": 0.65}},
+    "neon_dub": {"kick": {"drive": 2.0, "click": 0.28, "decay": 0.4}, "snare": {"snap": 0.42, "tone": 0.55, "crush": 0.08}, "hat": {"metal": 0.45, "cutoff": 7400, "decay": 0.055}, "ohat": {"metal": 0.45, "cutoff": 7000, "decay": 0.36}, "clap": {"decay": 0.28, "tone": 0.85}, "rim": {"decay": 0.055}, "perc": {"decay": 0.17}, "bass": {"drive": 1.1, "cutoff": 360, "res": 0.12, "fenv": 0.25, "sub": 0.97, "glide": 0.05}, "lead": {"detune": 0.12, "wave": 0.25, "cutoff": 4400, "drive": 0.9, "decay": 0.5}, "fx": {"reverb": 0.55, "delay": 0.44, "delayTime": 0.5, "width": 0.9}},
+    "broken_house": {"kick": {"drive": 2.4, "click": 0.42, "decay": 0.28}, "snare": {"snap": 0.68, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.48, "cutoff": 9400, "decay": 0.04}, "ohat": {"metal": 0.48, "cutoff": 8800, "decay": 0.28}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.045}, "perc": {"decay": 0.12}, "bass": {"drive": 1.3, "cutoff": 740, "res": 0.2, "fenv": 0.5, "sub": 0.7, "glide": 0.0}, "lead": {"detune": 0.15, "wave": 0.3, "cutoff": 5800, "drive": 1.2, "decay": 0.2}, "fx": {"reverb": 0.26, "delay": 0.22, "delayTime": 0.353, "width": 0.7}},
+    "lofi": {"kick": {"drive": 1.5, "click": 0.26, "decay": 0.34}, "snare": {"snap": 0.38, "tone": 0.44, "crush": 0.2}, "hat": {"metal": 0.32, "cutoff": 7000, "decay": 0.045}, "ohat": {"metal": 0.32, "cutoff": 6600, "decay": 0.24}, "clap": {"decay": 0.24, "tone": 0.8}, "rim": {"decay": 0.055}, "perc": {"decay": 0.15}, "bass": {"drive": 1.0, "cutoff": 460, "res": 0.14, "fenv": 0.35, "sub": 0.85, "glide": 0.0}, "lead": {"detune": 0.08, "wave": 0.2, "cutoff": 4000, "drive": 0.85, "decay": 0.4}, "fx": {"reverb": 0.4, "delay": 0.3, "delayTime": 0.45, "width": 0.6}},
+    "electro": {"kick": {"drive": 2.2, "click": 0.4, "decay": 0.42}, "snare": {"snap": 0.7, "tone": 0.4, "crush": 0.18}, "hat": {"metal": 0.7, "cutoff": 11000, "decay": 0.03}, "ohat": {"metal": 0.7, "cutoff": 10000, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.15}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 900, "res": 0.22, "fenv": 0.55, "sub": 0.7, "glide": 0.0}, "lead": {"detune": 0.06, "wave": 0.6, "cutoff": 6500, "drive": 1.6, "decay": 0.14}, "fx": {"reverb": 0.26, "delay": 0.22, "delayTime": 0.1875, "width": 0.8}},
+    "eighties_hiphop": {"kick": {"drive": 1.8, "click": 0.35, "decay": 0.46}, "snare": {"snap": 0.7, "tone": 0.55, "crush": 0.12}, "hat": {"metal": 0.4, "cutoff": 8500, "decay": 0.04}, "ohat": {"metal": 0.4, "cutoff": 8000, "decay": 0.26}, "clap": {"decay": 0.24, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.14, "fenv": 0.3, "sub": 0.9, "glide": 0.0}, "lead": {"detune": 0.1, "wave": 0.3, "cutoff": 4800, "drive": 1.0, "decay": 0.22}, "fx": {"reverb": 0.34, "delay": 0.28, "delayTime": 0.375, "width": 0.65}},
+    "jazz": {"kick": {"drive": 1.2, "click": 0.2, "decay": 0.3}, "snare": {"snap": 0.4, "tone": 0.5, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9000, "decay": 0.05}, "ohat": {"metal": 0.5, "cutoff": 8500, "decay": 0.4}, "clap": {"decay": 0.18, "tone": 0.9}, "rim": {"decay": 0.05}, "perc": {"decay": 0.12}, "bass": {"drive": 0.8, "cutoff": 520, "res": 0.1, "fenv": 0.25, "sub": 0.8, "glide": 0.02}, "lead": {"detune": 0.04, "wave": 0.18, "cutoff": 4200, "drive": 0.7, "decay": 0.35}, "fx": {"reverb": 0.42, "delay": 0.18, "delayTime": 0.42, "width": 0.7}},
+    "funk": {"kick": {"drive": 2.6, "click": 0.55, "decay": 0.26}, "snare": {"snap": 0.88, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.62, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.62, "cutoff": 9500, "decay": 0.22}, "clap": {"decay": 0.17, "tone": 1.05}, "rim": {"decay": 0.038}, "perc": {"decay": 0.1}, "bass": {"drive": 1.6, "cutoff": 900, "res": 0.28, "fenv": 0.7, "sub": 0.8, "glide": 0.01}, "lead": {"detune": 0.08, "wave": 0.4, "cutoff": 5600, "drive": 1.5, "decay": 0.16}, "fx": {"reverb": 0.18, "delay": 0.16, "delayTime": 0.33, "width": 0.7}},
+    "minneapolis_funk": {"kick": {"drive": 2.0, "click": 0.45, "decay": 0.3}, "snare": {"snap": 0.85, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9800, "decay": 0.035}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.26}, "clap": {"decay": 0.22, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.11}, "bass": {"drive": 1.4, "cutoff": 1000, "res": 0.3, "fenv": 0.6, "sub": 0.55, "glide": 0.0}, "lead": {"detune": 0.14, "wave": 0.45, "cutoff": 6200, "drive": 1.3, "decay": 0.18}, "fx": {"reverb": 0.28, "delay": 0.2, "delayTime": 0.1875, "width": 0.75}},
+}
+
+
+def _key_pc(key: str) -> int:
+    k = (key or "C minor").strip().lower().split()
+    return _PC.get(k[0] if k else "c", 0)
+
+
+class CannedSource:
+    name = "canned"
+
+    def __init__(self):
+        self.bpm = 100
+        self.root = 0
+        self.genre = "funk"
+        self.energy = 0.5
+        self.on = {"kick": True, "snare": True, "hat": True, "bass": True, "lead": True}
+        self.bar = 0
+        self.motif = []
+
+    def prime(self, section: dict) -> None:
+        self.bpm = float(section.get("tempo") or section.get("bpm") or 100)
+        self.root = _key_pc(section.get("key", "C minor"))
+        g = str(section.get("genre", "")).lower()
+        self.genre = g if g in GENRES else "funk"
+        instr = section.get("instruments") or {}
+        for k in self.on:
+            v = instr.get(k)
+            self.on[k] = True if v is None else bool(
+                v.get("enabled", True) if isinstance(v, dict) else v)
+        d = section.get("density")
+        r = random.random()
+        if r < 0.15:
+            self.energy = random.uniform(0.78, 0.95)
+        elif r < 0.45:
+            self.energy = random.uniform(0.5, 0.68)
+        else:
+            self.energy = random.uniform(0.3, 0.48)
+        if isinstance(d, (int, float)):
+            self.energy = max(0.22, min(0.95, 0.6 * self.energy + 0.4 * float(d)))
+        # a per-section melodic motif: list of (chord-tone index, step, dur16)
+        scale = PROFILE.get(self.genre, PROFILE["funk"])[0]
+        rr = random.Random(int(self.root * 7 + len(self.genre)))
+        self.motif = []
+        steps = sorted(rr.sample(range(16), rr.choice([3, 4, 4, 5])))
+        for s in steps:
+            self.motif.append((rr.choice([0, 1, 2, 1, 3]), s, rr.choice([1, 2, 2, 3])))
+        self.bar = 0
+
+    def synth_params(self) -> dict:
+        return SYNTH_PARAMS.get(self.genre, SYNTH_PARAMS["funk"])
+
+    # ---- harmony ----
+    def _scale(self):
+        return PROFILE.get(self.genre, PROFILE["funk"])[0]
+
+    def _chord(self, prog_idx, octave):
+        """Return (root_midi, [chord tone midis]) for progression slot.
+        Adds a secondary-dominant turnaround on the last bar (harmonic
+        motion, no extra notes) — keeps the music interesting, not denser.
+        """
+        prog = PROFILE.get(self.genre, PROFILE["funk"])[1]
+        sc = self._scale()
+        if prog_idx % 4 == 3:
+            rr = random.Random(prog_idx * 131 + self.root + len(self.genre))
+            if rr.random() < 0.55:
+                ndeg, _q = prog[(prog_idx + 1) % len(prog)]
+                nroot_pc = (self.root + sc[ndeg % len(sc)]) % 12
+                base = 12 * octave + ((nroot_pc + 7) % 12)     # V7 of next
+                q = "dom7b9" if rr.random() < 0.5 else "dom9"
+                return base, [base + iv for iv in CHORD[q]]
+        deg, qual = prog[prog_idx % len(prog)]
+        croot_pc = (self.root + sc[deg % len(sc)]) % 12
+        base = 12 * octave + croot_pc
+        tones = [base + iv for iv in CHORD.get(qual, CHORD["min7"])]
+        return base, tones
+
+    # ---- velocity tiers ----
+    def _acc(self, r): return r.uniform(0.88, 1.0)
+    def _main(self, r): return r.uniform(0.66, 0.82)
+    def _ghost(self, r): return r.uniform(0.18, 0.36)
+
+    def next_phrase(self) -> Phrase:
+        try:
+            return self._build()
+        except Exception as e:
+            beat = 60.0 / max(50.0, self.bpm)
+            print(f"[canned] {self.genre} error: {e}")
+            return Phrase(notes=[], length=4 * beat)
+
+    def _build(self) -> Phrase:
+        b = self.bar
+        rnd = random.Random(b * 8419 + hash(self.genre) % 9973)
+        beat = 60.0 / max(50.0, min(180.0, self.bpm))
+        s16 = 0.25 * beat
+        bar_len = 4 * beat
+        sc, prog, swing, sdrag, kpush, hjit, chaos, cap = PROFILE.get(
+            self.genre, PROFILE["funk"])
+        ph = b % 8
+        fill = ph == 7
+        sparse = ph in (4, 5, 6)
+        e = self.energy * (0.6 if sparse else 1.0)
+        croot, ctones = self._chord(b, 2)
+        nroot, _ = self._chord(b + 1, 2)
+
+        def t(step, voice):
+            base = step * s16 + (swing * s16 if step % 2 else 0.0)
+            off = (sdrag if voice == "snare" else
+                   kpush if voice == "kick" else
+                   rnd.uniform(-hjit, hjit) if voice == "hat" else 0.0)
+            if chaos:
+                off += rnd.uniform(-chaos, chaos)
+            return max(0.0, base + off)
+
+        core, orn = [], []
+        def D(st, du, pi, ve, ch, vo="", structural=False):
+            (core if structural else orn).append(Note(t(st, vo), du, pi, ve, ch))
+
+        getattr(self, f"_g_{self.genre}")(D, rnd, beat, sc, ctones, croot,
+                                          nroot, e, fill, sparse)
+
+        # soft sustained harmonic pad on the keys voice (energy-gated, not on
+        # the spikier genres) — body without density, keeps the space.
+        if self.on["lead"] and self.genre not in ("idm", "neon_dub", "electro"):
+            self._pad(D, rnd, beat, ctones)
+
+        # cap ONLY ornaments — the kick/snare backbone & bass "one" are core
+        if len(orn) > max(0, cap - len(core)):
+            orn.sort(key=lambda n: n.vel, reverse=True)
+            orn = orn[:max(0, cap - len(core))]
+        N = core + orn
+        for n in N:
+            n.t = max(0.0, n.t)
+            n.vel = max(0.05, min(1.0, n.vel))
+            n.pitch = max(0, min(127, int(n.pitch)))
+        N.sort(key=lambda n: n.t)
+        self.bar += 1
+        return Phrase(notes=N, length=bar_len)
+
+    # ---- shared layers ----
+    def _hats(self, D, rnd, e, accents):
+        for s in range(16):
+            if s in (6, 14):
+                continue
+            p = 0.9 if s % 2 == 0 else 0.55 + 0.4 * e
+            if rnd.random() < p:
+                v = self._main(rnd) if s in accents else self._ghost(rnd) + (0.12 if s % 4 == 0 else 0)
+                D(s, 0.04, HAT, v * 0.9, CH_DRUMS, "hat")
+        for s in (6, 14):
+            if rnd.random() < 0.6 + 0.3 * e:
+                D(s, 0.16, OHAT, self._main(rnd) * 0.8, CH_DRUMS, "hat")
+
+    def _ghost_sn(self, D, rnd, e):
+        for s in (7, 9, 11, 13, 3):
+            if rnd.random() < 0.2 + 0.5 * e:
+                D(s, 0.05, SNARE, self._ghost(rnd), CH_DRUMS, "snare")
+
+    def _backbeat(self, D, rnd, clap=True):
+        for s in (4, 12):
+            D(s, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", structural=True)
+            if clap and rnd.random() < 0.6:
+                D(s, 0.2, CLAP, 0.72, CH_DRUMS, "snare")
+
+    def _funk_bass(self, D, rnd, beat, ctones, croot, nroot, e, steps):
+        D(0, beat * 0.18, croot, self._acc(rnd), CH_BASS, "kick", structural=True)
+        fifth = croot + 7
+        for s in steps:
+            if rnd.random() < 0.4 + 0.5 * e:
+                if rnd.random() < 0.15:
+                    D(s, beat * 0.1, croot, self._ghost(rnd), CH_BASS)  # dead
+                else:
+                    p = rnd.choice([croot, croot, croot + 12, fifth,
+                                    rnd.choice(ctones)])
+                    D(s, beat * rnd.choice([0.14, 0.18, 0.22]), p,
+                      self._main(rnd), CH_BASS)
+        # chromatic/diatonic approach into next chord's root
+        if rnd.random() < 0.55 + 0.3 * e:
+            ap = nroot - 1 if rnd.random() < 0.5 else nroot + 1
+            D(15, beat * 0.16, ap, self._main(rnd) * 0.8, CH_BASS)
+
+    def _walk_bass(self, D, rnd, beat, ctones, croot, nroot):
+        # jazz: quarter-note walk root-3-5-approach toward next root
+        line = [croot, ctones[1] if len(ctones) > 1 else croot + 3,
+                ctones[2] if len(ctones) > 2 else croot + 7,
+                (nroot - 1) if rnd.random() < 0.5 else (nroot + 1)]
+        for i, p in enumerate(line):
+            D(i * 4, beat * 0.9, p, self._main(rnd) + (0.12 if i == 0 else 0),
+              CH_BASS, "kick" if i == 0 else "", structural=(i == 0))
+
+    def _voicelead(self, tones, center=60):
+        # move each chord tone to the octave nearest the previous voicing's
+        # centre -> smooth, minimal-movement chord changes (better chords).
+        c = getattr(self, "_vlc", center)
+        out = []
+        for p in tones:
+            pc = p % 12
+            best = pc + 12 * round((c - pc) / 12)
+            out.append(int(best))
+        out = sorted(set(out))
+        self._vlc = sum(out) / len(out) if out else c
+        return out
+
+    def _comp(self, D, rnd, beat, ctones, steps, oct_shift=12):
+        # voice-led top voicing on the KEYS voice (smooth chord motion, no
+        # crowding the lead). Same hit count = harmony, not density.
+        vc = self._voicelead(ctones, 60 + oct_shift)
+        if len(ctones) >= 4 and rnd.random() < 0.6:
+            vc = vc + [vc[0] + 12]                       # colour tone on top
+        for s in steps:
+            if rnd.random() < 0.45 + 0.3 * self.energy:
+                for p in vc:
+                    D(s, beat * 0.26, p, 0.34 + rnd.uniform(-0.04, 0.07), CH_KEYS)
+
+    def _pad(self, D, rnd, beat, ctones):
+        # ONE soft sustained voice-led chord under the bar (keys self-
+        # terminates). Harmonic body without notes-per-beat — keeps the space.
+        if rnd.random() < 0.45 + 0.35 * self.energy:
+            for p in self._voicelead(ctones[:4], 64):
+                D(0, beat * 3.4, p, 0.22 + rnd.uniform(-0.03, 0.05), CH_KEYS)
+
+    def _motif(self, D, rnd, beat, ctones):
+        # melody on chord guide-tones; occasionally harmonised a 3rd/6th below
+        gt = [ctones[1] if len(ctones) > 1 else ctones[0],
+              ctones[-1], ctones[0], ctones[2] if len(ctones) > 2 else ctones[0]]
+        for (ti, s, du) in self.motif:
+            if rnd.random() < 0.5 + 0.4 * self.energy:
+                top = gt[ti % len(gt)] + 12
+                D(s, beat * 0.18 * du, top, 0.42 + rnd.uniform(-0.04, 0.08), CH_LEAD)
+                if rnd.random() < 0.35:               # harmonised interval
+                    D(s, beat * 0.18 * du, top - rnd.choice([3, 4, 8, 9]),
+                      0.30, CH_LEAD)
+
+    # ---- genre builders (drums = funk research; harmony via helpers) ----
+    def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", structural=True)
+            for s in (6, 7, 10, 14):
+                if rnd.random() < 0.4 + 0.4 * e:
+                    D(s, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            self._backbeat(D, rnd); self._ghost_sn(D, rnd, e)
+            if fill:
+                for s in (10, 12, 13, 14, 15):
+                    D(s, 0.06, SNARE, 0.55 + 0.05 * s, CH_DRUMS, "snare")
+        if self.on["hat"]:
+            self._hats(D, rnd, e, (0, 4, 8, 12))
+        if self.on["bass"]:
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, ct)
+            if rnd.random() < 0.3:
+                self._comp(D, rnd, beat, ct, [6, 14])
+
+    def _g_jazz(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["hat"]:
+            for s in (0, 4, 6, 8, 12, 14):                 # swung ride
+                D(s, 0.06, HAT, self._main(rnd) if s in (4, 12) else self._ghost(rnd) + 0.15, CH_DRUMS, "hat")
+            if rnd.random() < 0.5:
+                D(10, 0.18, OHAT, 0.4, CH_DRUMS, "hat")
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.1, RIM, self._main(rnd), CH_DRUMS, "snare", True)
+            self._ghost_sn(D, rnd, e * 0.7)
+        if self.on["kick"]:
+            D(0, 0.16, KICK, self._main(rnd) * 0.7, CH_DRUMS, "kick", True)
+            if rnd.random() < 0.4:
+                D(rnd.choice([6, 10, 14]), 0.14, KICK, self._ghost(rnd) + 0.2, CH_DRUMS, "kick")
+        if self.on["bass"]:
+            self._walk_bass(D, rnd, beat, ct, cr, nr)
+        if self.on["lead"]:
+            self._comp(D, rnd, beat, ct, [2, 7, 11], oct_shift=0)
+            self._motif(D, rnd, beat, ct)
+
+    def _g_minneapolis_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            for s in (0, 10):
+                D(s, 0.2, KICK, self._acc(rnd) if s == 0 else self._main(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.4 + 0.4 * e:
+                D(6, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in (4, 12):                                # big gated snare
+                D(s, 0.22, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            self._ghost_sn(D, rnd, e * 0.6)
+        if self.on["hat"]:
+            self._hats(D, rnd, e, (0, 4, 8, 12))
+        if self.on["bass"]:                                  # syncopated synth-bass
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [2, 3, 6, 10, 11, 14])
+        if self.on["lead"]:
+            self._comp(D, rnd, beat, ct, [2, 6, 10, 14])     # stabby synth chords
+            if rnd.random() < 0.5:
+                self._motif(D, rnd, beat, ct)
+
+    def _g_electro_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            for s in (6, 7, 10, 11, 14):
+                if rnd.random() < 0.35 + 0.45 * e:
+                    D(s, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            self._backbeat(D, rnd); self._ghost_sn(D, rnd, e)
+        if self.on["hat"]:
+            self._hats(D, rnd, e, (0, 4, 8, 12))
+        if self.on["bass"]:
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, ct)
+
+    def _g_broken_house(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            for s in (0, 4, 8, 12):
+                D(s, 0.2, KICK, self._acc(rnd) if s == 0 else self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            self._backbeat(D, rnd); self._ghost_sn(D, rnd, e * 0.7)
+        if self.on["hat"]:
+            self._hats(D, rnd, e, (2, 6, 10, 14))
+        if self.on["bass"]:
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 14, 15])
+        if self.on["lead"] and rnd.random() < 0.5:
+            self._comp(D, rnd, beat, ct, [10])
+
+    def _g_synthwave(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            for s in (0, 4, 8, 12):
+                D(s, 0.2, KICK, self._acc(rnd) if s == 0 else self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            self._backbeat(D, rnd, clap=False); self._ghost_sn(D, rnd, e * 0.5)
+        if self.on["hat"]:
+            for s in range(16):
+                if s in (6, 14):
+                    D(s, 0.15, OHAT, 0.5, CH_DRUMS, "hat")
+                elif rnd.random() < 0.85:
+                    D(s, 0.04, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd) + 0.12, CH_DRUMS, "hat")
+        if self.on["bass"]:
+            for i in range(8):
+                D(i * 2, beat * 0.4, cr + (12 if i == 7 else 0),
+                  self._acc(rnd) if i == 0 else self._main(rnd), CH_BASS,
+                  "kick", structural=(i == 0))
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, ct)
+            self._comp(D, rnd, beat, ct, [0, 8])
+
+    def _g_idm(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            D(0, 0.16, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            for s in range(1, 16):
+                if rnd.random() < 0.12 + 0.18 * e:
+                    D(s, 0.14, KICK, self._main(rnd), CH_DRUMS, "kick")
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.12, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            for s in range(16):
+                if rnd.random() < 0.12 + 0.18 * e:
+                    D(s, 0.05, RIM if rnd.random() < 0.5 else SNARE, self._ghost(rnd), CH_DRUMS, "snare")
+        if self.on["hat"]:
+            for s in range(16):
+                if rnd.random() < 0.4 + 0.3 * e:
+                    D(s, 0.03, HAT, self._ghost(rnd) + 0.08, CH_DRUMS, "hat")
+        if self.on["bass"]:
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [5, 8, 11, 14])
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, ct)
+
+    def _g_neon_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            D(0, 0.32, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            if self.bar % 2 == 1:
+                D(8, 0.3, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            D(8, 0.2, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            if rnd.random() < 0.5:
+                D(8, 0.22, CLAP, 0.6, CH_DRUMS, "snare")
+        if self.on["hat"]:
+            for s in (6, 14):
+                if rnd.random() < 0.7:
+                    D(s, 0.22, OHAT, 0.42, CH_DRUMS, "hat")
+        if self.on["bass"]:
+            D(0, beat * 1.6, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.4 + 0.3 * e:
+                D(11, beat * 0.5, cr + 7, self._main(rnd) * 0.8, CH_BASS)
+        if self.on["lead"] and rnd.random() < 0.5:
+            self._comp(D, rnd, beat, ct, [6])
+
+    def _g_lofi(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            D(0, 0.25, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.5:
+                D(10, 0.22, KICK, self._main(rnd) * 0.8, CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.2, SNARE, self._main(rnd), CH_DRUMS, "snare", True)
+            self._ghost_sn(D, rnd, e * 0.6)
+        if self.on["hat"]:
+            for s in range(0, 16, 2):
+                if rnd.random() < 0.6 + 0.2 * e:
+                    D(s, 0.05, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd), CH_DRUMS, "hat")
+        if self.on["bass"]:
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e * 0.7, [6, 10])
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, ct)
+
+    def _g_electro(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            D(0, 0.3, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            for s in (3, 6, 10, 11, 14):
+                if rnd.random() < 0.4 + 0.4 * e:
+                    D(s, 0.24, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            self._backbeat(D, rnd); self._ghost_sn(D, rnd, e * 0.6)
+        if self.on["hat"]:
+            self._hats(D, rnd, e, (0, 4, 8, 12))
+            for s in (2, 7, 11):
+                if rnd.random() < 0.4 + 0.4 * e:
+                    D(s, 0.08, PERC, self._main(rnd) * 0.8, CH_DRUMS)
+        if self.on["bass"]:                                  # robotic riff
+            riff = [(0, cr), (3, cr + 12), (6, cr), (8, cr), (11, cr + 7), (14, cr + 12)]
+            for s, p in riff:
+                if s == 0 or rnd.random() < 0.55 + 0.4 * e:
+                    D(s, beat * 0.16, p, self._acc(rnd) if s == 0 else self._main(rnd),
+                      CH_BASS, "kick" if s == 0 else "", structural=(s == 0))
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, ct)
+
+    def _g_eighties_hiphop(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        if self.on["kick"]:
+            D(0, 0.28, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            for s in (6, 10):
+                if rnd.random() < 0.35 + 0.4 * e:
+                    D(s, 0.24, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.22, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+                if rnd.random() < 0.6:
+                    D(s, 0.22, CLAP, 0.7, CH_DRUMS, "snare")
+            if fill:
+                for s in (12, 13, 14, 15):
+                    D(s, 0.06, SNARE, 0.55 + 0.05 * s, CH_DRUMS, "snare")
+        if self.on["hat"]:
+            for s in range(0, 16, 2):
+                if rnd.random() < 0.5 + 0.3 * e:
+                    D(s, 0.05, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd), CH_DRUMS, "hat")
+        if self.on["bass"]:
+            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (6, 10, 14):
+                if rnd.random() < 0.35 + 0.35 * e:
+                    D(s, beat * 0.3, rnd.choice([cr, cr, cr + 12, cr + 7]),
+                      self._main(rnd), CH_BASS)
+        if self.on["lead"] and rnd.random() < 0.45:
+            self._motif(D, rnd, beat, ct)
