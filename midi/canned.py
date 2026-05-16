@@ -620,20 +620,24 @@ class CannedSource:
         steps = pf.get("steps", _PERC_DEF["steps"])
         pitches = pf.get("pitch", [60])
         if mode == "lots":
-            base_p = (0.55 + 0.20 * e) * pf.get("prob", 1.0)
-            vlo, vhi = 0.34, 0.50
+            if rnd.random() < 0.30:              # SPICE: it comes & goes
+                return
+            base_p = (0.50 + 0.20 * e) * pf.get("prob", 1.0)
+            vlo, vhi = 0.32, 0.48
         else:                                    # spice: seasoning, not a part
             if rnd.random() > 0.5:               # skip whole bars often
                 return
             base_p = (0.10 + 0.14 * e) * pf.get("prob", 1.0)
             vlo, vhi = 0.22, 0.34
+        # per-hit variation -> creative, never two identical hits
         hits = 0
         for idx, s in enumerate(steps):
             if rnd.random() < base_p:
-                D(s, beat * 0.12, pitches[idx % len(pitches)],
+                D(s, beat * 0.12, pitches[idx % len(pitches)]
+                  + rnd.choice([0, 0, 0, 12, -12, 7]),
                   rnd.uniform(vlo, vhi), CH_PERC, "perc")
                 hits += 1
-        if mode == "lots" and hits == 0 and steps:   # floor: >=1 hit/bar
+        if mode == "lots" and hits == 0 and steps:   # when it plays, >=1 hit
             idx = rnd.randrange(len(steps))
             D(steps[idx], beat * 0.12, pitches[idx % len(pitches)],
               rnd.uniform(vlo, vhi), CH_PERC, "perc")

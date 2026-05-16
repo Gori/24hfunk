@@ -6,6 +6,6 @@ SynthDef(\master, { |in=0, out=0|
 	var sig  = In.ar(in, 2);
 	var comp = Compander.ar(sig, sig, 0.32, 1.0, 0.55, 0.01, 0.20) * 1.18;
 	var wet  = FreeVerb2.ar(comp[0], comp[1], 1.0, 0.5, 0.5);
-	var glue = comp + (wet * 0.055);                 // VERY slight cohesion
+	var glue = comp + (wet * 0.025);                 // ~half the prior add
 	Out.ar(out, Limiter.ar(LeakDC.ar(glue), 0.97, 0.002));
 }).add;
