@@ -214,9 +214,17 @@
     },
     draw(eng, env) {
       const c = eng.cam, rows = eng.rows, cols = eng.cols;
-      // orthographic-ish: far camera, tiny fov -> perspective ~ flat (reads 2D)
-      c.x = this.sx + 4; c.y = 2; c.z = -40;
-      c.yaw = 0; c.pitch = 0; c.roll = 0; c.fov = 0.22;
+      // flat 2D side-scroller. A far ortho cam pushed all geometry past
+      // farFog(26) so fog() crushed it to the 6% floor (invisible) and
+      // collapsed sprites to 1px. Sane cam depth + no distance fog here.
+      const _ff = eng.farFog; eng.farFog = 1e6;
+      c.x = this.sx + 4; c.y = 2; c.z = -12;
+      c.yaw = 0; c.pitch = 0; c.roll = 0; c.fov = 0.62;
+      // the global music camera-swim zooms a flat 2D world far too hard —
+      // keep just a hint of it here.
+      // a flat 2D side-scroller should not dolly/zoom with the music at all
+      const fx = eng.fx, _dfov = fx.dfov, _dz = fx.dz;
+      fx.dfov = 0; fx.dz = 0;
       // parallax layers (far -> near) via depth planes
       const layers = [[18, acc(env, 2), 0.25, 'mountains'], [10, acc(env, 1), 0.5, 'city'], [3.5, env.pal.fg, 1, 'ground']];
       for (const [pz, colr, par, kind] of layers) {
@@ -246,7 +254,8 @@
         [' o ', '/|\\', ' \\ '], [' o ', '/|\\', '  |'],
       ][fr];
       eng.sprite(this.sx + 4, this.y + 1.2, 3.4, hero, acc(env, 0), 1.0);
-      eng.text2d(2, 1, this.title + '  ' + ('▮'.repeat(3)), acc(env, 2));
+      fx.dfov = _dfov; fx.dz = _dz;
+      eng.farFog = _ff;
     },
   };
 
@@ -317,7 +326,6 @@
       // HUD
       const fl = this._hud > 0.4;
       const hud = fl ? hC : scale(hC, 0.7);
-      eng.text2d(2, 1, '[ ' + this.title + ' ]', hud);
       eng.text2d(2, rows - 2, 'SPD ' + (this.z | 0), hud);
       const mx = (cols / 2) | 0, my = (rows / 2) | 0;
       eng.glyph2d(mx, my, '+', hC);

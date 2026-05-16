@@ -76,6 +76,17 @@
       if (depth < this.z[i]) { this.z[i] = depth; this.ch[i] = gc; this.col[i] = pc; }
     }
   };
+  // fast horizontal run — one tight loop, no per-cell call overhead
+  A3D.prototype.hspan = function (cy, x0, x1, glyph, rgb, depth) {
+    if (cy < 0 || cy >= this.rows) return;
+    if (x0 < 0) x0 = 0; if (x1 >= this.cols) x1 = this.cols - 1;
+    const gc = typeof glyph === 'number' ? glyph : glyph.charCodeAt(0);
+    const pc = pack(rgb), base = (cy | 0) * this.cols, z = this.z, ch = this.ch, col = this.col;
+    for (let x = x0 | 0; x <= x1; x++) {
+      const i = base + x;
+      if (depth < z[i]) { z[i] = depth; ch[i] = gc; col[i] = pc; }
+    }
+  };
   // world -> screen cell. returns {x,y,z,vis}
   A3D.prototype.project = function (wx, wy, wz) {
     const c = this.cam, X = this.fx;

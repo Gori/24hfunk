@@ -9,8 +9,10 @@ SynthDef(\leadPulse, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	var f      = freq * (1 + vib);
 	var pw     = SinOsc.kr(0.7 + wave * 4).range(0.15, 0.85);
 	var sig    = Pulse.ar(f, pw) + (Pulse.ar(f * (1 + detune * 0.04), pw) * 0.5);
-	sig = sig + (Pulse.ar(f * 2, 0.5) * fmIndex * 0.15);
-	sig = LPF.ar(sig, (cutoff * (0.55 + v)).clip(500, 12000));
-	sig = (sig * (1 + drive * 0.5)).softclip * 0.6;
-	Out.ar(out, Pan2.ar(sig * env * safety * amp, pan));
+	// slightly softened: less octave-buzz harmonic, lower top, less drive
+	sig = sig + (Pulse.ar(f * 2, 0.5) * fmIndex * 0.10);
+	sig = LPF.ar(sig, (cutoff * (0.55 + v)).clip(500, 9500));
+	sig = (sig * (1 + drive * 0.4)).softclip * 0.6;
+	// lead mix trim — lead sat too hot vs drums/bass across genres (tune here)
+	Out.ar(out, Pan2.ar(sig * env * safety * amp * 0.6, pan));
 }).add;

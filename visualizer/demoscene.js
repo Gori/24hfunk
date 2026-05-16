@@ -18,12 +18,14 @@
     step(dt) { this.t += dt; },
     draw(eng, env) {
       const C = eng.cols, R = eng.rows, t = this.t;
-      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
         const v = Math.sin(x * 0.16 + t) + Math.sin(y * 0.22 - t * 1.3)
           + Math.sin((x + y) * 0.12 + t * 0.7) + Math.sin(Math.hypot(x - C / 2, y - R / 2) * 0.18 - t * 2);
         const k = (v + 4) / 8;
         const col = lerpC(acc(env, 0), acc(env, 1), (Math.sin(v + t) + 1) / 2);
-        eng.plot(x, y, gly(0.2 + k * 0.8), mul(col, 0.5 + env.beat * 0.5 + k * 0.5), 500);
+        const g = gly(0.2 + k * 0.8), c = mul(col, 0.5 + env.beat * 0.5 + k * 0.5);
+        eng.plot(x, y, g, c, 500); eng.plot(x + 1, y, g, c, 500);
+        eng.plot(x, y + 1, g, c, 500); eng.plot(x + 1, y + 1, g, c, 500);
       }
     },
   };
@@ -107,15 +109,16 @@
     step(dt) { this.t += dt; },
     draw(eng, env) {
       const C = eng.cols, R = eng.rows;
-      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
         const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2);
         const d = Math.hypot(dx, dy) + 0.0001;
         const u = (1 / d * 1.4 + this.t * 2);
         const v = Math.atan2(dy, dx) / 6.283 * 16;
         const chk = ((u | 0) + (v | 0)) & 1;
         const sh = Math.min(1, d * 1.3);
-        eng.plot(x, y, chk ? gly(sh) : gly(sh * 0.5),
-          mul(acc(env, chk ? 0 : 1), 0.15 + sh), 500);
+        const g = chk ? gly(sh) : gly(sh * 0.5), c = mul(acc(env, chk ? 0 : 1), 0.15 + sh);
+        eng.plot(x, y, g, c, 500); eng.plot(x + 1, y, g, c, 500);
+        eng.plot(x, y + 1, g, c, 500); eng.plot(x + 1, y + 1, g, c, 500);
       }
     },
   };
@@ -223,11 +226,14 @@
       const b = [[C / 2 + Math.sin(t) * C * 0.3, R / 2 + Math.cos(t * 1.3) * R * 0.3],
       [C / 2 + Math.sin(t * 1.7 + 2) * C * 0.32, R / 2 + Math.sin(t * 0.9) * R * 0.32],
       [C / 2 + Math.cos(t * 0.8) * C * 0.28, R / 2 + Math.cos(t * 1.5 + 1) * R * 0.3]];
-      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
         let s = 0;
         for (const [bx, by] of b) s += 30 / (Math.hypot(x - bx, (y - by) * 2) + 1);
-        if (s > 1.0) eng.plot(x, y, gly(Math.min(1, (s - 1) * 0.6)),
-          mul(acc(env, s > 2.4 ? 2 : 0), 0.4 + Math.min(0.9, s * 0.25)), 500);
+        if (s > 1.0) {
+          const g = gly(Math.min(1, (s - 1) * 0.6)), c = mul(acc(env, s > 2.4 ? 2 : 0), 0.4 + Math.min(0.9, s * 0.25));
+          eng.plot(x, y, g, c, 500); eng.plot(x + 1, y, g, c, 500);
+          eng.plot(x, y + 1, g, c, 500); eng.plot(x + 1, y + 1, g, c, 500);
+        }
       }
     },
   };
@@ -286,23 +292,31 @@
     draw(eng, env) {
       // tint accent lookups with this effect's colour offset for variety
       const base = env.pal, P = this.P;
-      const e2 = base.accent ? {
+      // forward the WHOLE env (mv/bass/lead/drum/pitch + future fields) and
+      // only override the palette with this effect's accent offset. Dropping
+      // mv here made env.mv undefined -> NaN sizes -> black effects.
+      const e2 = base && base.accent ? Object.assign({}, env, {
         pal: { bg: base.bg, fg: base.fg,
           accent: base.accent.map((_, i) => base.accent[(i + P.cj) % base.accent.length]) },
-        beat: env.beat, t: env.t, energy: env.energy, hit: env.hit,
-      } : env;
+      }) : env;
       drawf.call(this, eng, e2);
     },
   });
   const px = (eng, x, y, g, c, z) => eng.plot(x | 0, y | 0, g, c, z || 500);
 
   const Raster = E('RASTER BARS', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y++) {
-      const v = Math.sin(y * 0.25 + this.t * 3) * 0.5 + 0.5;
-      const ci = (y + (this.t * 8 | 0)) % env.pal.accent.length;
-      const col = mul(acc(env, ci), 0.25 + v * (0.7 + env.beat * 0.5));
-      for (let x = 0; x < C; x++) px(eng, x, y, gly(v), col);
+    // authentic copper/raster bars: a few THICK shaded bands over empty bg,
+    // drawn with the fast hspan (no per-cell plot, no symmetry multiply).
+    const C = eng.cols, R = eng.rows, N = 6, half = 4;
+    for (let b = 0; b < N; b++) {
+      const cy = R / 2 + Math.sin(this.t * (0.5 + b * 0.22) + b * 1.6 * this.P.dir)
+        * R * 0.42 * this.P.amp;
+      const base = acc(env, (b + (this.t | 0)) % env.pal.accent.length);
+      for (let d = -half; d <= half; d++) {
+        const k = (1 - Math.abs(d) / half);                 // bright core
+        eng.hspan(cy + d, 0, C - 1, gly(0.4 + k * 0.6),
+          mul(base, 0.22 + k * (0.75 + env.beat * 0.45)), 200 + b);
+      }
     }
   });
   const Kefrens = E('KEFRENS BARS', function () { this.h = []; }, function (eng, env) {
@@ -337,47 +351,64 @@
     const C = eng.cols, R = eng.rows;
     const ax = C / 2 + Math.sin(this.t) * C * 0.3, ay = R / 2 + Math.cos(this.t * 1.2) * R * 0.3;
     const bx = C / 2 - Math.sin(this.t * 0.8) * C * 0.3, by = R / 2 - Math.cos(this.t) * R * 0.3;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const d1 = Math.hypot(x - ax, (y - ay) * 2), d2 = Math.hypot(x - bx, (y - by) * 2);
       const v = (Math.sin(d1 * 0.5) * Math.sin(d2 * 0.5));
-      if (v > 0.2) px(eng, x, y, v > 0.6 ? '#' : '+', mul(acc(env, v > 0.6 ? 0 : 1), 0.4 + v * (0.6 + env.beat * 0.4)));
-    }
-  });
-  const Road = E('VECTOR ROAD', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows, hor = R * 0.42 | 0;
-    for (let y = 0; y < hor; y++) for (let x = 0; x < C; x += 2)
-      px(eng, x, y, '.', mul(acc(env, 2), 0.12 + (1 - y / hor) * 0.15), 800);
-    for (let y = hor; y < R; y++) {
-      const p = (y - hor) / (R - hor) + 0.05;
-      const z = 1 / p, curve = Math.sin(this.t * 0.8 + z * 0.05) * 18;
-      const w = C * 0.06 + (1 - p) * C * 0.7;
-      const cx = C / 2 + curve / p;
-      const seg = ((z * 1.5 + this.t * 12) | 0) & 1;
-      const rd = seg ? acc(env, 0) : env.pal.fg;
-      for (let x = 0; x < C; x++) {
-        const on = Math.abs(x - cx) < w;
-        px(eng, x, y, on ? gly(0.5 + (seg ? 0.4 : 0)) : ':', on ? mul(rd, 0.5 + env.beat * 0.4) : mul(acc(env, 1), 0.18), 600);
+      if (v > 0.2) {
+        const g = v > 0.6 ? '#' : '+', c = mul(acc(env, v > 0.6 ? 0 : 1), 0.4 + v * (0.6 + env.beat * 0.4));
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
       }
     }
   });
+  const Road = E('VECTOR ROAD', null, function (eng, env) {
+    // Outrun road via hspan per scanline (grass band + road band), no
+    // per-cell loop, not symmetry-multiplied -> cheap.
+    const C = eng.cols, R = eng.rows, hor = R * 0.42 | 0;
+    const sky = acc(env, 2), grass = acc(env, 1);
+    for (let y = 0; y < hor; y += 2)                 // faint sky bands
+      eng.hspan(y, 0, C - 1, '`', mul(sky, 0.10 + (1 - y / hor) * 0.16), 800);
+    for (let y = hor; y < R; y++) {
+      const p = (y - hor) / (R - hor) + 0.05;
+      const z = 1 / p, curve = Math.sin(this.t * 0.8 + z * 0.05) * 18;
+      const w = (C * 0.06 + (1 - p) * C * 0.7) | 0;
+      const cx = (C / 2 + curve / p) | 0;
+      const seg = ((z * 1.5 + this.t * 12) | 0) & 1;
+      const rd = seg ? acc(env, 0) : env.pal.fg;
+      eng.hspan(y, 0, C - 1, ':', mul(grass, 0.16 + (seg ? 0.05 : 0)), 620);
+      eng.hspan(y, cx - w, cx + w, gly(0.5 + (seg ? 0.4 : 0)),
+        mul(rd, 0.5 + env.beat * 0.4), 600);
+      if (seg) eng.hspan(y, cx - 1, cx + 1, '|',
+        mul(env.pal.fg, 0.8), 590);                  // centre line
+    }
+  });
   const Mandel = E('MANDELBROT', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
+    // 2x downsample (compute 1/4 cells, fill 2x2) + lower cap -> ~5x faster
+    const C = eng.cols, R = eng.rows, M = 20;
     const zoom = 0.6 + Math.sin(this.t * 0.2) * 0.5, ox = -0.745, oy = 0.113;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const cr = ox + (x / C - 0.5) * 3 / zoom, ci = oy + (y / R - 0.5) * 2.4 / zoom;
       let zr = 0, zi = 0, n = 0;
-      while (n < 28 && zr * zr + zi * zi < 4) { const t = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t; n++; }
-      if (n < 28) px(eng, x, y, gly(n / 28), mul(acc(env, n % 3), 0.3 + n / 28 + env.beat * 0.3));
+      while (n < M && zr * zr + zi * zi < 4) { const t = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t; n++; }
+      if (n < M) {
+        const g = gly(n / M), c = mul(acc(env, n % 3), 0.3 + n / M + env.beat * 0.3);
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const Worm = E('WORMHOLE', null, function (eng, env) {
+    // 2x downsample (atan2/hypot/2x sin per cell was the cost)
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2);
       const a = Math.atan2(dy, dx), d = Math.hypot(dx, dy) + 1e-3;
       const v = Math.sin(8 / d + this.t * 3) + Math.sin(a * 6 + this.t * 2);
       const k = (v + 2) / 4;
-      px(eng, x, y, gly(k * (1 - d * 0.4)), mul(acc(env, (a * 3 | 0) % 3 + 3 % 3), 0.2 + k * (0.7 + env.beat * 0.4)));
+      const g = gly(k * (1 - d * 0.4));
+      const c = mul(acc(env, (a * 3 | 0) % 3), 0.2 + k * (0.7 + env.beat * 0.4));
+      px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+      px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
     }
   });
   const Life = E('LIFE', function (eng) {
@@ -415,13 +446,18 @@
       const h = R * (0.16 + 0.14 * (0.5 + 0.5 * Math.sin(fx * 1.7 + t * 1.6)))
         * (1 + env.mv * 0.6);
       const ci = (x * 0.04 + t * 0.5 | 0);
-      for (let y = 0; y < R; y++) {
+      const c0 = acc(env, ci), c1 = acc(env, ci + 1);   // per-column, hoisted
+      // iterate ONLY the lit band, not every row
+      const y0 = Math.max(0, (base - h) | 0);
+      const y1 = Math.min(R - 1, (base + h) | 0);
+      for (let y = y0; y <= y1; y++) {
         const d = Math.abs(y - base);
-        if (d > h) continue;
         const k = (1 - d / h) * (0.55 + 0.45 * Math.sin(fx + y * 0.12 - t * 3))
           + env.beat * 0.4;
         if (k < 0.12) continue;
-        const c = lerpC(acc(env, ci), acc(env, ci + 1), y / R);
+        const yr = y / R;
+        const c = [c0[0] + (c1[0] - c0[0]) * yr | 0, c0[1] + (c1[1] - c0[1]) * yr | 0,
+          c0[2] + (c1[2] - c0[2]) * yr | 0];
         px(eng, x, y, gly(Math.min(1, k)), mul(c, 0.3 + Math.min(0.95, k)));
       }
       if (Math.random() < 0.04 + env.hit * 0.1)        // sparkle
@@ -436,10 +472,15 @@
     if (this.src.length === 0) this.src.push({ x: C / 2, y: R / 2, a: 0 });
     for (const s of this.src) s.a += 0.04;
     this.src = this.src.filter((s) => s.a < 8);
-    for (let y = 0; y < R; y += 1) for (let x = 0; x < C; x += 1) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       let v = 0;
       for (const s of this.src) v += Math.sin(Math.hypot(x - s.x, (y - s.y) * 2) * 0.5 - s.a * 6) / (1 + s.a);
-      if (Math.abs(v) > 0.15) px(eng, x, y, gly(Math.abs(v)), mul(acc(env, v > 0 ? 0 : 1), 0.3 + Math.min(0.9, Math.abs(v) + env.beat * 0.3)));
+      const av = Math.abs(v);
+      if (av > 0.15) {
+        const g = gly(av), c = mul(acc(env, v > 0 ? 0 : 1), 0.3 + Math.min(0.9, av + env.beat * 0.3));
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const Helix = E('DNA HELIX', null, function (eng, env) {
@@ -489,11 +530,15 @@
   });
   const Hex = E('HEX ZOOM', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, zo = 6 + Math.sin(this.t * 0.6) * 4 + env.beat * 3;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const q = (x - C / 2) / zo, r = (y - R / 2) / zo * 1.6;
       const hx = Math.abs(((q + r * 0.5) % 1 + 1) % 1 - 0.5) + Math.abs(((r) % 1 + 1) % 1 - 0.5);
       const v = 1 - hx;
-      if (v > 0.45) px(eng, x, y, gly(v), mul(acc(env, ((q | 0) + (r | 0)) % 3), 0.3 + v * (0.7 + env.beat * 0.4)));
+      if (v > 0.45) {
+        const g = gly(v), c = mul(acc(env, ((q | 0) + (r | 0)) % 3), 0.3 + v * (0.7 + env.beat * 0.4));
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const Lissa = E('LISSAJOUS', null, function (eng, env) {
@@ -506,12 +551,14 @@
   });
   const PlasTun = E('PLASMA TUNNEL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2), d = Math.hypot(dx, dy) + 1e-3;
       const u = 1 / d + this.t * 2, a = Math.atan2(dy, dx) * 3;
       const v = (Math.sin(u) + Math.sin(a + this.t) + Math.sin(u * 0.5 + a)) / 3;
       const k = (v + 1) / 2;
-      px(eng, x, y, gly(k * Math.min(1, d * 1.5)), mul(lerpC(acc(env, 0), acc(env, 1), k), 0.3 + k + env.beat * 0.3));
+      const g = gly(k * Math.min(1, d * 1.5)), c = mul(lerpC(acc(env, 0), acc(env, 1), k), 0.3 + k + env.beat * 0.3);
+      px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+      px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
     }
   });
   const VBallGrid = E('VECTOR BALL GRID', null, function (eng, env) {
@@ -525,39 +572,65 @@
   });
   const Spiral = E('COLOR SPIRAL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const dx = x - C / 2, dy = (y - R / 2) * 2;
       const a = Math.atan2(dy, dx), d = Math.hypot(dx, dy);
       const v = Math.sin(a * 4 + d * 0.3 - this.t * 4);
-      if (v > 0) px(eng, x, y, gly(v), mul(acc(env, ((a / 2 + this.t) | 0) % 3 + 3 % 3), 0.3 + v * (0.7 + env.beat * 0.4)));
+      if (v > 0) {
+        const g = gly(v), c = mul(acc(env, ((a / 2 + this.t) | 0) % 3 + 3 % 3), 0.3 + v * (0.7 + env.beat * 0.4));
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const Checker = E('CHECKER FLOOR', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, hor = (R * 0.4) | 0;
-    for (let y = 0; y < hor; y++) for (let x = 0; x < C; x += 1)
-      px(eng, x, y, ' .'[1], mul(acc(env, 2), 0.05 + (y / hor) * 0.12), 800);
-    for (let y = hor; y < R; y++) {
+    // sky: flat per-row gradient -> one hspan per row (was hor*C plots)
+    for (let y = 0; y < hor; y++)
+      eng.hspan(y, 0, C - 1, '.', mul(acc(env, 2), 0.05 + (y / hor) * 0.12), 800);
+    // floor: 2x downsample + skip the empty squares entirely (was drawing bg)
+    for (let y = hor; y < R; y += 2) {
       const z = 1 / ((y - hor) / (R - hor) + 0.04);
-      for (let x = 0; x < C; x++) {
-        const wx = (x - C / 2) * z * 0.06, wz = z + this.t * 6;
-        const c = (((wx | 0) + (wz | 0)) & 1);
-        px(eng, x, y, c ? '#' : ' ', c ? mul(acc(env, 0), 0.3 + (1 - y / R) + env.beat * 0.3) : env.pal.bg, c ? 600 : 9e8);
+      const wz = z + this.t * 6;
+      const col = mul(acc(env, 0), 0.3 + (1 - y / R) + env.beat * 0.3);
+      for (let x = 0; x < C; x += 2) {
+        const wx = (x - C / 2) * z * 0.06;
+        if (((wx | 0) + (wz | 0)) & 1) {
+          px(eng, x, y, '#', col, 600); px(eng, x + 1, y, '#', col, 600);
+          px(eng, x, y + 1, '#', col, 600); px(eng, x + 1, y + 1, '#', col, 600);
+        }
       }
     }
   });
-  const Burst3D = E('DOT EXPLOSION', function () { this.p = []; }, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
-    if (this.bt > 0.5 || this.p.length === 0)
-      for (let i = 0; i < 60; i++) this.p.push({ x: 0, y: 0, z: 0, vx: (Math.random() - 0.5), vy: (Math.random() - 0.5), vz: (Math.random() - 0.5), l: 1 });
-    this.p = this.p.filter((q) => q.l > 0);
-    for (const q of this.p) { q.x += q.vx * 0.05; q.y += q.vy * 0.05; q.z += q.vz * 0.05; q.l -= 0.012; const pz = 2 / (2 + q.z + 1); px(eng, C / 2 + q.x * C * pz, R / 2 - q.y * R * pz, q.l > 0.6 ? '@' : '*', mul(acc(env, 0), q.l), 300); }
+  const Burst3D = E('DOT EXPLOSION', function () { this.p = []; this._arm = false; }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, p = this.p;
+    const burst = () => { for (let i = 0; i < 60; i++) p.push({ x: 0, y: 0, z: 0, vx: Math.random() - 0.5, vy: Math.random() - 0.5, vz: Math.random() - 0.5, l: 1 }); };
+    // one burst per beat (rising-edge latch). Old code spawned 60 dots every
+    // frame bt>0.5 held (~8 frames/beat) -> thousands of runaway particles.
+    if (this.bt > 0.5) { if (!this._arm && p.length < 600) burst(); this._arm = true; }
+    else if (this.bt < 0.2) this._arm = false;
+    if (p.length === 0) burst();
+    let w = 0;                                   // in-place compact, no realloc
+    for (let r = 0; r < p.length; r++) {
+      const q = p[r];
+      q.x += q.vx * 0.05; q.y += q.vy * 0.05; q.z += q.vz * 0.05; q.l -= 0.012;
+      if (q.l <= 0) continue;
+      const pz = 2 / (2 + q.z + 1);
+      px(eng, C / 2 + q.x * C * pz, R / 2 - q.y * R * pz, q.l > 0.6 ? '@' : '*', mul(acc(env, 0), q.l), 300);
+      p[w++] = q;
+    }
+    p.length = w;
   });
   const Interf = E('INTERFERENCE', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const v = Math.sin(x * 0.3 + this.t * 2) + Math.sin(y * 0.4 - this.t) + Math.sin((x + y) * 0.2 + this.t * 1.5) + Math.sin(Math.hypot(x - C / 2, y - R / 2) * 0.25 - this.t * 3);
       const k = (v + 4) / 8;
-      if (k > 0.35) px(eng, x, y, gly(k), mul(acc(env, (k * 3 | 0) % 3), 0.25 + k * (0.7 + env.beat * 0.4)));
+      if (k > 0.35) {
+        const g = gly(k), c = mul(acc(env, (k * 3 | 0) % 3), 0.25 + k * (0.7 + env.beat * 0.4));
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const Grid3D = E('WAVE GRID', null, function (eng, env) {
@@ -607,12 +680,16 @@
     }
   });
   const Julia = E('JULIA', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
+    const C = eng.cols, R = eng.rows, M = 20;          // 2x downsample + cap
     const cr = 0.355 + Math.sin(this.t * 0.3) * 0.2, ci = 0.355 + Math.cos(this.t * 0.21) * 0.2;
-    for (let y = 0; y < R; y += 1) for (let x = 0; x < C; x += 1) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       let zr = (x / C - 0.5) * 3.2 / this.P.zoom, zi = (y / R - 0.5) * 2.6 / this.P.zoom, n = 0;
-      while (n < 26 && zr * zr + zi * zi < 4) { const t = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t; n++; }
-      if (n < 26) px(eng, x, y, gly(n / 26), mul(acc(env, n % 3), 0.3 + n / 26 + env.beat * 0.3));
+      while (n < M && zr * zr + zi * zi < 4) { const t = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t; n++; }
+      if (n < M) {
+        const g = gly(n / M), c = mul(acc(env, n % 3), 0.3 + n / M + env.beat * 0.3);
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const DVD = E('BOUNCE LOGO', function (eng) { this.x = eng.cols / 2; this.y = eng.rows / 2; this.vx = (this.P.dir) * 22; this.vy = 14; }, function (eng, env) {
@@ -626,10 +703,14 @@
   });
   const PolarSwirl = E('POLAR SWIRL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const dx = x - C / 2, dy = (y - R / 2) * 2, a = Math.atan2(dy, dx), d = Math.hypot(dx, dy);
       const v = Math.sin(a * 5 * this.P.dir + d * 0.2 - this.t * 4);
-      if (v > 1 - this.P.dens) px(eng, x, y, gly(v), mul(acc(env, (d * 0.1 | 0) % 3), 0.3 + v * (0.6 + env.beat * 0.4)));
+      if (v > 1 - this.P.dens) {
+        const g = gly(v), c = mul(acc(env, (d * 0.1 | 0) % 3), 0.3 + v * (0.6 + env.beat * 0.4));
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const TunRings = E('TUNNEL RINGS', null, function (eng, env) {
@@ -663,11 +744,13 @@
   });
   const Glitch = E('DATAMOSH', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y++) {
+    for (let y = 0; y < R; y += 2) {
       const sh = (Math.sin(y * 0.3 + this.t * 6) * 14 * (0.3 + env.beat) * this.P.amp) | 0;
-      for (let x = 0; x < C; x++) {
+      for (let x = 0; x < C; x += 2) {
         const v = (((x + sh) ^ y) + (this.t * 10 | 0)) & 15;
-        px(eng, x, y, gly(v / 15), mul(acc(env, (sh & 3) % 3), 0.25 + v / 15 * (0.6 + env.beat * 0.5)));
+        const g = gly(v / 15), c = mul(acc(env, (sh & 3) % 3), 0.25 + v / 15 * (0.6 + env.beat * 0.5));
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
       }
     }
   });
@@ -689,26 +772,28 @@
     const C = eng.cols, R = eng.rows;
     const b = [[C / 2 + Math.sin(this.t) * C * 0.3, R / 2 + Math.cos(this.t * 1.3) * R * 0.3],
     [C / 2 + Math.cos(this.t * 0.8) * C * 0.3, R / 2 + Math.sin(this.t * 1.1) * R * 0.3]];
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2), d = Math.hypot(dx, dy) + 1e-3;
       let s = Math.sin(1 / d * 1.4 + this.t * 2);
       for (const [bx, by] of b) s += 16 / (Math.hypot(x - bx, (y - by) * 2) + 1);
       const k = (s % 2 + 2) % 2 / 2;
-      px(eng, x, y, gly(k * Math.min(1, d * 1.5)), mul(acc(env, (s | 0) % 3), 0.25 + k + env.beat * 0.3));
+      const g = gly(k * Math.min(1, d * 1.5)), c = mul(acc(env, (s | 0) % 3), 0.25 + k + env.beat * 0.3);
+      px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+      px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
     }
   });
   const Cubes = E('CUBE FIELD', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
     const drawC = (cx, cy, cz, s) => {
       const v = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]
-        .map(([x, y, z]) => { const Z = cz; const p = 6 / (6 + Z); return [C / 2 + (cx + x * s) * p * 6, R / 2 + (cy + y * s) * p * 6, Z]; });
+        .map(([x, y, z]) => { const Z = cz; const p = 6 / (6 + Z); return [C / 2 + (cx + x * s) * p * 11, R / 2 + (cy + y * s) * p * 11, Z]; });
       [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(([i, j]) => {
         const a = v[i], b = v[j]; eng.line3 && 0;
         let x0 = a[0] | 0, y0 = a[1] | 0, x1 = b[0] | 0, y1 = b[1] | 0, dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, er = dx - dy, n = dx + dy + 1;
         while (n-- > 0) { px(eng, x0, y0, '#', mul(acc(env, 0), 0.4 + (1 - a[2] / 30) + env.beat * 0.3), a[2]); if (x0 === x1 && y0 === y1) break; const e2 = 2 * er; if (e2 > -dy) { er -= dy; x0 += sx; } if (e2 < dx) { er += dx; y0 += sy; } }
       });
     };
-    for (let i = 0; i < 7; i++) { const z = ((i * 4 - this.t * 6 * this.P.spd) % 28 + 28) % 28; drawC(Math.sin(i * 2 + this.t) * 1.5, Math.cos(i * 1.7) * 1, z, 0.5); }
+    for (let i = 0; i < 7; i++) { const z = ((i * 4 - this.t * 6 * this.P.spd) % 28 + 28) % 28; drawC(Math.sin(i * 2 + this.t) * 1.5, Math.cos(i * 1.7) * 1, z, 0.6); }
   });
   const SinScrollDots = E('SINE DOTS', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
@@ -732,11 +817,13 @@
   });
   const Plasma2 = E('PLASMA FRACTAL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, t = this.t;
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       let v = 0, f = 0.08;
       for (let o = 0; o < 4; o++) { v += Math.sin(x * f + t) + Math.sin(y * f * 1.3 - t * 1.1); f *= 1.9; }
       const k = (v + 8) / 16;
-      px(eng, x, y, gly(k), mul(lerpC(acc(env, 0), acc(env, 1), (Math.sin(v) + 1) / 2), 0.3 + k + env.beat * 0.3));
+      const g = gly(k), c = mul(lerpC(acc(env, 0), acc(env, 1), (Math.sin(v) + 1) / 2), 0.3 + k + env.beat * 0.3);
+      px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+      px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
     }
   });
   const Lens = E('LENS', null, function (eng, env) {
@@ -804,15 +891,30 @@
       }
     }
   });
+  // canonical 4-param de Jong. The old reused-frequency variant collapsed to
+  // a fixed point / 2-cycle for almost all random params (-> "two dots").
+  // Curated tuples that all yield dense strange attractors; pick one per
+  // reset for variety, then skip the transient so frame 1 is already formed.
+  const DEJONG = [
+    [1.4, -2.3, 2.4, -2.1], [2.01, -2.53, 1.61, -0.33],
+    [-2.7, -0.09, -0.86, -2.2], [-2.24, 0.43, -0.65, -2.43],
+    [1.641, 1.902, 0.316, 1.525], [-2.0, -2.0, -1.2, 2.0],
+    [-1.8, -2.0, -0.5, -0.9], [1.7, 1.7, 0.6, 1.2],
+  ];
   const Attractor = E('ATTRACTOR', function () {
-    this.a = -2 + Math.random() * 4; this.b = -2 + Math.random() * 4;
-    this.c = -2 + Math.random() * 4; this.d = -2 + Math.random() * 4;
+    const p = DEJONG[(Math.random() * DEJONG.length) | 0];
+    this.a = p[0]; this.b = p[1]; this.c = p[2]; this.d = p[3];
     this.x = 0.1; this.y = 0.1;
+    for (let i = 0; i < 60; i++) {                 // burn the transient
+      const nx = Math.sin(this.a * this.y) - Math.cos(this.b * this.x);
+      const ny = Math.sin(this.c * this.x) - Math.cos(this.d * this.y);
+      this.x = nx; this.y = ny;
+    }
   }, function (eng, env) {
     const C = eng.cols, R = eng.rows, n = 1400 + (env.energy * 1600 | 0);
     for (let i = 0; i < n; i++) {
-      const nx = Math.sin(this.a * this.y) + this.c * Math.cos(this.a * this.x);
-      const ny = Math.sin(this.b * this.x) + this.d * Math.cos(this.b * this.y);
+      const nx = Math.sin(this.a * this.y) - Math.cos(this.b * this.x);
+      const ny = Math.sin(this.c * this.x) - Math.cos(this.d * this.y);
       this.x = nx; this.y = ny;
       eng.plot(C / 2 + nx * C * 0.22, R / 2 + ny * R * 0.22, i % 3 ? '.' : '*',
         mul(acc(env, (i / 300 | 0) % 3), 0.35 + env.beat * 0.5), 300);
@@ -831,7 +933,11 @@
       n[y * C + x] = Math.max(0, Math.min(1, v + (s / 9 - 0.5) * 0.6
         + Math.sin(x * 0.1 + y * 0.1 + this.t * 2) * 0.05));
       if (env.hit > 0.7 && Math.random() < 0.001) n[y * C + x] = 1;
-      if (v > 0.55) eng.plot(x, y, gly(v), mul(acc(env, v > 0.8 ? 2 : 0), 0.3 + v * (0.6 + env.beat * 0.4)));
+      if (v > 0.55 && (x & 1) === 0 && (y & 1) === 0) {
+        const gC = gly(v), cC = mul(acc(env, v > 0.8 ? 2 : 0), 0.3 + v * (0.6 + env.beat * 0.4));
+        px(eng, x, y, gC, cC); px(eng, x + 1, y, gC, cC);
+        px(eng, x, y + 1, gC, cC); px(eng, x + 1, y + 1, gC, cC);
+      }
     }
     this.g = n;
   });
@@ -840,12 +946,14 @@
     const b = [];
     for (let i = 0; i < 4; i++) b.push([C / 2 + Math.sin(t * (0.8 + i * 0.3) + i) * C * 0.32,
     R / 2 + Math.cos(t * (1.1 + i * 0.2) + i * 2) * R * 0.32, 18 + i * 6]);
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       let s = 0, gx = 0, gy = 0;
       for (const [bx, by, m] of b) { const dd = Math.hypot(x - bx, (y - by) * 2) + 1; s += m / dd; gx += (x - bx) / (dd * dd); gy += (y - by) / (dd * dd); }
       if (s > 1.0) {
         const nl = Math.max(0.1, (-gx * 0.5 - gy * 0.5 + 1) / 2);   // fake lighting
-        eng.plot(x, y, gly(nl), mul(acc(env, s > 2.2 ? 2 : 0), 0.25 + nl * (0.7 + env.beat * 0.4)));
+        const g = gly(nl), c = mul(acc(env, s > 2.2 ? 2 : 0), 0.25 + nl * (0.7 + env.beat * 0.4));
+        eng.plot(x, y, g, c); eng.plot(x + 1, y, g, c);
+        eng.plot(x, y + 1, g, c); eng.plot(x + 1, y + 1, g, c);
       }
     }
   });
@@ -853,25 +961,29 @@
     const tgt = [[-0.745, 0.113], [-0.7436, 0.1318], [0.2925, 0.0149], [-1.25066, 0.02012]];
     this.c = tgt[(Math.random() * tgt.length) | 0];
   }, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
+    const C = eng.cols, R = eng.rows, M = 24;          // 2x downsample
     const zoom = Math.pow(1.6, (this.t * 0.5) % 14) * (1 + env.mv);
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       const cr = this.c[0] + (x / C - 0.5) * 3 / zoom, ci = this.c[1] + (y / R - 0.5) * 2.4 / zoom;
       let zr = 0, zi = 0, k = 0;
-      while (k < 24 && zr * zr + zi * zi < 4) { const tt = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = tt; k++; }
-      if (k < 24) eng.plot(x, y, gly(k / 24),
-        mul(acc(env, (k + (this.t * 4 | 0)) % 3), 0.3 + k / 24 + env.beat * 0.3));
+      while (k < M && zr * zr + zi * zi < 4) { const tt = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = tt; k++; }
+      if (k < M) {
+        const g = gly(k / M), c = mul(acc(env, (k + (this.t * 4 | 0)) % 3), 0.3 + k / M + env.beat * 0.3);
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
   const BumpPlasma = E('BUMP PLASMA', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, t = this.t;
     const h = (x, y) => Math.sin(x * 0.14 + t) + Math.sin(y * 0.18 - t * 1.2)
       + Math.sin((x + y) * 0.1 + t * 0.7);
-    for (let y = 1; y < R - 1; y++) for (let x = 1; x < C - 1; x++) {
+    for (let y = 1; y < R - 1; y += 2) for (let x = 1; x < C - 1; x += 2) {
       const nx = h(x + 1, y) - h(x - 1, y), ny = h(x, y + 1) - h(x, y - 1);
       const L = Math.max(0.05, (-nx * 0.6 - ny * 0.6 + 1.6) / 3.2);   // emboss light
-      eng.plot(x, y, gly(L), mul(lerpC(acc(env, 0), acc(env, 1), L),
-        0.25 + L * (0.7 + env.beat * 0.5)), 500);
+      const g = gly(L), c = mul(lerpC(acc(env, 0), acc(env, 1), L), 0.25 + L * (0.7 + env.beat * 0.5));
+      eng.plot(x, y, g, c, 500); eng.plot(x + 1, y, g, c, 500);
+      eng.plot(x, y + 1, g, c, 500); eng.plot(x + 1, y + 1, g, c, 500);
     }
   });
   const WarpStars = E('WARP STARS', function () {
@@ -1165,27 +1277,47 @@
       }
     }
   });
-  const Voronoi = E('VORONOI', function () { this.s = []; for (let i = 0; i < 7; i++) this.s.push({ a: Math.random() * 6.28, r: 0.2 + Math.random() * 0.3, sp: 0.3 + Math.random() }); }, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
-    const pts = this.s.map((q, i) => [C / 2 + Math.cos(q.a + this.t * q.sp * this.P.dir) * C * q.r * (1 + env.mv * 0.5), R / 2 + Math.sin(q.a + this.t * q.sp) * R * q.r, i]);
-    for (let y = 0; y < R; y += 1) for (let x = 0; x < C; x += 1) {
+  const Voronoi = E('VORONOI', function () {
+    this.s = []; for (let i = 0; i < 7; i++) this.s.push({ a: Math.random() * 6.28, r: 0.2 + Math.random() * 0.3, sp: 0.3 + Math.random() });
+    this.pxb = new Float64Array(this.s.length); this.pyb = new Float64Array(this.s.length);
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, s = this.s, N = s.length;
+    const PX = this.pxb, PY = this.pyb, t = this.t, dir = this.P.dir, mv = 1 + env.mv * 0.5;
+    for (let i = 0; i < N; i++) {                 // reused buffers, no realloc
+      const q = s[i];
+      PX[i] = C / 2 + Math.cos(q.a + t * q.sp * dir) * C * q.r * mv;
+      PY[i] = R / 2 + Math.sin(q.a + t * q.sp) * R * q.r;
+    }
+    const ce = mul(acc(env, 2), 0.6 + env.beat * 0.4);   // edge colour: hoisted
+    for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
       let b = 1e9, b2 = 1e9, bi = 0;
-      for (const p of pts) { const d = (x - p[0]) * (x - p[0]) + (y - p[1]) * (y - p[1]) * 4; if (d < b) { b2 = b; b = d; bi = p[2]; } else if (d < b2) b2 = d; }
-      const edge = (Math.sqrt(b2) - Math.sqrt(b)) < 2.2;
-      px(eng, x, y, edge ? '#' : gly(0.3 + (bi / 7)), edge ? mul(acc(env, 2), 0.6 + env.beat * 0.4) : mul(acc(env, bi % 3), 0.18 + env.beat * 0.18));
+      for (let i = 0; i < N; i++) {
+        const ddx = x - PX[i], ddy = y - PY[i];
+        const d = ddx * ddx + ddy * ddy * 4;
+        if (d < b) { b2 = b; b = d; bi = i; } else if (d < b2) b2 = d;
+      }
+      const edge = (Math.sqrt(b2) - Math.sqrt(b)) < 2.6;
+      const g = edge ? '#' : gly(0.3 + (bi / 7));
+      const c = edge ? ce : mul(acc(env, bi % 3), 0.18 + env.beat * 0.18);
+      for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++) px(eng, x + xx, y + yy, g, c);
     }
   });
   const BurnShip = E('BURNING SHIP', function () { this.cx = -1.755; this.cy = -0.03; }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, zoom = 0.5 + (Math.sin(this.t * 0.15) * 0.5 + 0.5) * (40 + env.mv * 30);
-    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+    const C = eng.cols, R = eng.rows, M = 22;          // 2x downsample
+    const zoom = 0.5 + (Math.sin(this.t * 0.15) * 0.5 + 0.5) * (40 + env.mv * 30);
+    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
       let zr = 0, zi = 0, k = 0;
       const cr = this.cx + (x / C - 0.5) * 3 / zoom, ci = this.cy + (y / R - 0.5) * 2.4 / zoom;
-      while (k < 22 && zr * zr + zi * zi < 4) {
+      while (k < M && zr * zr + zi * zi < 4) {
         const xr = zr * zr - zi * zi + cr;
         const xi = Math.abs(2 * zr * zi) + ci;
         zr = Math.abs(xr); zi = Math.abs(xi); k++;
       }
-      if (k < 22) px(eng, x, y, gly(k / 22), mul(acc(env, k % 3), 0.3 + k / 22 + env.beat * 0.3));
+      if (k < M) {
+        const g = gly(k / M), c = mul(acc(env, k % 3), 0.3 + k / M + env.beat * 0.3);
+        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
+        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      }
     }
   });
 
@@ -1197,9 +1329,9 @@
       const cy = R / 2 + Math.sin(this.t * (0.6 + b * 0.25) + b * 1.7) * R * 0.42;
       const col = acc(env, b % 3);
       for (let d = -3; d <= 3; d++) {
-        const y = (cy + d) | 0; if (y < 0 || y >= R) continue;
         const k = (1 - Math.abs(d) / 3) * (0.7 + env.beat * 0.4);
-        for (let x = 0; x < C; x++) px(eng, x, y, gly(0.5 + k * 0.5), mul(col, 0.25 + k));
+        eng.hspan(cy + d, 0, C - 1, gly(0.5 + k * 0.5),
+          mul(col, 0.25 + k), 210 + b);
       }
     }
   });

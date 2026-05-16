@@ -8,10 +8,12 @@ SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=
 	var vib    = SinOsc.kr(5.5) * 0.008 * EnvGen.kr(Env([0, 0, 1], [0.18, 0.6]));
 	var f      = freq * (1 + vib);
 	var iEnv   = EnvGen.kr(Env.perc(0.004, decay, 0.6, -3), gate);
-	var mod    = SinOsc.ar(f * (fmRatio + 0.001)) * f * (fmIndex * 4 + wave * 6)
-	             * (0.4 + v * 0.7) * iEnv;
-	var sig    = SinOsc.ar(f + mod) + (SinOsc.ar(f * 2.01) * 0.2);
-	sig = LPF.ar(sig, (cutoff * (0.5 + v)).clip(400, 13000));
-	sig = (sig * (1 + drive * 0.4)).softclip;
-	Out.ar(out, Pan2.ar(sig * env * safety * amp, pan));
+	// slightly softened: a touch less FM index and brightness
+	var mod    = SinOsc.ar(f * (fmRatio + 0.001)) * f * (fmIndex * 3.3 + wave * 5)
+	             * (0.4 + v * 0.65) * iEnv;
+	var sig    = SinOsc.ar(f + mod) + (SinOsc.ar(f * 2.01) * 0.17);
+	sig = LPF.ar(sig, (cutoff * (0.5 + v)).clip(400, 10500));
+	sig = (sig * (1 + drive * 0.32)).softclip;
+	// lead mix trim — lead sat too hot vs drums/bass across genres (tune here)
+	Out.ar(out, Pan2.ar(sig * env * safety * amp * 0.6, pan));
 }).add;

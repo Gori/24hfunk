@@ -25,7 +25,7 @@
     if (section.mood) parts.push(up(section.mood));
     if (section.bpm) parts.push(`${section.bpm | 0} BPM`);
     if (section.key) parts.push(up(section.key));
-    musicEl.textContent = 'MUSIC · ' + parts.filter(Boolean).join('  ·  ');
+    musicEl.textContent = parts.filter(Boolean).join('  ·  ');
   }
 
   function connect() {

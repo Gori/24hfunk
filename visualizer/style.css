@@ -4,47 +4,5 @@ html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
 /* the old dev/debug line — hidden so there's a single HUD (kept in the DOM
    so main.js's setStatus() keeps working harmlessly). */
 #status { display: none; }
-
-/* Big always-on "now playing" HUD — what EFFECT and what MUSIC right now.
-   Centred top, heavy contrast plate so it stays readable over any effect. */
-/* compact, refined: a small centred pill, not a slab. Clearly legible over
-   any effect via a tight shadow — no giant glow / stroke / black band. */
-#hud {
-  position: fixed;
-  bottom: 18px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  pointer-events: none;
-  font-family: "JetBrains Mono", "SF Mono", Menlo, Monaco, monospace;
-  z-index: 20;
-}
-/* one cohesive centred plate: effect on top, hairline divider, music below */
-#hud > div {
-  display: table;
-  margin: 0 auto;
-  padding: 7px 22px;
-  background: rgba(6, 7, 10, 0.46);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-}
-#hud-effect {
-  border-radius: 7px 7px 0 0;
-  border-bottom: none;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.30em;
-  color: rgba(255, 255, 255, 0.94);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 7px rgba(0, 0, 0, 0.55);
-}
-#hud-music {
-  border-radius: 0 0 7px 7px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  margin-top: 0;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.24em;
-  color: rgba(255, 213, 92, 0.88);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 7px rgba(0, 0, 0, 0.55);
-}
+/* The HUD is now rendered through the ascii engine (render.js drawHud) so it
+   shares the exact font/size and cell grid as the visuals — no DOM overlay. */

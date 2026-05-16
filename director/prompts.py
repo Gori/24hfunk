@@ -103,14 +103,27 @@ EXAMPLE = """{
 }"""
 
 
-def build_user_prompt(history: list[str]) -> str:
+def build_user_prompt(
+    history: list[str], forced_genre: str | None = None
+) -> str:
     if history:
         hist = "\n".join(f"- {h}" for h in history[-4:])
-        ctx = (f"Recent sections (oldest first):\n{hist}\n\n"
-               "Make the next section clearly DIFFERENT — switch genre, move "
-               "key/energy. Do not repeat the most recent genre.")
+        ctx = f"Recent sections (oldest first):\n{hist}\n\n"
     else:
-        ctx = "First section. Pick a punchy genre (not lofi). Make it groove."
+        ctx = ""
+    if forced_genre:
+        ctx += (
+            f'Compose THIS section in genre: "{forced_genre}". Set the JSON '
+            f'"genre" field to exactly "{forced_genre}". Choose bpm, key, '
+            f"mood, density, instruments, fx, palette and visuals that fit "
+            f"{forced_genre}, and make it clearly different from any recent "
+            f"sections above."
+        )
+    elif history:
+        ctx += ("Make the next section clearly DIFFERENT — switch genre, move "
+                "key/energy. Do not repeat the most recent genre.")
+    else:
+        ctx += "First section. Pick a punchy genre (not lofi). Make it groove."
     return (
         f"{ctx}\n\nExact JSON shape to mirror:\n{EXAMPLE}\n\n"
         "Now output the next section as ONE JSON object only."

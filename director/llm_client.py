@@ -94,10 +94,15 @@ class Director:
         )
         return _THINK_RE.sub("", out).strip()
 
-    def next_section(self, history: list[str]) -> tuple[SectionState, float]:
-        """Returns (section, latency_sec). Never raises."""
+    def next_section(
+        self, history: list[str], forced_genre: str | None = None
+    ) -> tuple[SectionState, float]:
+        """Returns (section, latency_sec). Never raises.
+
+        If forced_genre is given, it is guaranteed on the returned section
+        (the shuffle-bag, not the LLM, owns genre rotation)."""
         t0 = time.time()
-        user = build_user_prompt(history)
+        user = build_user_prompt(history, forced_genre)
         for attempt in (1, 2):
             try:
                 raw = self._generate(user)
@@ -105,16 +110,21 @@ class Director:
                 if data is None:
                     raise ValueError("no JSON object in output")
                 section = SectionState(**data)
+                if forced_genre:
+                    section.genre = forced_genre
                 return section, time.time() - t0
             except Exception as e:  # noqa: BLE001 - resilience is the point
                 print(f"[director] attempt {attempt} failed: {e}")
                 user = (
-                    build_user_prompt(history)
+                    build_user_prompt(history, forced_genre)
                     + "\n\nYour previous reply was invalid. Output ONLY one "
                     "valid JSON object, no other text."
                 )
         print("[director] falling back to safe default section")
-        return SectionState(id=f"fallback_{int(time.time())}"), time.time() - t0
+        fb = SectionState(id=f"fallback_{int(time.time())}")
+        if forced_genre:
+            fb.genre = forced_genre
+        return fb, time.time() - t0
 
 
 def summarize(s: SectionState) -> str:

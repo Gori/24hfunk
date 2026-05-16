@@ -8,14 +8,21 @@ Env:
 from __future__ import annotations
 
 import os
+import random
 import signal
 import time
 
 from director.llm_client import Director, summarize
 from director.publish import publish
-from director.schema import SectionState
+from director.schema import GENRES, SectionState
 
 _running = True
+
+
+def _shuffled_genres() -> list[str]:
+    g = list(GENRES)
+    random.shuffle(g)
+    return g
 
 
 def _stop(*_):
@@ -39,10 +46,21 @@ def main() -> None:
     publish(warm)
 
     history: list[str] = []
+    # genre shuffle-bag: every genre plays once in random order before any
+    # repeats; reshuffle on exhaustion without repeating across the seam.
+    bag: list[str] = []
+    last_genre: str | None = None
     n = 0
     while _running:
         n += 1
-        section, lat = d.next_section(history)
+        if not bag:
+            bag = _shuffled_genres()
+            if last_genre and len(bag) > 1 and bag[0] == last_genre:
+                bag[0], bag[1] = bag[1], bag[0]
+        target_genre = bag.pop(0)
+        section, lat = d.next_section(history, target_genre)
+        section.genre = target_genre
+        last_genre = target_genre
         section.id = f"sec_{int(time.time())}_{n:03d}"
         dur = override_sec if override_sec else section.duration_sec
 

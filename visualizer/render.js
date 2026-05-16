@@ -62,8 +62,12 @@
   let palT = 1, palDur = 4, beatEnv = 0, beatKick = 0, noteE = 0;
   // per-instrument musical energy so visuals move with the WHOLE music
   let bassE = 0, leadE = 0, drumE = 0, hitE = 0, lastPitch = 0.5, mv = 0;
-  let pool = [], poolIdx = 0, sinceCut = 0, palIdx = 0;
+  let pool = [], bag = [], sinceCut = 0, palIdx = 0;
   let scrollMsg = DEFAULT_MSG, scrollX = 0, llmScroll = null;
+  // HUD is drawn THROUGH the ascii engine (glyph2d) so it is literally the
+  // same font/size and snapped to the same cell grid as the effect behind it.
+  let hudEffect = '', hudMusic = '';
+  const HUD_COL = [240, 240, 248];
 
   // curated, deliberately DISTINCT palettes — we fade to the next one on every
   // new music style so the colour world visibly changes each section.
@@ -82,8 +86,33 @@
 
   // Push the current effect name into the always-on HUD.
   function announceEffect() {
-    const el = typeof document !== 'undefined' && document.getElementById('hud-effect');
-    if (el && active) el.textContent = 'EFFECT · ' + (active.title || 'SCENE');
+    if (active) hudEffect = (active.title || 'SCENE').toUpperCase();
+  }
+  function setNowPlaying(section) {
+    if (!section) return;
+    const up = (s) => String(s || '').replace(/_/g, ' ').trim().toUpperCase();
+    const parts = [up(section.genre)];
+    if (section.mood) parts.push(up(section.mood));
+    if (section.bpm) parts.push(`${section.bpm | 0} BPM`);
+    if (section.key) parts.push(up(section.key));
+    hudMusic = parts.filter(Boolean).join('  ·  ');
+  }
+  // draw a string through the engine grid, centred, skipping spaces so the
+  // effect shows between words and only the glyphs are opaque (always on top).
+  function drawHudLine(str, row) {
+    if (!str || !eng) return;
+    const C = eng.cols, R = eng.rows;
+    if (row < 0 || row >= R) return;
+    const sx = Math.max(0, (C - str.length) >> 1);
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (ch === ' ' || sx + i >= C) continue;
+      eng.glyph2d(sx + i, row, ch, HUD_COL);
+    }
+  }
+  function drawHud() {
+    drawHudLine(hudEffect, 1);
+    drawHudLine(hudMusic, eng.rows - 2);
   }
 
   let demoSet = new Set();
@@ -93,6 +122,22 @@
     pool = [].concat(W.classics || [], W.demos || []);
     if (!pool.length) pool = [W.Glyph].filter(Boolean);
     demoSet = new Set(W.demos || []);
+    bag = [];
+  }
+  // shuffle-bag: every scene plays once (random order) before any repeats;
+  // reshuffle on exhaustion, never repeating the just-shown one back-to-back.
+  function nextActive() {
+    if (!bag.length) {
+      bag = pool.map((_, i) => i);
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        const tmp = bag[i]; bag[i] = bag[j]; bag[j] = tmp;
+      }
+      if (active && pool.length > 1 && pool[bag[0]] === active) {
+        const tmp = bag[0]; bag[0] = bag[1]; bag[1] = tmp;
+      }
+    }
+    return pool[bag.shift()];
   }
   // re-roll universal variety knobs whenever the active scene changes, so a
   // recurring demoscene mode is mirrored/flipped/timed differently each time
@@ -132,9 +177,7 @@
   function nextWorld(section) {
     const sc = section && section.visuals && section.visuals.scene;
     if (sc === 'glyphfield' && window.Worlds.Glyph) return window.Worlds.Glyph;
-    const w = pool[poolIdx % pool.length];
-    poolIdx++;
-    return w;
+    return nextActive();
   }
 
   // Amiga sine scroller: small rigid glyphs scrolling fast R->L; each char's
@@ -168,12 +211,13 @@
       eng = new window.A3D(canvas);
       buildPool();
       window.addEventListener('resize', () => { eng.resize(); if (active && active.reset) active.reset(eng); });
-      active = pool[0];
+      active = nextActive();
       if (active.reset) active.reset(eng);
       rerollFX(); announceEffect();
       announceEffect();
     },
     onSection(section) {
+      setNowPlaying(section);
       prevPal = { bg: curPal.bg.slice(), fg: curPal.fg.slice(), accent: curPal.accent.map((x) => x.slice()) };
       // every new music style -> fade to the NEXT distinct curated palette
       palIdx = (palIdx + 1) % PALETTES.length;
@@ -232,7 +276,7 @@
       // visuals change on their OWN 30s clock, independent of the music genre
       sinceCut += dt;
       if (sinceCut > 30) {
-        active = pool[poolIdx++ % pool.length];
+        active = nextActive();
         if (active.reset) active.reset(eng);
         rerollFX(); announceEffect();
         sinceCut = 0;
@@ -258,6 +302,7 @@
       eng.clear(curPal.bg);
       drawActive(env);              // applies per-appearance symmetry/flip
       drawScroller(env);            // persists on top, every frame
+      drawHud();                    // grid-aligned HUD, top-most
       eng.flush();
     },
   };
