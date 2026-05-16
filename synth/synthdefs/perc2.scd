@@ -15,9 +15,10 @@ SynthDef(\perc2, { |out=0, amp=0.5, freq=220, decay=0.18, drive=1.0,
 	var body = (SinOsc.ar(bf) * 0.8) + (LFTri.ar(bf * 1.5) * 0.2)
 	           + (HPF.ar(WhiteNoise.ar, 1800)
 	              * EnvGen.kr(Env.perc(0.0005, 0.02)) * 0.5);
-	// shaker: band-passed noise with a soft swell
-	var shk  = BPF.ar(WhiteNoise.ar, 6200, 0.7)
-	           * EnvGen.kr(Env([0, 1, 0.6, 0], [0.012, dec * 0.4, dec * 0.5])) * 2.4;
+	// shaker: a soft DARK "shh" (NOT a bright hi-hat tick) — lower band,
+	// wider, gentle swish, much quieter
+	var shk  = BPF.ar(WhiteNoise.ar, 3000, 1.0)
+	           * EnvGen.kr(Env([0, 1, 0.45, 0], [0.02, dec * 0.5, dec * 0.6])) * 1.25;
 	// glitch: short high-passed noise, sample-rate-reduced (digital)
 	var gN   = HPF.ar(WhiteNoise.ar, 3000);
 	var gl   = Latch.ar(gN, Impulse.ar(

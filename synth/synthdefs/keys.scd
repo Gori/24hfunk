@@ -9,14 +9,16 @@ SynthDef(\keys, { |out=0, amp=0.4, freq=220, cutoff=2600, sus=0.9, drive=1.0, vi
 	var vibe = SinOsc.kr(5.4) * vib * 0.012
 		* EnvGen.kr(Env([0, 0, 1], [0.18, 0.5]));   // vibrato fades in
 	var f    = freq * (1 + vibe);
-	var tine = SinOsc.ar(f * 7) * (0.18 + v * 0.5)
-		* EnvGen.kr(Env.perc(0.001, 0.10, 1, -6));   // bright FM attack tine
-	var body = SinOsc.ar(f + (tine * f * 0.5))
+	// warmer, not bright: lower FM partial, less velocity-zing
+	var tine = SinOsc.ar(f * 5) * (0.12 + v * 0.30)
+		* EnvGen.kr(Env.perc(0.001, 0.10, 1, -6));
+	var body = SinOsc.ar(f + (tine * f * 0.35))
 		+ (SinOsc.ar(f * 1.003) * 0.5)               // slight chorus detune
-		+ (SinOsc.ar(f * 2) * 0.18);
-	var sig  = (body + tine * 0.3);
-	sig = LPF.ar(sig, (cutoff * (0.45 + v * 1.05)).clip(300, 9000));
-	// chords/comp/pad sit louder in the mix vs the (now trimmed) lead
-	sig = (sig * (1 + drive * 0.4)).softclip * 1.15;   // chords sit loud
+		+ (SinOsc.ar(f * 2) * 0.14);
+	var sig  = (body + tine * 0.18);
+	// firm low-pass so chords are never super bright (was up to 9 kHz)
+	sig = LPF.ar(sig, (cutoff * (0.40 + v * 0.55)).clip(280, 4200));
+	// ~50% between the pre-raise (0.72) and post-raise (1.15) level
+	sig = (sig * (1 + drive * 0.4)).softclip * 0.93;
 	Out.ar(out, Pan2.ar(sig * env * amp, pan));
 }).add;

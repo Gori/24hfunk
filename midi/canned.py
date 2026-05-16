@@ -304,12 +304,13 @@ _PERC = {
     "funk":         {"mode": "lots", "tone": 0.66, "prob": 0.8,
                      "steps": [2, 6, 7, 10, 14], "pitch": [53, 48, 57],
                      "syn": {"decay": 0.13, "drive": 1.3, "crush": 0.3}},
-    "uk_garage":    {"mode": "lots", "tone": 0.45, "prob": 0.85,
-                     "steps": [0, 2, 4, 6, 8, 10, 12, 14], "pitch": [72],
-                     "syn": {"decay": 0.08, "drive": 1.0, "crush": 0.3}},
-    "broken_house": {"mode": "lots", "tone": 0.42, "prob": 0.8,
-                     "steps": [2, 6, 10, 14, 3, 11], "pitch": [72],
-                     "syn": {"decay": 0.09, "drive": 1.0, "crush": 0.3}},
+    # syncopated, gappy shaker grooves — NOT a straight grid (was a 2nd hat)
+    "uk_garage":    {"mode": "lots", "tone": 0.5,  "prob": 0.55,
+                     "steps": [2, 3, 7, 10, 11, 14], "pitch": [60],
+                     "syn": {"decay": 0.11, "drive": 0.9, "crush": 0.25}},
+    "broken_house": {"mode": "lots", "tone": 0.46, "prob": 0.5,
+                     "steps": [3, 6, 11, 14], "pitch": [60],
+                     "syn": {"decay": 0.12, "drive": 0.9, "crush": 0.25}},
     # ---- NONE: spacious / minimal genres own the space ----
     "dub":            {"mode": "none"},
     "neon_dub":       {"mode": "none"},
@@ -592,20 +593,20 @@ class CannedSource:
     def _comp(self, D, rnd, beat, ctones, steps, oct_shift=12):
         # voice-led top voicing on the KEYS voice (smooth chord motion, no
         # crowding the lead). Same hit count = harmony, not density.
-        vc = self._voicelead(ctones, 60 + oct_shift)
+        vc = self._voicelead(ctones, 48 + oct_shift)   # an octave lower
         if len(ctones) >= 4 and rnd.random() < 0.6:
             vc = vc + [vc[0] + 12]                       # colour tone on top
         for s in steps:
             if rnd.random() < 0.45 + 0.3 * self.energy:
                 for p in vc:
-                    D(s, beat * 0.26, p, 0.66 + rnd.uniform(-0.05, 0.08), CH_KEYS)
+                    D(s, beat * 0.26, p, 0.50 + rnd.uniform(-0.04, 0.07), CH_KEYS)
 
     def _pad(self, D, rnd, beat, ctones):
         # ONE soft sustained voice-led chord under the bar (keys self-
         # terminates). Harmonic body without notes-per-beat — keeps the space.
         if rnd.random() < 0.45 + 0.35 * self.energy:
-            for p in self._voicelead(ctones[:4], 64):
-                D(0, beat * 3.4, p, 0.52 + rnd.uniform(-0.04, 0.06), CH_KEYS)
+            for p in self._voicelead(ctones[:4], 52):       # octave lower
+                D(0, beat * 3.4, p, 0.37 + rnd.uniform(-0.03, 0.05), CH_KEYS)
 
     def _perc(self, D, rnd, beat, e):
         # Dedicated percussion layer, dropped into the groove's GAPS (its
@@ -801,8 +802,8 @@ class CannedSource:
         # off-beat reggae/dub organ chord skank on the KEYS voice
         for s in steps:
             if rnd.random() < prob:
-                for p in self._voicelead(ct[:3], 60):
-                    D(s, beat * 0.18, p, 0.62 + rnd.uniform(-0.04, 0.06), CH_KEYS)
+                for p in self._voicelead(ct[:3], 48):       # octave lower
+                    D(s, beat * 0.18, p, 0.48 + rnd.uniform(-0.04, 0.05), CH_KEYS)
 
     def _g_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # one-drop: the weight is on beat 3 (step 8); huge space + dub delay
@@ -871,8 +872,8 @@ class CannedSource:
                 D(10, beat * 0.6, cr, self._main(rnd) * 0.8, CH_BASS)
         if self.on["lead"]:                                       # the dub chord
             for s in ([6] if rnd.random() < 0.6 else [10]):
-                for p in self._voicelead(ct[:4], 60):
-                    D(s, beat * 0.4, p, 0.56 + rnd.uniform(-0.04, 0.06), CH_KEYS)
+                for p in self._voicelead(ct[:4], 48):       # octave lower
+                    D(s, beat * 0.4, p, 0.43 + rnd.uniform(-0.03, 0.05), CH_KEYS)
             if rnd.random() < 0.5:
                 self._pad(D, rnd, beat, ct)
 
