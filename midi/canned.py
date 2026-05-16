@@ -478,67 +478,33 @@ class CannedSource:
             for p in self._voicelead(ctones[:4], 64):
                 D(0, beat * 3.4, p, 0.22 + rnd.uniform(-0.03, 0.05), CH_KEYS)
 
-    def _scale_pitches(self, sc, lo, hi):
-        out, o = [], (lo // 12) - 1
-        while o * 12 + self.root <= hi + 12:
-            base = o * 12 + self.root
-            for d in sc:
-                p = base + d
-                if lo <= p <= hi:
-                    out.append(p)
-            o += 1
-        return sorted(set(out)) or [self.root + 60]
-
-    @staticmethod
-    def _near_idx(sp, pitch):
-        bi, best = 0, 1e9
-        for i, p in enumerate(sp):
-            dd = pitch - p if pitch >= p else p - pitch
-            if dd < best:
-                best, bi = dd, i
-        return bi
-
     def _motif(self, D, rnd, beat, sc, ctones):
-        # Genre-aware melody: a per-section repeating CONTOUR anchored to chord
-        # tones (memorable phrase; inverted on answer bars for call/response)
-        # connected by in-scale STEPWISE motion (singable). Density/character
-        # per genre — sparse genres stay sparse (changes note choice, not
-        # density). Combines a melodic phrase shape with scale passing tones.
+        # A fixed per-section melodic phrase built ONLY from the current bar's
+        # CHORD TONES, so it always follows the progression, and repeated every
+        # bar so it is a recognisable riff — not random. Sparse by design: no
+        # pickup runs, no per-bar inversion. A gentle cadence to the root
+        # closes every 4th bar (a musical resolution, not randomisation).
         if not ctones:
             return
         st = _LEAD_STYLE.get(self.genre, _LEAD_DEF)
-        c0 = ctones[0]
-        sp = self._scale_pitches(sc, c0 + 2, c0 + 34)
-        n = len(sp)
+        cN = len(ctones)
         cseed = random.Random(self.root * 17 + len(self.genre) * 5 + 3)
-        contour = _CONTOURS[cseed.randrange(len(_CONTOURS))]
-        answer = (self.bar % 2) == 1
-        span = st["span"]
-        prev = None
+        shape = _CONTOURS[cseed.randrange(len(_CONTOURS))]
+        base = cseed.choice((0, 0, 1, 2))                  # start root/3rd/5th
+        fire = (0.40 + 0.28 * self.energy) * st["notes"]
+        last = len(self.motif) - 1
+        resolve = (self.bar % 4) == 3
         for i, (ti, s, du) in enumerate(self.motif):
-            if rnd.random() >= (0.5 + 0.4 * self.energy) * st["notes"]:
+            if rnd.random() >= fire:
                 continue                                   # leave space
-            anchor = self._near_idx(sp, ctones[ti % len(ctones)] + 12)
-            d = contour[i % len(contour)]
-            if answer:
-                d = -d
-            d = max(-span, min(span, d))
-            targ = max(0, min(n - 1, anchor + d))
-            dur = beat * 0.18 * du
-            if prev is not None and s >= 1 and rnd.random() < st["fill"]:
-                diff = targ - prev
-                stp = 1 if diff >= 0 else -1
-                runn = min(st["run"], abs(diff), 4)
-                for j in range(runn, 0, -1):
-                    pk, at = targ - stp * j, s - j * 0.5
-                    if at >= 0 and 0 <= pk < n:
-                        D(at, beat * 0.10, sp[pk],
-                          0.30 + rnd.uniform(-0.03, 0.05), CH_LEAD)
-            pit = sp[targ]
-            D(s, dur, pit, 0.42 + rnd.uniform(-0.04, 0.08), CH_LEAD)
-            if rnd.random() < st["harm"]:
-                D(s, dur, pit - rnd.choice([3, 4, 8, 9]), 0.30, CH_LEAD)
-            prev = targ
+            deg = 0 if (resolve and i == last) else \
+                (base + shape[i % len(shape)]) % cN
+            pit = ctones[deg] + 12
+            D(s, beat * 0.22 * du, pit, 0.46 + rnd.uniform(-0.04, 0.08),
+              CH_LEAD)
+            if rnd.random() < st["harm"] * 0.5:            # sparse harmony
+                D(s, beat * 0.22 * du, pit - rnd.choice([3, 4, 7]), 0.28,
+                  CH_LEAD)
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
     def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):

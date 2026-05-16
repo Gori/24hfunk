@@ -109,16 +109,17 @@
     step(dt) { this.t += dt; },
     draw(eng, env) {
       const C = eng.cols, R = eng.rows;
-      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
-        const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2);
-        const d = Math.hypot(dx, dy) + 0.0001;
-        const u = (1 / d * 1.4 + this.t * 2);
+      const cx = C / 2, cy = R / 2, ix = 1 / cx, iy = 1 / cy, t2 = this.t * 2;
+      for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
+        const dx = (x - cx) * ix, dy = (y - cy) * iy;
+        const d = Math.sqrt(dx * dx + dy * dy) + 0.0001;
+        const u = (1 / d * 1.4 + t2);
         const v = Math.atan2(dy, dx) / 6.283 * 16;
         const chk = ((u | 0) + (v | 0)) & 1;
         const sh = Math.min(1, d * 1.3);
         const g = chk ? gly(sh) : gly(sh * 0.5), c = mul(acc(env, chk ? 0 : 1), 0.15 + sh);
-        eng.plot(x, y, g, c, 500); eng.plot(x + 1, y, g, c, 500);
-        eng.plot(x, y + 1, g, c, 500); eng.plot(x + 1, y + 1, g, c, 500);
+        for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++)
+          eng.plot(x + xx, y + yy, g, c, 500);
       }
     },
   };
@@ -1137,25 +1138,30 @@
     for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const v = g[y * C + x]; if (v) px(eng, x, y, '▒', mul(acc(env, v - 1), 0.5 + env.beat * 0.3)); }
   });
   const Raymarch = E('RAYMARCH', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows, t = this.t, ST = 2;
+    const C = eng.cols, R = eng.rows, t = this.t, ST = 3;
+    const rad = 1.1 + Math.sin(t * 2) * 0.2;          // hoisted (was per sdf)
+    const cc = Math.cos(t * 0.4), sn = Math.sin(t * 0.4);  // hoisted (was per cell)
     const sdf = (x, y, z) => {
-      const r = Math.hypot(x, y, z) - (1.1 + Math.sin(t * 2) * 0.2);
-      const tx = Math.hypot(x, z) - 1.3, to = Math.hypot(tx, y) - 0.35;
+      const r = Math.sqrt(x * x + y * y + z * z) - rad;
+      const tx = Math.sqrt(x * x + z * z) - 1.3;
+      const to = Math.sqrt(tx * tx + y * y) - 0.35;
       return Math.min(r, to + Math.sin(x * 3 + t) * 0.12);
     };
     for (let py = 0; py < R; py += ST) for (let pxx = 0; pxx < C; pxx += ST) {
-      let ox = (pxx / C - 0.5) * 2.2, oy = (py / R - 0.5) * 2.0, oz = -3.5, hit = 0, d;
-      const dx = ox * 0.0 + Math.sin(t * 0.3) * 0.0, c = Math.cos(t * 0.4), sn = Math.sin(t * 0.4);
-      for (let m = 0; m < 14; m++) {
-        let X = ox, Y = oy, Z = oz;
-        const xr = X * c - Z * sn, zr = X * sn + Z * c;
-        d = sdf(xr, Y, zr);
+      const ox = (pxx / C - 0.5) * 2.2, oy = (py / R - 0.5) * 2.0;
+      let oz = -3.5, hit = 0;
+      for (let m = 0; m < 10; m++) {
+        const xr = ox * cc - oz * sn, zr = ox * sn + oz * cc;
+        const d = sdf(xr, oy, zr);
         if (d < 0.02) { hit = 1; break; }
-        ox += 0; oz += d; if (oz > 4) break;
+        oz += d; if (oz > 4) break;
       }
       const sh = hit ? Math.max(0.1, 1 - (oz + 3.5) / 6) : 0;
-      if (sh > 0.05) for (let a = 0; a < ST; a++) for (let b = 0; b < ST; b++)
-        px(eng, pxx + b, py + a, gly(sh), mul(acc(env, 0), 0.3 + sh * (0.7 + env.beat * 0.4)), 500);
+      if (sh > 0.05) {
+        const g = gly(sh), c = mul(acc(env, 0), 0.3 + sh * (0.7 + env.beat * 0.4));
+        for (let a = 0; a < ST; a++) for (let b = 0; b < ST; b++)
+          px(eng, pxx + b, py + a, g, c, 500);
+      }
     }
   });
   const Boids = E('BOIDS', function (eng) {
@@ -1339,20 +1345,22 @@
     }
   });
   const BurnShip = E('BURNING SHIP', function () { this.cx = -1.755; this.cy = -0.03; }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, M = 22;          // 2x downsample
+    const C = eng.cols, R = eng.rows, M = 16;          // 4x downsample
     const zoom = 0.5 + (Math.sin(this.t * 0.15) * 0.5 + 0.5) * (40 + env.mv * 30);
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    const sxc = 3 / zoom, syc = 2.4 / zoom, iC = 1 / C, iR = 1 / R;
+    const cx = this.cx, cy = this.cy, bb = 0.3 + env.beat * 0.3;
+    for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
       let zr = 0, zi = 0, k = 0;
-      const cr = this.cx + (x / C - 0.5) * 3 / zoom, ci = this.cy + (y / R - 0.5) * 2.4 / zoom;
+      const cr = cx + (x * iC - 0.5) * sxc, ci = cy + (y * iR - 0.5) * syc;
       while (k < M && zr * zr + zi * zi < 4) {
         const xr = zr * zr - zi * zi + cr;
         const xi = Math.abs(2 * zr * zi) + ci;
         zr = Math.abs(xr); zi = Math.abs(xi); k++;
       }
       if (k < M) {
-        const g = gly(k / M), c = mul(acc(env, k % 3), 0.3 + k / M + env.beat * 0.3);
-        px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
-        px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+        const g = gly(k / M), c = mul(acc(env, k % 3), bb + k / M);
+        for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++)
+          px(eng, x + xx, y + yy, g, c);
       }
     }
   });

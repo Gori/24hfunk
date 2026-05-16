@@ -15,5 +15,5 @@ SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=
 	sig = LPF.ar(sig, (cutoff * (0.5 + v)).clip(400, 10500));
 	sig = (sig * (1 + drive * 0.32)).softclip;
 	// lead mix trim — lead sat too hot vs drums/bass across genres (tune here)
-	Out.ar(out, Pan2.ar(sig * env * safety * amp * 0.6, pan));
+	Out.ar(out, Pan2.ar(sig * env * safety * amp * 0.85, pan));
 }).add;
