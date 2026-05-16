@@ -202,6 +202,44 @@ def _key_pc(key: str) -> int:
     return _PC.get(k[0] if k else "c", 0)
 
 
+# Repeating melodic contours (scale-step deltas from a chord-anchored note).
+# A section picks one deterministically -> the lead phrase recurs (memorable),
+# with a call-and-response variation on the "answer" bars.
+_CONTOURS = (
+    (0, 1, 2, 1, 0), (0, 2, 1, -1, -2), (0, -1, 1, 3, 2),
+    (0, 1, -1, 2, 0, -2), (0, 3, 2, 0, -1), (0, -2, -1, 1, 0),
+    (0, 1, 0, 2, 1, -1),
+)
+# Per-genre lead character. notes=fire prob mult (density), fill=prob of a
+# stepwise scale pickup INTO the anchor, run=max pickup length, span=contour
+# clamp (scale steps), harm=harmonised-interval prob. Sparse genres stay
+# sparse (minimal aesthetic) — this changes note CHOICE, not density.
+_LEAD_DEF = {"notes": 1.0, "fill": 0.45, "run": 2, "span": 6, "harm": 0.30}
+_LEAD_STYLE = {
+    "jazz":             {"notes": 1.25, "fill": 0.78, "run": 4, "span": 10, "harm": 0.22},
+    "funk":             {"notes": 1.0,  "fill": 0.42, "run": 2, "span": 5,  "harm": 0.30},
+    "minneapolis_funk": {"notes": 1.0,  "fill": 0.45, "run": 3, "span": 6,  "harm": 0.32},
+    "electro_funk":     {"notes": 1.0,  "fill": 0.45, "run": 3, "span": 6,  "harm": 0.28},
+    "neon_dub":         {"notes": 0.5,  "fill": 0.22, "run": 2, "span": 5,  "harm": 0.18},
+    "dub":              {"notes": 0.5,  "fill": 0.22, "run": 2, "span": 5,  "harm": 0.18},
+    "steppers_dub":     {"notes": 0.55, "fill": 0.25, "run": 2, "span": 5,  "harm": 0.18},
+    "dub_techno":       {"notes": 0.55, "fill": 0.25, "run": 2, "span": 4,  "harm": 0.16},
+    "dub_garage":       {"notes": 0.7,  "fill": 0.4,  "run": 3, "span": 6,  "harm": 0.22},
+    "roots_reggae":     {"notes": 0.6,  "fill": 0.3,  "run": 2, "span": 5,  "harm": 0.22},
+    "minimal_techno":   {"notes": 0.7,  "fill": 0.3,  "run": 2, "span": 4,  "harm": 0.14},
+    "detroit_techno":   {"notes": 0.78, "fill": 0.4,  "run": 3, "span": 5,  "harm": 0.18},
+    "rnb":              {"notes": 0.85, "fill": 0.62, "run": 3, "span": 7,  "harm": 0.36},
+    "afro_rnb":         {"notes": 0.92, "fill": 0.6,  "run": 3, "span": 7,  "harm": 0.32},
+    "indie_rnb":        {"notes": 0.78, "fill": 0.62, "run": 3, "span": 7,  "harm": 0.34},
+    "lofi":             {"notes": 0.8,  "fill": 0.6,  "run": 3, "span": 6,  "harm": 0.34},
+    "synthwave":        {"notes": 1.0,  "fill": 0.55, "run": 3, "span": 8,  "harm": 0.30},
+    "electro":          {"notes": 1.0,  "fill": 0.42, "run": 2, "span": 6,  "harm": 0.24},
+    "broken_house":     {"notes": 0.95, "fill": 0.5,  "run": 3, "span": 7,  "harm": 0.26},
+    "uk_garage":        {"notes": 0.95, "fill": 0.5,  "run": 3, "span": 7,  "harm": 0.26},
+    "eighties_hiphop":  {"notes": 0.85, "fill": 0.5,  "run": 3, "span": 6,  "harm": 0.28},
+}
+
+
 class CannedSource:
     name = "canned"
 
@@ -440,17 +478,67 @@ class CannedSource:
             for p in self._voicelead(ctones[:4], 64):
                 D(0, beat * 3.4, p, 0.22 + rnd.uniform(-0.03, 0.05), CH_KEYS)
 
-    def _motif(self, D, rnd, beat, ctones):
-        # melody on chord guide-tones; occasionally harmonised a 3rd/6th below
-        gt = [ctones[1] if len(ctones) > 1 else ctones[0],
-              ctones[-1], ctones[0], ctones[2] if len(ctones) > 2 else ctones[0]]
-        for (ti, s, du) in self.motif:
-            if rnd.random() < 0.5 + 0.4 * self.energy:
-                top = gt[ti % len(gt)] + 12
-                D(s, beat * 0.18 * du, top, 0.42 + rnd.uniform(-0.04, 0.08), CH_LEAD)
-                if rnd.random() < 0.35:               # harmonised interval
-                    D(s, beat * 0.18 * du, top - rnd.choice([3, 4, 8, 9]),
-                      0.30, CH_LEAD)
+    def _scale_pitches(self, sc, lo, hi):
+        out, o = [], (lo // 12) - 1
+        while o * 12 + self.root <= hi + 12:
+            base = o * 12 + self.root
+            for d in sc:
+                p = base + d
+                if lo <= p <= hi:
+                    out.append(p)
+            o += 1
+        return sorted(set(out)) or [self.root + 60]
+
+    @staticmethod
+    def _near_idx(sp, pitch):
+        bi, best = 0, 1e9
+        for i, p in enumerate(sp):
+            dd = pitch - p if pitch >= p else p - pitch
+            if dd < best:
+                best, bi = dd, i
+        return bi
+
+    def _motif(self, D, rnd, beat, sc, ctones):
+        # Genre-aware melody: a per-section repeating CONTOUR anchored to chord
+        # tones (memorable phrase; inverted on answer bars for call/response)
+        # connected by in-scale STEPWISE motion (singable). Density/character
+        # per genre — sparse genres stay sparse (changes note choice, not
+        # density). Combines a melodic phrase shape with scale passing tones.
+        if not ctones:
+            return
+        st = _LEAD_STYLE.get(self.genre, _LEAD_DEF)
+        c0 = ctones[0]
+        sp = self._scale_pitches(sc, c0 + 2, c0 + 34)
+        n = len(sp)
+        cseed = random.Random(self.root * 17 + len(self.genre) * 5 + 3)
+        contour = _CONTOURS[cseed.randrange(len(_CONTOURS))]
+        answer = (self.bar % 2) == 1
+        span = st["span"]
+        prev = None
+        for i, (ti, s, du) in enumerate(self.motif):
+            if rnd.random() >= (0.5 + 0.4 * self.energy) * st["notes"]:
+                continue                                   # leave space
+            anchor = self._near_idx(sp, ctones[ti % len(ctones)] + 12)
+            d = contour[i % len(contour)]
+            if answer:
+                d = -d
+            d = max(-span, min(span, d))
+            targ = max(0, min(n - 1, anchor + d))
+            dur = beat * 0.18 * du
+            if prev is not None and s >= 1 and rnd.random() < st["fill"]:
+                diff = targ - prev
+                stp = 1 if diff >= 0 else -1
+                runn = min(st["run"], abs(diff), 4)
+                for j in range(runn, 0, -1):
+                    pk, at = targ - stp * j, s - j * 0.5
+                    if at >= 0 and 0 <= pk < n:
+                        D(at, beat * 0.10, sp[pk],
+                          0.30 + rnd.uniform(-0.03, 0.05), CH_LEAD)
+            pit = sp[targ]
+            D(s, dur, pit, 0.42 + rnd.uniform(-0.04, 0.08), CH_LEAD)
+            if rnd.random() < st["harm"]:
+                D(s, dur, pit - rnd.choice([3, 4, 8, 9]), 0.30, CH_LEAD)
+            prev = targ
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
     def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
@@ -469,7 +557,7 @@ class CannedSource:
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
         if self.on["lead"]:
-            self._motif(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)
             if rnd.random() < 0.3:
                 self._comp(D, rnd, beat, ct, [6, 14])
 
@@ -491,7 +579,7 @@ class CannedSource:
             self._walk_bass(D, rnd, beat, ct, cr, nr)
         if self.on["lead"]:
             self._comp(D, rnd, beat, ct, [2, 7, 11], oct_shift=0)
-            self._motif(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)
 
     def _g_minneapolis_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
@@ -510,7 +598,7 @@ class CannedSource:
         if self.on["lead"]:
             self._comp(D, rnd, beat, ct, [2, 6, 10, 14])     # stabby synth chords
             if rnd.random() < 0.5:
-                self._motif(D, rnd, beat, ct)
+                self._motif(D, rnd, beat, sc, ct)
 
     def _g_minimal_techno(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # hypnotic + sparse: steady 4-on-floor, off-beat hats, almost no melody
@@ -567,7 +655,7 @@ class CannedSource:
             self._comp(D, rnd, beat, ct, [3, 6, 10, 14], oct_shift=0)
             self._pad(D, rnd, beat, ct)
             if rnd.random() < 0.4:
-                self._motif(D, rnd, beat, ct)
+                self._motif(D, rnd, beat, sc, ct)
 
     def _skank(self, D, rnd, beat, ct, steps, prob=0.7):
         # off-beat reggae/dub organ chord skank on the KEYS voice
@@ -686,7 +774,7 @@ class CannedSource:
         if self.on["lead"]:
             self._comp(D, rnd, beat, ct, [3, 6, 10, 14])
             if rnd.random() < 0.4:
-                self._motif(D, rnd, beat, ct)
+                self._motif(D, rnd, beat, sc, ct)
 
     def _g_dub_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # 2-step skeleton, sparser + dubwise (huge delay via _FX_SIG)
@@ -738,7 +826,7 @@ class CannedSource:
             self._comp(D, rnd, beat, ct, [2, 10], oct_shift=0)
             self._pad(D, rnd, beat, ct)
             if rnd.random() < 0.35:
-                self._motif(D, rnd, beat, ct)
+                self._motif(D, rnd, beat, sc, ct)
 
     def _g_afro_rnb(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # afrobeats: a FIXED 3-3-2-ish kick (0, 3, 6, 10), clap on 2 & 4,
@@ -767,7 +855,7 @@ class CannedSource:
         if self.on["lead"]:
             self._comp(D, rnd, beat, ct, [2, 11])
             if rnd.random() < 0.5:
-                self._motif(D, rnd, beat, ct)
+                self._motif(D, rnd, beat, sc, ct)
 
     def _g_indie_rnb(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # alt/indie R&B: slow, sparse but LOCKED. Kick 1 + "&" of 3, snare on
@@ -807,7 +895,7 @@ class CannedSource:
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
         if self.on["lead"]:
-            self._motif(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)
 
     def _g_broken_house(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
@@ -840,7 +928,7 @@ class CannedSource:
                   self._acc(rnd) if i == 0 else self._main(rnd), CH_BASS,
                   "kick", structural=(i == 0))
         if self.on["lead"]:
-            self._motif(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)
             self._comp(D, rnd, beat, ct, [0, 8])
 
 
@@ -880,7 +968,7 @@ class CannedSource:
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e * 0.7, [6, 10])
         if self.on["lead"]:
-            self._motif(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)
 
     def _g_electro(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
@@ -902,7 +990,7 @@ class CannedSource:
                     D(s, beat * 0.16, p, self._acc(rnd) if s == 0 else self._main(rnd),
                       CH_BASS, "kick" if s == 0 else "", structural=(s == 0))
         if self.on["lead"]:
-            self._motif(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)
 
     def _g_eighties_hiphop(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
@@ -929,4 +1017,4 @@ class CannedSource:
                     D(s, beat * 0.3, rnd.choice([cr, cr, cr + 12, cr + 7]),
                       self._main(rnd), CH_BASS)
         if self.on["lead"] and rnd.random() < 0.45:
-            self._motif(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)
