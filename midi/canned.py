@@ -126,7 +126,7 @@ SYNTH_PARAMS = {
     "lofi": {"kick": {"drive": 1.5, "click": 0.26, "decay": 0.34}, "snare": {"snap": 0.38, "tone": 0.44, "crush": 0.2}, "hat": {"metal": 0.32, "cutoff": 7000, "decay": 0.045}, "ohat": {"metal": 0.32, "cutoff": 6600, "decay": 0.24}, "clap": {"decay": 0.24, "tone": 0.8}, "rim": {"decay": 0.055}, "perc": {"decay": 0.15}, "bass": {"drive": 1.0, "cutoff": 460, "res": 0.14, "fenv": 0.35, "sub": 0.85, "glide": 0.0}, "lead": {"detune": 0.08, "wave": 0.2, "cutoff": 4000, "drive": 0.85, "decay": 0.4}, "fx": {"reverb": 0.4, "delay": 0.3, "delayTime": 0.45, "width": 0.6}},
     "electro": {"kick": {"drive": 2.2, "click": 0.4, "decay": 0.42}, "snare": {"snap": 0.7, "tone": 0.4, "crush": 0.18}, "hat": {"metal": 0.7, "cutoff": 11000, "decay": 0.03}, "ohat": {"metal": 0.7, "cutoff": 10000, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.15}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 900, "res": 0.22, "fenv": 0.55, "sub": 0.7, "glide": 0.0}, "lead": {"detune": 0.06, "wave": 0.6, "cutoff": 6500, "drive": 1.6, "decay": 0.14}, "fx": {"reverb": 0.26, "delay": 0.22, "delayTime": 0.1875, "width": 0.8}},
     "eighties_hiphop": {"kick": {"drive": 1.8, "click": 0.35, "decay": 0.46}, "snare": {"snap": 0.7, "tone": 0.55, "crush": 0.12}, "hat": {"metal": 0.4, "cutoff": 8500, "decay": 0.04}, "ohat": {"metal": 0.4, "cutoff": 8000, "decay": 0.26}, "clap": {"decay": 0.24, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.14, "fenv": 0.3, "sub": 0.9, "glide": 0.0}, "lead": {"detune": 0.1, "wave": 0.3, "cutoff": 4800, "drive": 1.0, "decay": 0.22}, "fx": {"reverb": 0.34, "delay": 0.28, "delayTime": 0.375, "width": 0.65}},
-    "jazz": {"kick": {"drive": 1.2, "click": 0.2, "decay": 0.3}, "snare": {"snap": 0.4, "tone": 0.5, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9000, "decay": 0.05}, "ohat": {"metal": 0.5, "cutoff": 8500, "decay": 0.4}, "clap": {"decay": 0.18, "tone": 0.9}, "rim": {"decay": 0.05}, "perc": {"decay": 0.12}, "bass": {"drive": 0.8, "cutoff": 520, "res": 0.1, "fenv": 0.25, "sub": 0.8, "glide": 0.02}, "lead": {"detune": 0.04, "wave": 0.18, "cutoff": 4200, "drive": 0.7, "decay": 0.35}, "fx": {"reverb": 0.42, "delay": 0.18, "delayTime": 0.42, "width": 0.7}},
+    "jazz": {"kick": {"drive": 1.2, "click": 0.2, "decay": 0.3}, "snare": {"snap": 0.4, "tone": 0.5, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9000, "decay": 0.05}, "ohat": {"metal": 0.5, "cutoff": 8500, "decay": 0.4}, "clap": {"decay": 0.18, "tone": 0.9}, "rim": {"decay": 0.05}, "perc": {"decay": 0.12}, "bass": {"drive": 0.8, "cutoff": 520, "res": 0.1, "fenv": 0.25, "sub": 0.8, "glide": 0.02}, "lead": {"detune": 0.06, "wave": 0.28, "cutoff": 3400, "drive": 0.45, "decay": 0.7}, "fx": {"reverb": 0.42, "delay": 0.18, "delayTime": 0.42, "width": 0.7}},
     "funk": {"kick": {"drive": 2.6, "click": 0.55, "decay": 0.26}, "snare": {"snap": 0.88, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.62, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.62, "cutoff": 9500, "decay": 0.22}, "clap": {"decay": 0.17, "tone": 1.05}, "rim": {"decay": 0.038}, "perc": {"decay": 0.1}, "bass": {"drive": 0.6, "cutoff": 420, "res": 0.08, "fenv": 0.2, "sub": 0.92, "glide": 0.01}, "lead": {"detune": 0.08, "wave": 0.4, "cutoff": 5600, "drive": 1.5, "decay": 0.16}, "fx": {"reverb": 0.18, "delay": 0.16, "delayTime": 0.33, "width": 0.7}},
     "minneapolis_funk": {"kick": {"drive": 2.0, "click": 0.45, "decay": 0.3}, "snare": {"snap": 0.85, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9800, "decay": 0.035}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.26}, "clap": {"decay": 0.22, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.11}, "bass": {"drive": 1.4, "cutoff": 1000, "res": 0.3, "fenv": 0.6, "sub": 0.55, "glide": 0.0}, "lead": {"detune": 0.14, "wave": 0.45, "cutoff": 6200, "drive": 1.3, "decay": 0.18}, "fx": {"reverb": 0.28, "delay": 0.2, "delayTime": 0.1875, "width": 0.75}},
     "minimal_techno": {"kick": {"drive": 1.8, "click": 0.3, "decay": 0.34}, "snare": {"snap": 0.5, "tone": 0.4, "crush": 0.0}, "hat": {"metal": 0.55, "cutoff": 11000, "decay": 0.022}, "ohat": {"metal": 0.55, "cutoff": 9500, "decay": 0.16}, "clap": {"decay": 0.16, "tone": 1.1}, "rim": {"decay": 0.03}, "perc": {"decay": 0.08}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.12, "fenv": 0.3, "sub": 0.92, "glide": 0.02}, "lead": {"detune": 0.05, "wave": 0.5, "cutoff": 5200, "drive": 1.1, "decay": 0.12}, "fx": {"reverb": 0.34, "delay": 0.34, "delayTime": 0.5, "width": 0.7}},
@@ -181,7 +181,7 @@ _GENRE_INSTR = {
     "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadFM"},
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
-    "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadFM"},
+    "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "lead"},
     "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "lead"},
     "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadPulse"},
     "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadPulse"},
@@ -656,6 +656,51 @@ class CannedSource:
                   base + rnd.choice([0, 0, 12, 7]),
                   min(0.6, v), CH_PERC, "perc")
 
+    def _jazz_motif(self, D, rnd, beat, sc, ctones):
+        # Jazz lead = a flowing bebop-ish line: CHORD tones on the strong
+        # beats (so it outlines the ii-V-I changes) connected by SCALE
+        # passing tones (Dorian) on the weak beats, with the occasional
+        # enclosure approach. Legato (the jazz lead decay carries the
+        # sustain) and soft/intimate, swung via the timing grid.
+        cN = len(ctones)
+        root = self.root
+        scl = sorted({d % 12 for d in sc}) or [0, 2, 3, 5, 7, 9, 10]
+        c0 = ctones[0] + 24                          # lead register (horn/vibe)
+        ladder, o = [], (c0 // 12) - 2
+        while (o * 12) + root <= c0 + 18:
+            for d in scl:
+                p = (o * 12) + root + d
+                if (c0 - 7) <= p <= (c0 + 17):
+                    ladder.append(p)
+            o += 1
+        ladder = sorted(set(ladder))
+        if not ladder:
+            return
+        ct_oct = [c + 24 for c in ctones]
+        near = lambda tgt: min(range(len(ladder)),
+                               key=lambda k: abs(ladder[k] - tgt))
+        seed = random.Random(root * 13 + (self.bar // 2) + 7)
+        sct = seed.choice((0, 1, 2)) % cN
+        pi = near(ct_oct[sct])
+        for j, (ti, s, du) in enumerate(self.motif):
+            strong = (s % 4) == 0
+            if strong:
+                pi = near(ct_oct[(sct + (j // 2)) % cN])    # land on a chord tone
+            else:
+                goal = near(ct_oct[(sct + (j // 2) + 1) % cN])
+                pi = max(0, min(len(ladder) - 1,
+                                pi + (1 if goal >= pi else -1)))  # scale step
+            pit = ladder[pi]
+            vel = 0.40 + (0.06 if strong else 0.0) + rnd.uniform(-0.03, 0.05)
+            vel = max(0.22, min(0.80, vel))
+            if strong and j > 0 and rnd.random() < 0.30:    # enclosure approach
+                D(max(0.0, s - 0.5), beat * 0.12,
+                  ladder[max(0, pi - 1)], vel * 0.65, CH_LEAD)
+            D(s, beat * 0.30 * du, pit, vel, CH_LEAD)        # legato
+            if rnd.random() < 0.16:                          # sparse 3rd below
+                D(s, beat * 0.30 * du, pit - rnd.choice([3, 4]),
+                  vel * 0.55, CH_LEAD)
+
     def _motif(self, D, rnd, beat, sc, ctones):
         # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
         # intentional syncopation/space) carries a fixed per-section CONTOUR
@@ -665,6 +710,9 @@ class CannedSource:
         # approach note into a strong beat. The phrase plays as written (no
         # random note-dropping) so it reads as a melody, not noise. Sparse.
         if not ctones or not self.motif:
+            return
+        if self.genre == "jazz":
+            self._jazz_motif(D, rnd, beat, sc, ctones)
             return
         st = _LEAD_STYLE.get(self.genre, _LEAD_DEF)
         cN = len(ctones)
