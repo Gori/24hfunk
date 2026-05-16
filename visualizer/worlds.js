@@ -55,44 +55,32 @@
     note() { this.flash = Math.min(1, this.flash + 0.5); },
     beat() {},
     wall(x, z) { return x < 0 || z < 0 || x >= this.N || z >= this.N || this.m[z | 0][x | 0] === 1; },
-    // free distance along a heading (so the bot can SEE down corridors)
-    freeDist(ang) {
+    _probe(a) {                       // free distance along heading a
       let d = 0;
-      while (d < 9 && !this.wall(this.px + Math.cos(ang) * d, this.pz + Math.sin(ang) * d)) d += 0.4;
+      while (d < 6 && !this.wall(this.px + Math.cos(a) * d, this.pz + Math.sin(a) * d)) d += 0.35;
       return d;
     },
-    _retarget() {
-      // choose the heading down the LONGEST corridor; strongly prefer to keep
-      // going straight (corridor following) so it doesn't spin / face walls.
-      const cands = [0, -Math.PI / 2, Math.PI / 2, -Math.PI / 4,
-        Math.PI / 4, Math.PI];
-      let best = 0, bestD = -1e9;
-      for (const off of cands) {
-        const d = this.freeDist(this.ang + off)
-          + (off === 0 ? 2.5 : 0) - (off === Math.PI ? 2 : 0);
-        if (d > bestD) { bestD = d; best = off; }
-      }
-      this.tgt = this.ang + best;
-      this.reT = 2.0 + Math.random() * 1.5;
-    },
     step(dt) {
-      if (this.tgt === undefined) { this.tgt = this.ang; this.reT = 0; }
-      this.reT -= dt;
-      const aheadNow = this.freeDist(this.ang);
-      if (this.reT <= 0 || aheadNow < 1.0) this._retarget();
-      // smooth, rate-limited turn toward target (no snapping = not spazzy)
-      let dA = Math.atan2(Math.sin(this.tgt - this.ang),
-        Math.cos(this.tgt - this.ang));
-      const maxTurn = 1.1 * dt;                       // rad/s cap
-      this.ang += Math.max(-maxTurn, Math.min(maxTurn, dA));
-      // move forward steadily only when the corridor ahead is clear and we're
-      // roughly aimed at the target (so it travels INTO depth, not walls)
-      const aligned = Math.abs(dA) < 0.5;
+      // simple, ALWAYS-progressing wander: walk forward; at a wall steer
+      // toward the more open side; gentle drift; un-stick if cornered.
       const fx = Math.cos(this.ang), fz = Math.sin(this.ang);
-      const sp = (aligned && this.freeDist(this.ang) > 0.9 ? 1.5 : 0.0) * dt;
+      const blocked = this.wall(this.px + fx * 0.55, this.pz + fz * 0.55);
+      if (blocked) {
+        const L = this._probe(this.ang - 1.15), R = this._probe(this.ang + 1.15);
+        this.turn = (L > R ? -1 : 1) * 2.0;
+      } else if (Math.random() < 0.02) {
+        this.turn = (Math.random() - 0.5) * 1.4;
+      }
+      this.ang += (this.turn || 0) * dt;
+      this.turn = (this.turn || 0) * 0.90;
+      const sp = (blocked ? 0 : 1.5) * dt;
       const nx = this.px + fx * sp, nz = this.pz + fz * sp;
-      if (!this.wall(nx + fx * 0.3, this.pz)) this.px = nx;
-      if (!this.wall(this.px, nz + fz * 0.3)) this.pz = nz;
+      let moved = 0;
+      if (!this.wall(nx, this.pz)) { moved += Math.abs(nx - this.px); this.px = nx; }
+      if (!this.wall(this.px, nz)) { moved += Math.abs(nz - this.pz); this.pz = nz; }
+      // anti-stuck: if it can't make progress, spin to find an opening
+      this._stuck = moved < 1e-4 ? (this._stuck || 0) + dt : 0;
+      if (this._stuck > 0.8) { this.ang += 1.7; this._stuck = 0; }
       this.flash = Math.max(0, this.flash - dt * 2.2);
     },
     draw(eng, env) {

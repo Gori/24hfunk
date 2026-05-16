@@ -10,7 +10,7 @@ import time
 from director.schema import SectionState
 from director.publish import publish
 
-SECS = float(sys.argv[1]) if len(sys.argv) > 1 else 25.0
+SECS = float(sys.argv[1]) if len(sys.argv) > 1 else 60.0
 
 GENRES = [
     ("electro_funk", 104, "G minor", 0.74, {"bg": "#140a16", "fg": "#f3d9a6",
@@ -19,8 +19,6 @@ GENRES = [
         "accent": ["#5ad1ff", "#ffae57", "#b988ff"]}),
     ("synthwave", 112, "E minor", 0.68, {"bg": "#150a22", "fg": "#ffe1f0",
         "accent": ["#ff43c8", "#43d9ff", "#ffd23f"]}),
-    ("idm", 132, "C minor", 0.82, {"bg": "#0c0f0c", "fg": "#d6f5d6",
-        "accent": ["#9dff57", "#ff5757", "#57c8ff"]}),
     ("neon_dub", 84, "D minor", 0.42, {"bg": "#06121a", "fg": "#bfeaf0",
         "accent": ["#2ad6c0", "#7a6cff"]}),
     ("lofi", 78, "F# minor", 0.45, {"bg": "#100d0a", "fg": "#e6d6c0",
@@ -51,6 +49,12 @@ GENRES = [
         "accent": ["#b06cff", "#36e6c8", "#ffd23f"]}),
     ("dub_garage", 130, "F minor", 0.5, {"bg": "#0a0a16", "fg": "#d6dcf0",
         "accent": ["#6c7bff", "#3ad6b0", "#ffb35a"]}),
+    ("rnb", 84, "D minor", 0.5, {"bg": "#140a12", "fg": "#f0d8e4",
+        "accent": ["#e08ab0", "#7ab0c8", "#ffce6a"]}),
+    ("afro_rnb", 108, "A minor", 0.6, {"bg": "#140e06", "fg": "#ffe8c8",
+        "accent": ["#ff9b3d", "#3ad69e", "#ffd23f"]}),
+    ("indie_rnb", 78, "C minor", 0.4, {"bg": "#0c0a14", "fg": "#dcd6ec",
+        "accent": ["#8c7ad0", "#5ac8d6", "#e0a0c0"]}),
 ]
 
 

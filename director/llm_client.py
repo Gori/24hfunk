@@ -17,7 +17,11 @@ from mlx_lm.sample_utils import make_sampler
 from director.prompts import SYSTEM, build_user_prompt
 from director.schema import SectionState
 
-MODEL_ID = os.environ.get("STR_DIRECTOR_MODEL", "mlx-community/Qwen3-8B-4bit")
+# default to the 4B so a 16 GB Mac is safe out of the box (director + scribe
+# both ~2.5 GB). Override with STR_DIRECTOR_MODEL=mlx-community/Qwen3-8B-4bit
+# on a 24 GB+ machine for a touch more direction quality.
+MODEL_ID = os.environ.get(
+    "STR_DIRECTOR_MODEL", "mlx-community/Qwen3-4B-Instruct-2507-4bit")
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 

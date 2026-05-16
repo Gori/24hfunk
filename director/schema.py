@@ -9,11 +9,12 @@ from pydantic import BaseModel, Field, field_validator
 
 GLYPH_SETS = ("abstract_blocks", "ascii_punct", "mixed_unicode", "text_heavy")
 PACINGS = ("still", "slow_drift", "active", "fast")
-GENRES = ("electro_funk", "idm", "synthwave", "neon_dub", "broken_house",
+GENRES = ("electro_funk", "synthwave", "neon_dub", "broken_house",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
-          "dub_garage", "uk_garage")
+          "dub_garage", "uk_garage",
+          "rnb", "afro_rnb", "indie_rnb")
 SCENES = ("raycaster", "glyphfield")
 
 
@@ -157,11 +158,12 @@ class SectionState(_Clamped):
     id: str = "sec"
     duration_sec: int = Field(360, ge=20, le=600)
     mood: str = "neutral"
-    genre: Literal["electro_funk", "idm", "synthwave", "neon_dub", "broken_house",
+    genre: Literal["electro_funk", "synthwave", "neon_dub", "broken_house",
                    "lofi", "electro", "eighties_hiphop", "jazz", "funk",
                    "minneapolis_funk", "minimal_techno", "detroit_techno",
                    "dub", "steppers_dub", "dub_techno", "roots_reggae",
-                   "dub_garage", "uk_garage"] = "funk"
+                   "dub_garage", "uk_garage",
+                   "rnb", "afro_rnb", "indie_rnb"] = "funk"
     bpm: int = Field(96, ge=70, le=150)
     key: str = "C minor"
     density: float = Field(0.6, ge=0.0, le=1.0)

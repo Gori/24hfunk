@@ -19,8 +19,11 @@ import requests
 PORT = os.environ.get("BRIDGE_HTTP_PORT", "8080")
 STATE_URL = f"http://localhost:{PORT}/state"
 SCROLL_URL = f"http://localhost:{PORT}/scroll"
-MODEL_ID = os.environ.get("STR_DIRECTOR_MODEL", "mlx-community/Qwen3-8B-4bit")
-COOLDOWN = 38.0  # min seconds between regenerations
+# the scribe only writes a short scroll — a small fast model keeps CPU/GPU/RAM
+# load (and the contention dip) low. Override with STR_SCRIBE_MODEL.
+MODEL_ID = os.environ.get(
+    "STR_SCRIBE_MODEL", "mlx-community/Qwen3-4B-Instruct-2507-4bit")
+COOLDOWN = 55.0  # min seconds between regenerations (less frequent = less load)
 
 SYS = (
     "You write classic AMIGA DEMOSCENE SCROLLER text — the long hypnotic "
@@ -96,7 +99,7 @@ def main():
                         except TypeError:
                             prompt = tok.apply_chat_template(
                                 msgs, add_generation_prompt=True)
-                        out = gen(model, tok, prompt=prompt, max_tokens=320,
+                        out = gen(model, tok, prompt=prompt, max_tokens=190,
                                   sampler=sampler, verbose=False)
                         text = _clean(out)
                     except Exception as e:  # noqa: BLE001

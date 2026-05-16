@@ -160,28 +160,44 @@
   };
 
   A3D.prototype.flush = function () {
-    const ctx = this.ctx;
+    // tight hot loop: hoisted locals, a persistent packed-int -> css cache,
+    // skip redundant fillStyle writes, no O(n^2) run concatenation.
+    const ctx = this.ctx, ch = this.ch, col = this.col;
+    const rows = this.rows, cols = this.cols, cw = this.cw, chh = this.chh;
+    const css = this._css || (this._css = new Map());
+    const scratch = this._scr && this._scr.length >= cols
+      ? this._scr : (this._scr = new Array(cols));
     ctx.fillStyle = `rgb(${this.bg[0]},${this.bg[1]},${this.bg[2]})`;
     ctx.fillRect(0, 0, this.W, this.H);
-    const cw = this.cw, chh = this.chh, cols = this.cols;
-    for (let r = 0; r < this.rows; r++) {
-      const base = r * cols;
+    let lastStyle = -1;
+    for (let r = 0; r < rows; r++) {
+      const base = r * cols, ry = r * chh;
       let c = 0;
       while (c < cols) {
-        const i = base + c;
-        const code = this.ch[i];
+        const code = ch[base + c];
         if (code === SPACE) { c++; continue; }
-        const color = this.col[i];
-        let run = String.fromCharCode(code);
-        let c2 = c + 1;
+        const color = col[base + c];
+        scratch[0] = code;
+        let len = 1, c2 = c + 1;
         while (c2 < cols) {
-          const j = base + c2;
-          if (this.ch[j] === SPACE || this.col[j] !== color) break;
-          run += String.fromCharCode(this.ch[j]);
-          c2++;
+          const cc = ch[base + c2];
+          if (cc === SPACE || col[base + c2] !== color) break;
+          scratch[len++] = cc; c2++;
         }
-        ctx.fillStyle = `rgb(${(color >> 16) & 255},${(color >> 8) & 255},${color & 255})`;
-        ctx.fillText(run, c * cw, r * chh);
+        if (color !== lastStyle) {
+          let s = css.get(color);
+          if (s === undefined) {
+            s = 'rgb(' + ((color >> 16) & 255) + ',' + ((color >> 8) & 255)
+              + ',' + (color & 255) + ')';
+            css.set(color, s);
+          }
+          ctx.fillStyle = s;
+          lastStyle = color;
+        }
+        ctx.fillText(
+          String.fromCharCode.apply(null, len === scratch.length
+            ? scratch : scratch.slice(0, len)),
+          c * cw, ry);
         c = c2;
       }
     }

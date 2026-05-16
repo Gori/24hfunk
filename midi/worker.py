@@ -119,24 +119,46 @@ class Worker:
         seq = 0
         now = time.monotonic
         horizon = now() + 0.25
+        pend_new = None      # genre queued behind a transition
+        swap_at = 0.0        # when to actually drop the new genre
 
         while self._running:
-            # section change -> panic + re-prime + reset timeline
             with self._lock:
                 pend = self._pending_section
                 self._pending_section = None
+
+            # a new section arrived -> a CLEAN transition: let the last notes
+            # ring out, a short breath of space, then the new genre drops on
+            # a fresh downbeat. No fill/wash (that sounded weird).
             if pend is not None:
+                if pend_new is None:
+                    bpm = float(self.source.bpm or 100)
+                    beatlen = 60.0 / max(50.0, min(180.0, bpm))
+                    t0 = now()
+                    tail = 0.32          # let notes already sounding ring out
+                    # drop anything scheduled past the tail -> goes quiet
+                    heap = [e for e in heap if e[0] <= t0 + tail]
+                    heapq.heapify(heap)
+                    # stop pulling old phrases (handled by the fill guard);
+                    # new genre enters after the tail + ~1 beat of breath
+                    swap_at = t0 + tail + max(0.45, beatlen)
+                pend_new = pend     # always swap to the most recent request
+
+            if pend_new is not None and now() >= swap_at:
                 self.sc.panic()
-                self.source.prime(pend)
-                self.sc.tempo(float(pend.get("bpm") or pend.get("tempo") or 78))
+                self.source.prime(pend_new)
+                self.sc.tempo(float(pend_new.get("bpm")
+                                    or pend_new.get("tempo") or 78))
                 self._push_synth_params()
                 heap.clear()
-                horizon = now() + 0.15
-                print(f"[worker] re-primed: {pend.get('key')} "
-                      f"{pend.get('bpm') or pend.get('tempo')}bpm")
+                horizon = now() + 0.10
+                print(f"[worker] dropped: {pend_new.get('genre')} "
+                      f"{pend_new.get('key')} "
+                      f"{pend_new.get('bpm') or pend_new.get('tempo')}bpm")
+                pend_new = None
 
-            # keep the buffer full
-            while horizon - now() < self.min_buffer:
+            # keep the buffer full — but NOT while a transition is breathing
+            while pend_new is None and horizon - now() < self.min_buffer:
                 ph = self.source.next_phrase()
                 for n in ph.notes:
                     t0 = horizon + n.t

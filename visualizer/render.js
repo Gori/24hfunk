@@ -192,11 +192,9 @@
             + '   ***   STR DEMOSCENE   ***   ';
         } else scrollMsg = DEFAULT_MSG;
       }
-      active = nextWorld(section);
-      if (active.reset) active.reset(eng, section);
-      rerollFX(); announceEffect();
-      announceEffect();
-      sinceCut = 0;
+      // NOTE: a music-section change only fades the palette + swaps the
+      // scroller. The visual EFFECT runs on its own independent 30s clock
+      // (see frame()), so visuals and genre change at different rates.
     },
     setScroll(text) {
       if (typeof text !== 'string' || !text.trim()) return;
@@ -231,12 +229,12 @@
         + hitE * 0.4 + bassE * 0.3);
       scrollX += dt * (34 + mv * 10);          // readable; only a gentle music lilt
 
+      // visuals change on their OWN 30s clock, independent of the music genre
       sinceCut += dt;
-      if (active !== window.Worlds.Glyph && sinceCut > 46) {
+      if (sinceCut > 30) {
         active = pool[poolIdx++ % pool.length];
         if (active.reset) active.reset(eng);
         rerollFX(); announceEffect();
-        announceEffect();
         sinceCut = 0;
       }
       // camera SWIMS with the music (energy/bass/drums/pitch), not just beat

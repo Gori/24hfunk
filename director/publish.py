@@ -51,7 +51,9 @@ def publish(section: SectionState) -> None:
     _midi.send_message(
         "/midi/section",
         [json.dumps({
+            "genre": section.genre,          # <-- the worker needs this!
             "tempo": section.bpm,
+            "bpm": section.bpm,
             "key": section.key,
             "density": section.density,
             "instruments": enabled,
