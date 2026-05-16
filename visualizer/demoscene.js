@@ -398,17 +398,19 @@
     }
   });
   const Worm = E('WORMHOLE', null, function (eng, env) {
-    // 2x downsample (atan2/hypot/2x sin per cell was the cost)
+    // 4x downsample + hoisted consts/reciprocals, sqrt over hypot
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
-      const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2);
-      const a = Math.atan2(dy, dx), d = Math.hypot(dx, dy) + 1e-3;
-      const v = Math.sin(8 / d + this.t * 3) + Math.sin(a * 6 + this.t * 2);
+    const cx = C / 2, cy = R / 2, ix = 1 / cx, iy = 1 / cy;
+    const t3 = this.t * 3, t2 = this.t * 2, bk = 0.7 + env.beat * 0.4;
+    for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
+      const dx = (x - cx) * ix, dy = (y - cy) * iy;
+      const a = Math.atan2(dy, dx), d = Math.sqrt(dx * dx + dy * dy) + 1e-3;
+      const v = Math.sin(8 / d + t3) + Math.sin(a * 6 + t2);
       const k = (v + 2) / 4;
       const g = gly(k * (1 - d * 0.4));
-      const c = mul(acc(env, (a * 3 | 0) % 3), 0.2 + k * (0.7 + env.beat * 0.4));
-      px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
-      px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
+      const c = mul(acc(env, (a * 3 | 0) % 3), 0.2 + k * bk);
+      for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++)
+        px(eng, x + xx, y + yy, g, c);
     }
   });
   const Life = E('LIFE', function (eng) {
@@ -692,14 +694,33 @@
       }
     }
   });
-  const DVD = E('BOUNCE LOGO', function (eng) { this.x = eng.cols / 2; this.y = eng.rows / 2; this.vx = (this.P.dir) * 22; this.vy = 14; }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, L = ['#####', '#   #', '#####', '#  # ', '#   #'];
+  const OSKAR = {
+    O: ['#####', '#   #', '#   #', '#   #', '#####'],
+    S: ['#####', '#    ', '#####', '    #', '#####'],
+    K: ['#   #', '#  # ', '###  ', '#  # ', '#   #'],
+    A: [' ### ', '#   #', '#####', '#   #', '#   #'],
+    R: ['#### ', '#   #', '#### ', '#  # ', '#   #'],
+  };
+  const DVD = E('BOUNCE LOGO', function (eng) {
+    this.w = 'OSKAR';
+    this.x = (eng.cols / 2) | 0; this.y = (eng.rows / 2) | 0;
+    this.vx = this.P.dir * 22; this.vy = 14;
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, w = this.w, GW = 11;   // 5px*2 + 1 gap
+    const W = w.length * GW;
     this.x += this.vx * 0.016 * this.P.spd; this.y += this.vy * 0.016 * this.P.spd;
-    if (this.x < 4 || this.x > C - 10) { this.vx *= -1; this.ci = ((this.ci || 0) + 1); }
-    if (this.y < 4 || this.y > R - 8) { this.vy *= -1; this.ci = ((this.ci || 0) + 1); }
-    for (let ry = 0; ry < 5; ry++) for (let rx = 0; rx < 5; rx++)
-      if (L[ry][rx] === '#') for (let s = 0; s < 2; s++) for (let q = 0; q < 2; q++)
-        px(eng, this.x + rx * 2 + s, this.y + ry * 2 + q, '#', mul(acc(env, (this.ci || 0) % 3), 0.6 + env.beat * 0.4));
+    if (this.x < 1 || this.x > C - W) { this.vx *= -1; this.ci = (this.ci || 0) + 1; this.x = Math.max(1, Math.min(C - W, this.x)); }
+    if (this.y < 1 || this.y > R - 11) { this.vy *= -1; this.ci = (this.ci || 0) + 1; this.y = Math.max(1, Math.min(R - 11, this.y)); }
+    const col = mul(acc(env, (this.ci || 0) % 3), 0.6 + env.beat * 0.4);
+    const ox = this.x | 0, oy = this.y | 0;
+    for (let li = 0; li < w.length; li++) {
+      const bmp = OSKAR[w[li]]; if (!bmp) continue;
+      const lx = ox + li * GW;
+      for (let ry = 0; ry < 5; ry++) for (let rx = 0; rx < 5; rx++)
+        if (bmp[ry][rx] === '#')
+          for (let s = 0; s < 2; s++) for (let q = 0; q < 2; q++)
+            px(eng, lx + rx * 2 + s, oy + ry * 2 + q, '#', col);
+    }
   });
   const PolarSwirl = E('POLAR SWIRL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
