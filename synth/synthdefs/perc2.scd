@@ -43,6 +43,11 @@ SynthDef(\perc2, { |out=0, amp=0.5, freq=220, decay=0.18, drive=1.0,
 	var wM   = (Rand(0, 1) < (0.16 + (t * 0.40))) * Rand(0.22, 0.60);
 	var sig  = (gl * wG) + (shk * wS) + (body * wB) + (metal * wM);
 	sig = (sig * (1 + drive * 0.5)).tanh;
+	// musical per-note panning: each pitch sits in its OWN wide, consistent
+	// spot (like a real percussion ensemble laid across the stage) — and
+	// since the pattern varies pitch per hit this paints a coherent moving
+	// stereo groove. Plus a slow image sway + a touch of life.
 	Out.ar(out, Pan2.ar(LeakDC.ar(sig) * env * amp * 0.7,
-		(pan + Rand(-0.3, 0.3)).clip(-1, 1)));
+		(pan + ((((f0.cpsmidi % 12) / 12) * 1.7) - 0.85)
+		 + (LFNoise1.kr(0.08) * 0.16) + Rand(-0.12, 0.12)).clip(-0.95, 0.95)));
 }).add;
