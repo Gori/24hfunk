@@ -80,6 +80,12 @@
     { bg: '#0c0c12', fg: '#dfe4f0', accent: ['#8892ff', '#ff79c6', '#50fa7b'] },
   ];
 
+  // Push the current effect name into the always-on HUD.
+  function announceEffect() {
+    const el = typeof document !== 'undefined' && document.getElementById('hud-effect');
+    if (el && active) el.textContent = 'EFFECT · ' + (active.title || 'SCENE');
+  }
+
   let demoSet = new Set();
   let fxSym = 0, fxFlip = false, fxTime = 1;
   function buildPool() {
@@ -91,9 +97,13 @@
   // re-roll universal variety knobs whenever the active scene changes, so a
   // recurring demoscene mode is mirrored/flipped/timed differently each time
   function rerollFX() {
-    fxSym = (Math.random() * 5) | 0;          // 0 none 1 X 2 Y 3 quad 4 kaleido
-    fxFlip = Math.random() < 0.3;
-    fxTime = 0.55 + Math.random() * 1.5;
+    // weighted: mostly NONE, sometimes a single cheap mirror (2x draw),
+    // quad (4x) rare, kaleido removed — symmetry was tanking the framerate
+    // across every effect.
+    const r = Math.random();
+    fxSym = r < 0.55 ? 0 : r < 0.80 ? 1 : r < 0.93 ? 2 : 3;
+    fxFlip = Math.random() < 0.25;
+    fxTime = 0.92 + Math.random() * 0.22;     // ~1x: gentle vary, no crawl/runaway
   }
   function drawActive(env) {
     const isDemo = demoSet.has(active);
@@ -160,7 +170,8 @@
       window.addEventListener('resize', () => { eng.resize(); if (active && active.reset) active.reset(eng); });
       active = pool[0];
       if (active.reset) active.reset(eng);
-      rerollFX();
+      rerollFX(); announceEffect();
+      announceEffect();
     },
     onSection(section) {
       prevPal = { bg: curPal.bg.slice(), fg: curPal.fg.slice(), accent: curPal.accent.map((x) => x.slice()) };
@@ -183,7 +194,8 @@
       }
       active = nextWorld(section);
       if (active.reset) active.reset(eng, section);
-      rerollFX();
+      rerollFX(); announceEffect();
+      announceEffect();
       sinceCut = 0;
     },
     setScroll(text) {
@@ -223,7 +235,8 @@
       if (active !== window.Worlds.Glyph && sinceCut > 46) {
         active = pool[poolIdx++ % pool.length];
         if (active.reset) active.reset(eng);
-        rerollFX();
+        rerollFX(); announceEffect();
+        announceEffect();
         sinceCut = 0;
       }
       // camera SWIMS with the music (energy/bass/drums/pitch), not just beat

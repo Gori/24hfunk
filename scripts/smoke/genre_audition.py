@@ -35,6 +35,22 @@ GENRES = [
         "accent": ["#ff6a2d", "#ffcf3f", "#3dd6c8"]}),
     ("minneapolis_funk", 114, "A minor", 0.65, {"bg": "#16061a", "fg": "#ffd6f5",
         "accent": ["#ff3df0", "#5af0ff", "#ffe14d"]}),
+    ("minimal_techno", 127, "C minor", 0.42, {"bg": "#05080a", "fg": "#cdd6da",
+        "accent": ["#5fb0c0", "#7a8a90", "#d0e0e0"]}),
+    ("detroit_techno", 128, "F minor", 0.6, {"bg": "#0a0814", "fg": "#dfe0ff",
+        "accent": ["#6c7bff", "#36d6c8", "#ffb35a"]}),
+    ("dub", 76, "A minor", 0.4, {"bg": "#04100a", "fg": "#cfe8d6",
+        "accent": ["#2ad67a", "#ffcf3f", "#ff6a4d"]}),
+    ("steppers_dub", 80, "D minor", 0.5, {"bg": "#06120c", "fg": "#d6f0dc",
+        "accent": ["#3ad68a", "#ffd23f", "#5ad1ff"]}),
+    ("dub_techno", 122, "C minor", 0.42, {"bg": "#06100f", "fg": "#cfe0e0",
+        "accent": ["#3ab0b8", "#7a8a90", "#d0e8e8"]}),
+    ("roots_reggae", 78, "G minor", 0.5, {"bg": "#0a1006", "fg": "#e6f0c8",
+        "accent": ["#ffd23f", "#3ad65a", "#ff5a4d"]}),
+    ("uk_garage", 131, "E minor", 0.62, {"bg": "#100a16", "fg": "#e8d6ff",
+        "accent": ["#b06cff", "#36e6c8", "#ffd23f"]}),
+    ("dub_garage", 130, "F minor", 0.5, {"bg": "#0a0a16", "fg": "#d6dcf0",
+        "accent": ["#6c7bff", "#3ad6b0", "#ffb35a"]}),
 ]
 
 

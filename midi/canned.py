@@ -39,7 +39,9 @@ CHORD = {
 
 GENRES = ("electro_funk", "idm", "synthwave", "neon_dub", "broken_house",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
-          "minneapolis_funk")
+          "minneapolis_funk", "minimal_techno", "detroit_techno",
+          "dub", "steppers_dub", "dub_techno", "roots_reggae",
+          "dub_garage", "uk_garage")
 
 # scale (for melody/passing) + chord progression as (scale_degree, quality)
 # pairs + swing(0..0.5 of 16th) + snare_drag_s + kick_push_s + hat_jit_s +
@@ -78,6 +80,33 @@ PROFILE = {
     "minneapolis_funk": (DORIAN,
         [(0, "min9"), (3, "maj9"), (4, "dom9"), (0, "min9")],
         0.30, 0.014, -0.004, 0.005, 0.0, 70),
+    # minimal techno: hypnotic, mechanical, one-chord vamp, sparse
+    "minimal_techno": (NAT_MINOR,
+        [(0, "min9"), (0, "min9"), (0, "min7"), (0, "min9")],
+        0.03, 0.003, -0.003, 0.004, 0.0, 32),
+    # detroit techno: soulful/futurist, lush stab chords, driving
+    "detroit_techno": (DORIAN,
+        [(0, "min9"), (3, "maj9"), (5, "min7"), (4, "dom9")],
+        0.06, 0.008, -0.004, 0.005, 0.0, 64),
+    # Jamaican / UK lineage — bass + space heavy
+    "dub": (NAT_MINOR,
+        [(0, "min7"), (0, "min7"), (3, "maj7"), (0, "min7")],
+        0.30, 0.030, 0.010, 0.006, 0.0, 30),
+    "steppers_dub": (NAT_MINOR,
+        [(0, "min7"), (0, "min7"), (5, "min7"), (0, "min7")],
+        0.20, 0.024, 0.008, 0.006, 0.0, 34),
+    "dub_techno": (NAT_MINOR,
+        [(0, "min9"), (0, "min9"), (0, "min7"), (0, "min9")],
+        0.05, 0.006, -0.003, 0.004, 0.0, 30),
+    "roots_reggae": (NAT_MINOR,
+        [(0, "min7"), (3, "maj7"), (4, "min7"), (0, "min7")],
+        0.34, 0.028, 0.010, 0.007, 0.0, 36),
+    "uk_garage": (DORIAN,
+        [(0, "min9"), (3, "maj9"), (4, "dom9"), (0, "min9")],
+        0.46, 0.010, 0.0, 0.005, 0.0, 60),
+    "dub_garage": (DORIAN,
+        [(0, "min9"), (0, "min9"), (3, "maj7"), (4, "dom9")],
+        0.46, 0.012, 0.004, 0.005, 0.0, 56),
 }
 
 SYNTH_PARAMS = {
@@ -92,6 +121,64 @@ SYNTH_PARAMS = {
     "jazz": {"kick": {"drive": 1.2, "click": 0.2, "decay": 0.3}, "snare": {"snap": 0.4, "tone": 0.5, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9000, "decay": 0.05}, "ohat": {"metal": 0.5, "cutoff": 8500, "decay": 0.4}, "clap": {"decay": 0.18, "tone": 0.9}, "rim": {"decay": 0.05}, "perc": {"decay": 0.12}, "bass": {"drive": 0.8, "cutoff": 520, "res": 0.1, "fenv": 0.25, "sub": 0.8, "glide": 0.02}, "lead": {"detune": 0.04, "wave": 0.18, "cutoff": 4200, "drive": 0.7, "decay": 0.35}, "fx": {"reverb": 0.42, "delay": 0.18, "delayTime": 0.42, "width": 0.7}},
     "funk": {"kick": {"drive": 2.6, "click": 0.55, "decay": 0.26}, "snare": {"snap": 0.88, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.62, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.62, "cutoff": 9500, "decay": 0.22}, "clap": {"decay": 0.17, "tone": 1.05}, "rim": {"decay": 0.038}, "perc": {"decay": 0.1}, "bass": {"drive": 1.6, "cutoff": 900, "res": 0.28, "fenv": 0.7, "sub": 0.8, "glide": 0.01}, "lead": {"detune": 0.08, "wave": 0.4, "cutoff": 5600, "drive": 1.5, "decay": 0.16}, "fx": {"reverb": 0.18, "delay": 0.16, "delayTime": 0.33, "width": 0.7}},
     "minneapolis_funk": {"kick": {"drive": 2.0, "click": 0.45, "decay": 0.3}, "snare": {"snap": 0.85, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9800, "decay": 0.035}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.26}, "clap": {"decay": 0.22, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.11}, "bass": {"drive": 1.4, "cutoff": 1000, "res": 0.3, "fenv": 0.6, "sub": 0.55, "glide": 0.0}, "lead": {"detune": 0.14, "wave": 0.45, "cutoff": 6200, "drive": 1.3, "decay": 0.18}, "fx": {"reverb": 0.28, "delay": 0.2, "delayTime": 0.1875, "width": 0.75}},
+    "minimal_techno": {"kick": {"drive": 1.8, "click": 0.3, "decay": 0.34}, "snare": {"snap": 0.5, "tone": 0.4, "crush": 0.0}, "hat": {"metal": 0.55, "cutoff": 11000, "decay": 0.022}, "ohat": {"metal": 0.55, "cutoff": 9500, "decay": 0.16}, "clap": {"decay": 0.16, "tone": 1.1}, "rim": {"decay": 0.03}, "perc": {"decay": 0.08}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.12, "fenv": 0.3, "sub": 0.92, "glide": 0.02}, "lead": {"detune": 0.05, "wave": 0.5, "cutoff": 5200, "drive": 1.1, "decay": 0.12}, "fx": {"reverb": 0.34, "delay": 0.34, "delayTime": 0.5, "width": 0.7}},
+    "detroit_techno": {"kick": {"drive": 2.2, "click": 0.4, "decay": 0.32}, "snare": {"snap": 0.6, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.48, "cutoff": 9600, "decay": 0.035}, "ohat": {"metal": 0.48, "cutoff": 8800, "decay": 0.3}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.045}, "perc": {"decay": 0.12}, "bass": {"drive": 1.3, "cutoff": 720, "res": 0.2, "fenv": 0.45, "sub": 0.8, "glide": 0.0}, "lead": {"detune": 0.16, "wave": 0.3, "cutoff": 5800, "drive": 1.2, "decay": 0.3}, "fx": {"reverb": 0.46, "delay": 0.32, "delayTime": 0.375, "width": 0.85}},
+    "dub": {"kick": {"drive": 1.6, "click": 0.2, "decay": 0.5}, "snare": {"snap": 0.5, "tone": 0.55, "crush": 0.1}, "hat": {"metal": 0.35, "cutoff": 7200, "decay": 0.05}, "ohat": {"metal": 0.35, "cutoff": 6800, "decay": 0.4}, "clap": {"decay": 0.3, "tone": 0.8}, "rim": {"decay": 0.07}, "perc": {"decay": 0.18}, "bass": {"drive": 1.1, "cutoff": 320, "res": 0.1, "fenv": 0.25, "sub": 0.98, "glide": 0.06}, "lead": {"detune": 0.1, "wave": 0.2, "cutoff": 3600, "drive": 0.9, "decay": 0.5}, "fx": {"reverb": 0.6, "delay": 0.5, "delayTime": 0.5, "width": 0.9}},
+    "steppers_dub": {"kick": {"drive": 1.8, "click": 0.25, "decay": 0.46}, "snare": {"snap": 0.55, "tone": 0.5, "crush": 0.08}, "hat": {"metal": 0.38, "cutoff": 7600, "decay": 0.045}, "ohat": {"metal": 0.38, "cutoff": 7000, "decay": 0.38}, "clap": {"decay": 0.28, "tone": 0.85}, "rim": {"decay": 0.06}, "perc": {"decay": 0.16}, "bass": {"drive": 1.2, "cutoff": 340, "res": 0.12, "fenv": 0.3, "sub": 0.97, "glide": 0.04}, "lead": {"detune": 0.1, "wave": 0.25, "cutoff": 3800, "drive": 1.0, "decay": 0.45}, "fx": {"reverb": 0.55, "delay": 0.46, "delayTime": 0.5, "width": 0.88}},
+    "dub_techno": {"kick": {"drive": 1.8, "click": 0.28, "decay": 0.36}, "snare": {"snap": 0.45, "tone": 0.45, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9000, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 8200, "decay": 0.28}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.0, "cutoff": 380, "res": 0.1, "fenv": 0.25, "sub": 0.95, "glide": 0.03}, "lead": {"detune": 0.12, "wave": 0.35, "cutoff": 4200, "drive": 1.0, "decay": 0.4}, "fx": {"reverb": 0.6, "delay": 0.45, "delayTime": 0.5, "width": 0.85}},
+    "roots_reggae": {"kick": {"drive": 1.5, "click": 0.22, "decay": 0.42}, "snare": {"snap": 0.5, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.34, "cutoff": 7000, "decay": 0.05}, "ohat": {"metal": 0.34, "cutoff": 6600, "decay": 0.34}, "clap": {"decay": 0.24, "tone": 0.85}, "rim": {"decay": 0.07}, "perc": {"decay": 0.16}, "bass": {"drive": 1.0, "cutoff": 380, "res": 0.1, "fenv": 0.3, "sub": 0.95, "glide": 0.05}, "lead": {"detune": 0.08, "wave": 0.2, "cutoff": 3800, "drive": 0.85, "decay": 0.4}, "fx": {"reverb": 0.4, "delay": 0.28, "delayTime": 0.42, "width": 0.7}},
+    "uk_garage": {"kick": {"drive": 2.2, "click": 0.42, "decay": 0.28}, "snare": {"snap": 0.7, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.5, "cutoff": 10000, "decay": 0.035}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.26}, "clap": {"decay": 0.2, "tone": 1.05}, "rim": {"decay": 0.04}, "perc": {"decay": 0.11}, "bass": {"drive": 1.4, "cutoff": 760, "res": 0.24, "fenv": 0.6, "sub": 0.78, "glide": 0.02}, "lead": {"detune": 0.14, "wave": 0.35, "cutoff": 5800, "drive": 1.3, "decay": 0.2}, "fx": {"reverb": 0.32, "delay": 0.24, "delayTime": 0.353, "width": 0.75}},
+    "dub_garage": {"kick": {"drive": 2.0, "click": 0.38, "decay": 0.3}, "snare": {"snap": 0.65, "tone": 0.5, "crush": 0.06}, "hat": {"metal": 0.46, "cutoff": 9400, "decay": 0.035}, "ohat": {"metal": 0.46, "cutoff": 8600, "decay": 0.3}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.12}, "bass": {"drive": 1.3, "cutoff": 560, "res": 0.18, "fenv": 0.5, "sub": 0.88, "glide": 0.03}, "lead": {"detune": 0.12, "wave": 0.3, "cutoff": 5000, "drive": 1.1, "decay": 0.28}, "fx": {"reverb": 0.5, "delay": 0.42, "delayTime": 0.5, "width": 0.85}},
+}
+
+
+# per-genre per-track FX signatures (override the derived defaults)
+_FX_SIG = {
+    "neon_dub": {"fxMel": {"reverb": 0.6, "delay": 0.62, "delayTime": 0.5},
+                 "fxDrums": {"delay": 0.3, "delayTime": 0.5}},
+    "minimal_techno": {"fxMel": {"delay": 0.55, "delayTime": 0.5, "reverb": 0.4},
+                       "fxDrums": {"reverb": 0.06, "delay": 0.18, "delayTime": 0.375}},
+    "detroit_techno": {"fxMel": {"reverb": 0.55, "delay": 0.34, "delayTime": 0.375},
+                       "fxBass": {"reverb": 0.05}},
+    "jazz": {"fxMel": {"reverb": 0.5, "delay": 0.12}, "fxBass": {"reverb": 0.03}},
+    "idm": {"fxMel": {"delay": 0.34, "delayTime": 0.18}},
+    "lofi": {"fxMel": {"reverb": 0.5, "delay": 0.3}, "fxDrums": {"reverb": 0.18}},
+    "funk": {"fxMel": {"delay": 0.16}, "fxDrums": {"reverb": 0.05}},
+    "dub": {"fxMel": {"reverb": 0.7, "delay": 0.68, "delayTime": 0.5},
+            "fxDrums": {"delay": 0.45, "delayTime": 0.5, "reverb": 0.35},
+            "fxBass": {"reverb": 0.1}},
+    "steppers_dub": {"fxMel": {"reverb": 0.62, "delay": 0.6, "delayTime": 0.5},
+                     "fxDrums": {"delay": 0.4, "delayTime": 0.375, "reverb": 0.3}},
+    "dub_techno": {"fxMel": {"reverb": 0.7, "delay": 0.6, "delayTime": 0.5},
+                   "fxDrums": {"reverb": 0.2, "delay": 0.25, "delayTime": 0.5}},
+    "roots_reggae": {"fxMel": {"reverb": 0.42, "delay": 0.3, "delayTime": 0.42},
+                     "fxDrums": {"reverb": 0.18, "delay": 0.2}},
+    "dub_garage": {"fxMel": {"reverb": 0.5, "delay": 0.5, "delayTime": 0.5},
+                   "fxDrums": {"delay": 0.28, "delayTime": 0.375}},
+    "uk_garage": {"fxMel": {"reverb": 0.3, "delay": 0.22}},
+}
+
+# per-genre instrument variants (role -> SynthDef). Omitted roles = default.
+_GENRE_INSTR = {
+    "electro_funk":     {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "lead"},
+    "idm":              {"bass": "bassReese",  "kick": "kickHard", "snare": "snare909", "lead": "leadFM"},
+    "synthwave":        {"bass": "bass",       "kick": "kick",     "snare": "snare909", "lead": "lead"},
+    "neon_dub":         {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadFM"},
+    "broken_house":     {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadPulse"},
+    "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadFM"},
+    "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
+    "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
+    "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadFM"},
+    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "lead"},
+    "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadPulse"},
+    "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadPulse"},
+    "detroit_techno":   {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadFM"},
+    "dub":              {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadFM"},
+    "steppers_dub":     {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadFM"},
+    "dub_techno":       {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadFM"},
+    "roots_reggae":     {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadFM"},
+    "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadPulse"},
+    "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadFM"},
 }
 
 
@@ -143,6 +230,32 @@ class CannedSource:
 
     def synth_params(self) -> dict:
         return SYNTH_PARAMS.get(self.genre, SYNTH_PARAMS["funk"])
+
+    def instrument_map(self) -> dict:
+        # per-genre instrument variants (roles omitted use the default def)
+        return _GENRE_INSTR.get(self.genre, {})
+
+    def fx_params(self) -> dict:
+        """Per-track (drums / bass / lead+keys) FX, derived from the genre's
+        base fx with role character + a few per-genre signatures. Drums tight,
+        bass driest, melodic wettest — and e.g. dub/techno get huge lead delay.
+        """
+        base = SYNTH_PARAMS.get(self.genre, SYNTH_PARAMS["funk"]).get(
+            "fx", {"reverb": 0.3, "delay": 0.2, "delayTime": 0.375, "width": 0.6})
+        b = lambda k, d=0.0: float(base.get(k, d))
+        out = {
+            "fxDrums": {"reverb": b("reverb") * 0.30, "delay": b("delay") * 0.22,
+                        "delayTime": b("delayTime") * 0.5, "width": b("width") * 0.8},
+            "fxBass": {"reverb": b("reverb") * 0.12, "delay": b("delay") * 0.08,
+                       "delayTime": b("delayTime"), "width": b("width") * 0.5},
+            "fxMel": {"reverb": b("reverb") * 1.05, "delay": b("delay") * 1.1,
+                      "delayTime": b("delayTime"), "width": b("width")},
+        }
+        ov = _FX_SIG.get(self.genre)
+        if ov:
+            for bus, d in ov.items():
+                out.setdefault(bus, {}).update(d)
+        return out
 
     # ---- harmony ----
     def _scale(self):
@@ -383,6 +496,205 @@ class CannedSource:
             self._comp(D, rnd, beat, ct, [2, 6, 10, 14])     # stabby synth chords
             if rnd.random() < 0.5:
                 self._motif(D, rnd, beat, ct)
+
+    def _g_minimal_techno(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # hypnotic + sparse: steady 4-on-floor, off-beat hats, almost no melody
+        if self.on["kick"]:
+            for s in (0, 4, 8, 12):
+                D(s, 0.22, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["hat"]:
+            for s in (2, 6, 10, 14):                          # off-beat ticks
+                D(s, 0.035, HAT, self._main(rnd) * 0.7, CH_DRUMS, "hat")
+            if rnd.random() < 0.4:
+                D(rnd.choice([6, 14]), 0.12, OHAT, 0.4, CH_DRUMS, "hat")
+            if rnd.random() < 0.3 + 0.3 * e:                  # rare ghost 16th
+                D(rnd.choice([3, 7, 11, 15]), 0.03, HAT, self._ghost(rnd), CH_DRUMS, "hat")
+        if self.on["snare"] and rnd.random() < 0.35:           # sparse rim/clap
+            D(rnd.choice([4, 12]), 0.05, RIM, self._main(rnd) * 0.7, CH_DRUMS)
+        if self.on["bass"]:                                    # deep, very spaced
+            D(0, beat * 0.4, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (6, 10, 14):
+                if rnd.random() < 0.3 + 0.35 * e:
+                    D(s, beat * 0.35, cr if rnd.random() < 0.7 else cr + 12,
+                      self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            if rnd.random() < 0.45:                            # faint pad only
+                self._pad(D, rnd, beat, ct)
+            if rnd.random() < 0.18 + 0.2 * e:                  # very rare blip
+                D(rnd.choice([6, 11]), beat * 0.16,
+                  ct[rnd.choice([0, 1, len(ct) - 1])] + 12, 0.4, CH_LEAD)
+
+    def _g_detroit_techno(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # soulful/futurist: driving 4/4, lush stab chords + pad, rolling bass
+        if self.on["kick"]:
+            for s in (0, 4, 8, 12):
+                D(s, 0.22, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.18, CLAP, 0.7, CH_DRUMS, "snare", True)
+            self._ghost_sn(D, rnd, e * 0.5)
+        if self.on["hat"]:
+            for s in range(16):
+                if s % 2 == 1:
+                    D(s, 0.04, HAT, self._main(rnd) if s % 4 == 1 else self._ghost(rnd) + 0.1, CH_DRUMS, "hat")
+            for s in (6, 14):
+                D(s, 0.18, OHAT, 0.5, CH_DRUMS, "hat")
+        if self.on["bass"]:                                    # rolling octave bass
+            root = cr
+            for i in range(8):
+                if i % 2 == 0 or rnd.random() < 0.5 + 0.3 * e:
+                    D(i * 2, beat * 0.4, root + (12 if i % 4 == 3 else 0),
+                      self._acc(rnd) if i == 0 else self._main(rnd), CH_BASS,
+                      "kick", structural=(i == 0))
+        if self.on["lead"]:                                    # the Detroit stabs
+            self._comp(D, rnd, beat, ct, [3, 6, 10, 14], oct_shift=0)
+            self._pad(D, rnd, beat, ct)
+            if rnd.random() < 0.4:
+                self._motif(D, rnd, beat, ct)
+
+    def _skank(self, D, rnd, beat, ct, steps, prob=0.7):
+        # off-beat reggae/dub organ chord skank on the KEYS voice
+        for s in steps:
+            if rnd.random() < prob:
+                for p in self._voicelead(ct[:3], 60):
+                    D(s, beat * 0.18, p, 0.34 + rnd.uniform(-0.04, 0.05), CH_KEYS)
+
+    def _g_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # one-drop: the weight is on beat 3 (step 8); huge space + dub delay
+        if self.on["kick"]:
+            D(8, 0.3, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.3:
+                D(0, 0.26, KICK, self._main(rnd) * 0.7, CH_DRUMS, "kick")
+        if self.on["snare"]:
+            D(8, 0.16, RIM, self._acc(rnd), CH_DRUMS, "snare", True)  # cross-stick
+            if rnd.random() < 0.3:
+                D(rnd.choice([11, 14]), 0.05, RIM, self._ghost(rnd), CH_DRUMS)
+        if self.on["hat"]:
+            for s in (2, 6, 10, 14):
+                if rnd.random() < 0.6:
+                    D(s, 0.05, HAT, self._main(rnd) * 0.6, CH_DRUMS, "hat")
+            if rnd.random() < 0.5:
+                D(rnd.choice([6, 14]), 0.22, OHAT, 0.4, CH_DRUMS, "hat")
+        if self.on["bass"]:                                       # deep, melodic, vast
+            D(0, beat * 1.4, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.5 + 0.3 * e:
+                D(10, beat * 0.7, cr + rnd.choice([0, 3, 7, -5]),
+                  self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.5)
+            if rnd.random() < 0.4:
+                self._pad(D, rnd, beat, ct)
+
+    def _g_steppers_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # "steppers": four-to-the-floor militant kick, still deeply dub
+        if self.on["kick"]:
+            for s in (0, 4, 8, 12):
+                D(s, 0.28, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            D(8, 0.16, RIM, self._acc(rnd), CH_DRUMS, "snare", True)
+            if rnd.random() < 0.4:
+                D(12, 0.18, SNARE, self._main(rnd), CH_DRUMS, "snare")
+        if self.on["hat"]:
+            for s in (2, 6, 10, 14):
+                D(s, 0.05, HAT, self._main(rnd) * 0.6, CH_DRUMS, "hat")
+            if rnd.random() < 0.5:
+                D(14, 0.22, OHAT, 0.42, CH_DRUMS, "hat")
+        if self.on["bass"]:
+            D(0, beat * 1.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.5 + 0.3 * e:
+                D(11, beat * 0.6, cr + rnd.choice([0, 7, 12]), self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.55)
+            if rnd.random() < 0.4:
+                self._pad(D, rnd, beat, ct)
+
+    def _g_dub_techno(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # Basic-Channel hypnosis: tight 4/4, vast delayed chord, deep sub
+        if self.on["kick"]:
+            for s in (0, 4, 8, 12):
+                D(s, 0.22, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["snare"] and rnd.random() < 0.3:
+            D(rnd.choice([4, 12]), 0.05, RIM, self._main(rnd) * 0.6, CH_DRUMS)
+        if self.on["hat"]:
+            for s in (2, 6, 10, 14):
+                D(s, 0.035, HAT, self._main(rnd) * 0.55, CH_DRUMS, "hat")
+        if self.on["bass"]:
+            D(0, beat * 1.6, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.35 + 0.3 * e:
+                D(10, beat * 0.6, cr, self._main(rnd) * 0.8, CH_BASS)
+        if self.on["lead"]:                                       # the dub chord
+            for s in ([6] if rnd.random() < 0.6 else [10]):
+                for p in self._voicelead(ct[:4], 60):
+                    D(s, beat * 0.4, p, 0.3 + rnd.uniform(-0.03, 0.05), CH_KEYS)
+            if rnd.random() < 0.5:
+                self._pad(D, rnd, beat, ct)
+
+    def _g_roots_reggae(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # classic one-drop + bubbling skank + prominent melodic bass
+        if self.on["kick"]:
+            D(8, 0.26, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            D(8, 0.2, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+        if self.on["hat"]:
+            for s in (2, 6, 10, 14):
+                D(s, 0.05, HAT, self._main(rnd) * 0.6, CH_DRUMS, "hat")
+        if self.on["bass"]:                                       # reggae bass sings
+            D(0, beat * 0.7, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (4, 8, 11):
+                if rnd.random() < 0.55 + 0.3 * e:
+                    D(s, beat * 0.55, cr + rnd.choice([0, 3, 5, 7, -5]),
+                      self._main(rnd), CH_BASS)
+        if self.on["lead"]:                                       # bubble organ
+            self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.8)
+
+    def _g_uk_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # 2-step: syncopated kick, snare on 2 & 4, shuffled hats, organ stabs
+        if self.on["kick"]:
+            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            for s in (6, 10, 11):
+                if rnd.random() < 0.4 + 0.3 * e:
+                    D(s, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+                if rnd.random() < 0.5:
+                    D(s, 0.18, CLAP, 0.65, CH_DRUMS, "snare")
+            self._ghost_sn(D, rnd, e * 0.6)
+        if self.on["hat"]:
+            self._hats(D, rnd, e, (2, 6, 10, 14))
+        if self.on["bass"]:                                       # syncopated garage sub
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 14, 15])
+        if self.on["lead"]:
+            self._comp(D, rnd, beat, ct, [3, 6, 10, 14])
+            if rnd.random() < 0.4:
+                self._motif(D, rnd, beat, ct)
+
+    def _g_dub_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # 2-step skeleton, sparser + dubwise (huge delay via _FX_SIG)
+        if self.on["kick"]:
+            D(0, 0.22, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.5 + 0.3 * e:
+                D(10, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            if rnd.random() < 0.4:
+                D(rnd.choice([7, 14]), 0.05, RIM, self._ghost(rnd), CH_DRUMS)
+        if self.on["hat"]:
+            for s in (2, 6, 10, 14):
+                D(s, 0.045, HAT, self._main(rnd) * 0.6, CH_DRUMS, "hat")
+            if rnd.random() < 0.5:
+                D(6, 0.22, OHAT, 0.42, CH_DRUMS, "hat")
+        if self.on["bass"]:
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e * 0.8, [3, 6, 10, 14])
+        if self.on["lead"]:
+            self._skank(D, rnd, beat, ct, [6, 14], 0.6)
+            if rnd.random() < 0.4:
+                self._pad(D, rnd, beat, ct)
 
     def _g_electro_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:

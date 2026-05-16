@@ -8,11 +8,24 @@
   let connected = false;
   let stats = { notes: 0, beats: 0, lastBeat: null, section: '—' };
 
+  const musicEl = document.getElementById('hud-music');
+
   function setStatus() {
     document.body.classList.toggle('live', connected);
     statusEl.textContent =
       `${connected ? 'live' : 'offline'}  ·  section ${stats.section}  ·  ` +
       `notes ${stats.notes}  ·  beat ${stats.lastBeat ?? '—'}`;
+  }
+
+  // Big "what music is playing" HUD line, from the live SectionState.
+  function setNowPlaying(section) {
+    if (!musicEl || !section) return;
+    const up = (s) => String(s || '').replace(/_/g, ' ').trim().toUpperCase();
+    const parts = [up(section.genre)];
+    if (section.mood) parts.push(up(section.mood));
+    if (section.bpm) parts.push(`${section.bpm | 0} BPM`);
+    if (section.key) parts.push(up(section.key));
+    musicEl.textContent = 'MUSIC · ' + parts.filter(Boolean).join('  ·  ');
   }
 
   function connect() {
@@ -26,10 +39,15 @@
       switch (m.type) {
         case 'snapshot':
           if (m.scroll) window.Renderer.setScroll(m.scroll);
-          if (m.section) { window.Renderer.onSection(m.section); stats.section = m.section.id || 'set'; }
+          if (m.section) {
+            window.Renderer.onSection(m.section);
+            setNowPlaying(m.section);
+            stats.section = m.section.id || 'set';
+          }
           break;
         case 'section':
           window.Renderer.onSection(m.section);
+          setNowPlaying(m.section);
           stats.section = (m.section && m.section.id) || 'set';
           break;
         case 'scroll':

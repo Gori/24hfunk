@@ -260,7 +260,7 @@
     reset(eng, s) {
       const r = Math.random;
       this.P = {
-        spd: 0.55 + r() * 1.6,        // time speed multiplier
+        spd: 0.85 + r() * 0.45,       // time speed (tight: ~normal, gentle vary)
         amp: 0.65 + r() * 0.9,        // spatial amplitude
         dens: 0.5 + r() * 0.95,       // density / threshold
         dir: r() < 0.5 ? -1 : 1,      // rotation / scroll direction

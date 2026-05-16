@@ -12,12 +12,15 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~chanMap[1] = \lead;
 ~chanMap[2] = \keys;                          // comp/pad — self-terminating
 ~chanMap[9] = \drums;                        // pitch-routed to kick/snare/hat
-~gated     = Set[\bass, \lead];              // synths that hold a gate (need noteoff)
+~gated     = Set[\bass, \lead];              // ROLES that hold a gate (need noteoff)
+// role -> actual SynthDef (genre picks variants via /synth/map). Default = self.
+~roleMap = IdentityDictionary.new;
+[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \bass, \lead, \keys].do { |r|
+	~roleMap[r] = r };
 
 ~params = IdentityDictionary.new;            // synth -> IdentityDictionary(param->value)
 [\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \bass, \lead, \keys].do { |k|
 	~params[k] = IdentityDictionary.new };
-~fxParams = IdentityDictionary[\reverb -> 0.35, \delay -> 0.22, \delayTime -> 0.375];
 
 ~active = IdentityDictionary.new;            // "chan_pitch" -> Synth (gated only)
 ~mono   = IdentityDictionary.new;            // persistent mono voices (glide), by synth
@@ -36,10 +39,25 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	{ \hat };
 };
 
-// --- audio graph: instruments -> ~fxBus -> \fx -> out 0 ---
-~fxBus   = Bus.audio(Server.default, 2);
-~instGrp = Group.new(Server.default);
-~fxSynth = Synth.tail(Server.default, \fx, [\in, ~fxBus.index, \out, 0]);
+// --- audio graph: instruments -> per-track FX bus -> \fx -> out 0 ---
+// three independent FX chains so each track can have its own genre-dependent
+// space (e.g. dry tight drums, huge delay on the leads).
+~instGrp  = Group.new(Server.default);
+~fxBuses  = IdentityDictionary.new;
+~fxSynths = IdentityDictionary.new;
+[\drums, \bass, \mel].do { |g|
+	~fxBuses[g] = Bus.audio(Server.default, 2);
+	~fxSynths[g] = Synth.tail(Server.default, \fx,
+		[\in, ~fxBuses[g].index, \out, 0]);
+};
+// which FX bus each role feeds
+~busFor = IdentityDictionary.new;
+[\kick, \snare, \hat, \ohat, \clap, \rim, \perc].do { |r| ~busFor[r] = \drums };
+~busFor[\bass] = \bass;
+~busFor[\lead] = \mel;
+~busFor[\keys] = \mel;
+~fxParams = IdentityDictionary.new;
+[\drums, \bass, \mel].do { |g| ~fxParams[g] = IdentityDictionary.new };
 
 // --- tempo / beat clock ---
 ~bpm   = 78;
@@ -56,9 +74,10 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 }).play(~clock);
 
 // --- helpers ---
-~argsFor = { |synth, freq, vel|
-	var a = [\freq, freq, \amp, vel, \out, ~fxBus.index];
-	var p = ~params[synth];
+~argsFor = { |role, freq, vel|
+	var grp = ~busFor[role] ? \mel;              // role -> its FX bus
+	var a = [\freq, freq, \amp, vel, \out, ~fxBuses[grp].index];
+	var p = ~params[role];                       // params are keyed by ROLE
 	if(p.notNil) { p.keysValuesDo { |k, v| a = a ++ [k, v] } };
 	a;
 };
@@ -66,27 +85,28 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // --- /midi/noteon  ch pitch vel t_ms ---
 OSCdef(\noteon, { |msg|
 	var ch = msg[1].asInteger, pitch = msg[2].asInteger;
-	var vel = msg[3].asFloat, synth, freq, node, key;
-	synth = ~chanMap[ch];
-	if(synth.notNil) {
+	var vel = msg[3].asFloat, role, def, freq, node, key;
+	role = ~chanMap[ch];
+	if(role.notNil) {
 		freq = pitch.midicps;
-		if(synth == \drums) {
-			synth = ~drumFor.(pitch);
-			Synth(synth, ~argsFor.(synth, freq, vel), ~instGrp);
+		if(role == \drums) { role = ~drumFor.(pitch) };
+		def = ~roleMap[role] ? role;                 // genre-chosen variant
+		if(#[\kick, \snare, \hat, \ohat, \clap, \rim, \perc].includes(role)) {
+			Synth(def, ~argsFor.(role, freq, vel), ~instGrp);   // one-shot
 		} {
-			if(~monoFor[ch] == synth) {
+			if(~monoFor[ch] == role) {
 				// persistent MONO voice -> portamento between notes
-				node = ~mono[synth];
+				node = ~mono[role];
 				if(node.isNil) {
-					node = Synth(synth, ~argsFor.(synth, freq, vel)
+					node = Synth(def, ~argsFor.(role, freq, vel)
 						++ [\gate, 1, \t_trig, 1], ~instGrp);
-					~mono[synth] = node;
+					~mono[role] = node;
 				} {
 					node.set(\freq, freq, \amp, vel, \gate, 1, \t_trig, 1);
 				};
 			} {
-				node = Synth(synth, ~argsFor.(synth, freq, vel) ++ [\gate, 1], ~instGrp);
-				if(~gated.includes(synth)) {
+				node = Synth(def, ~argsFor.(role, freq, vel) ++ [\gate, 1], ~instGrp);
+				if(~gated.includes(role)) {
 					key = (ch.asString ++ "_" ++ pitch.asString).asSymbol;
 					~active[key] = node;
 				};
@@ -124,13 +144,33 @@ OSCdef(\param, { |msg|
 	var synth = msg[1].asString.asSymbol;
 	var param = msg[2].asString.asSymbol;
 	var value = msg[3].asFloat;
+	// fx targets: fxDrums / fxBass / fxMel  (also accept plain "fx" -> all)
+	var fxg = (synth == \fxDrums).if(\drums,
+		{ (synth == \fxBass).if(\bass,
+			{ (synth == \fxMel).if(\mel, { nil }) }) });
 	if(synth == \fx) {
-		~fxParams[param] = value;
-		~fxSynth.set(param, value);
+		[\drums, \bass, \mel].do { |g|
+			~fxParams[g][param] = value; ~fxSynths[g].set(param, value) };
 	} {
-		if(~params[synth].notNil) { ~params[synth][param] = value };
+		if(fxg.notNil) {
+			~fxParams[fxg][param] = value;
+			~fxSynths[fxg].set(param, value);
+		} {
+			if(~params[synth].notNil) { ~params[synth][param] = value };
+		};
 	};
 }, '/synth/param');
+
+// --- /synth/map  role synthDefName  : genre picks an instrument variant ---
+OSCdef(\synthmap, { |msg|
+	var role = msg[1].asString.asSymbol;
+	var def  = msg[2].asString.asSymbol;
+	if(~roleMap[role].notNil) {
+		~roleMap[role] = def;
+		// swap takes effect immediately for mono voices
+		if(~mono[role].notNil) { ~mono[role].free; ~mono.removeAt(role) };
+	};
+}, '/synth/map');
 
 ~releaseAll = {
 	~active.values.do { |n| n.set(\gate, 0) };

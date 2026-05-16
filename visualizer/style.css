@@ -11,3 +11,39 @@ html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
   white-space: pre;
 }
 body.live #status { color: rgba(120, 200, 140, 0.5); }
+
+/* Big always-on "now playing" HUD — what EFFECT and what MUSIC right now.
+   Centred top, heavy contrast plate so it stays readable over any effect. */
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, Monaco, monospace;
+  z-index: 20;
+  padding: 16px 24px 18px;
+  background: linear-gradient(rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.30) 78%, rgba(0, 0, 0, 0));
+}
+#hud-effect {
+  font-size: clamp(34px, 5.4vw, 68px);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ffffff;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.9);
+  text-shadow:
+    0 0 2px #000, 0 0 6px #000, 0 0 18px rgba(0, 0, 0, 0.95),
+    0 3px 0 #000, 0 0 26px rgba(120, 200, 255, 0.45);
+}
+#hud-music {
+  margin-top: 8px;
+  font-size: clamp(18px, 2.6vw, 34px);
+  font-weight: 700;
+  letter-spacing: 0.20em;
+  color: #ffe14d;
+  -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.85);
+  text-shadow:
+    0 0 2px #000, 0 0 6px #000, 0 0 16px rgba(0, 0, 0, 0.95),
+    0 2px 0 #000, 0 0 22px rgba(255, 200, 60, 0.4);
+}

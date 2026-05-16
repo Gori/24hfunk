@@ -1,61 +1,120 @@
-# str
+# str — 24h generative funk audiovisual stream
 
-Hermetic, fully-local pipeline that generates AI music + beat-synced monospace-glyph
-visuals. **Milestone 1: local preview** — runs on one Mac, plays to speakers, shows
-visuals in a browser at `http://localhost:8080`. No network, no APIs, no streaming.
+A **hermetic, fully-local** machine that improvises endless funk/jazz/electro/dub
+music *and* a matching ASCII demoscene visual, forever, with no network and no
+APIs. Everything runs on one Mac: a groove engine drives SuperCollider synths,
+local LLMs (Qwen via MLX) direct the sections and write the scroller, and a
+browser renders 89 music-reactive ASCII effects.
 
 ```
-midi/  (canned OR MIDI-LLM)  ──OSC 57120──▶  synth/ (SuperCollider) ──audio──▶ speakers
-      ▲ /midi/section (OSC 57121)                   │ /vis/* OSC 57130
-director/ (Qwen3-8B, mlx-lm) ─OSC 57120 + HTTP 8080─▶ bridge/ (Node WS :8080) ──WS──▶ visualizer/ (browser)
+ midi/  groove engine ──OSC 57120─▶ synth/  SuperCollider ──audio──▶ speakers
+   │  (19 genres, funk theory)        │  (per-track FX buses)
+   │                                  └─ /vis/* OSC 57130 ─┐
+ director/ Qwen ─ section state ─▶ bridge/ Node WS :8080 ◀─┘
+ scribe/  Qwen ─ scroll text  ─▶   │
+                                   └── WS ──▶ visualizer/  browser  (89 ASCII FX)
 ```
 
-- **Audio**: a MIDI source feeds SuperCollider's fixed SynthDef library
-  (kick/snare/hat/bass/lead + reverb/delay bus). Two sources:
-  - `canned` (**default**): deterministic generative lofi from the section's
-    tempo/key/density. Always works.
-  - `midillm` (opt-in): `slseanwu/MIDI-LLM_Llama-3.2-1B` (fp16/MPS, decoded via
-    the `anticipation` lib). Auto-falls-back to canned on any failure.
-- **Director**: local `mlx-community/Qwen3-8B-4bit` via `mlx-lm` picks a new
-  `SectionState` (mood/bpm/key/palette/glyphs/params/text) every 5–8 min.
-  Out-of-range values are clamped, never rejected.
-- **Visuals**: Canvas2D monospace glyph field; note-ons spawn impulses, beats
-  pulse brightness, palette slowly lerps, occasional centered text strings.
+## Screenshots
 
-## Install (Phase A)
+> The visuals run in your browser at `http://localhost:8080`. This agent can't
+> capture browser screenshots — drop your own into `docs/screenshots/` (capture
+> on macOS with **⌘⇧4**, or `screencapture -x docs/screenshots/raycaster.png`).
+
+| | |
+|---|---|
+| ![DOOM raycaster](docs/screenshots/raycaster.png) | ![Plasma + scroller + HUD](docs/screenshots/plasma.png) |
+| ![Voxel landscape](docs/screenshots/landscape.png) | ![Wireframe / tesseract](docs/screenshots/wireframe.png) |
+
+Each shot should show the big top **HUD** (`EFFECT · …` / `MUSIC · genre · mood
+· bpm · key`) and the sine-scroller riding across the bottom-mid.
+
+## What's going on
+
+### Music — a funk-first groove engine (`midi/canned.py`)
+- **19 genres**: electro_funk, idm, synthwave, neon_dub, broken_house, lofi,
+  electro, eighties_hiphop, jazz, funk, minneapolis_funk, minimal_techno,
+  detroit_techno, dub, steppers_dub, dub_techno, roots_reggae, uk_garage,
+  dub_garage.
+- **Research-backed funk**: space is articulation/syncopation/dynamics/
+  micro-timing — *not* note count. "The one" lock, ghost-note tiers, per-genre
+  swing, behind-the-beat pocket, 8-bar phrasing, and a per-section **energy
+  roll** (mostly sparse, occasionally dense).
+- **Real harmony**: per-genre chord progressions with proper qualities
+  (maj7/min9/dom7#9/…), secondary-dominant turnarounds, **voice-led** keys
+  comping + a soft pad, and a melodic motif on chord guide-tones.
+- **Expressive, gliding, digital synths** (SuperCollider, `synth/synthdefs/`):
+  19 SynthDefs incl. variants — bass is a **mono portamento** voice (real
+  funk slides), velocity→filter/grit, fade-in vibrato, a warm FM e-piano.
+- **Per-genre instruments**: every genre deliberately picks its kick / snare /
+  bass / lead variant (e.g. funk = bassFM + kickHard; electro = bassSquare +
+  kick808 + snare909 + leadPulse; dub = deep sub + kick808 + leadFM).
+- **Per-track, genre-dependent FX**: drums / bass / lead+keys run through 3
+  independent FX chains; dub gets huge delayed leads, jazz a room on the keys,
+  techno tight dry drums, etc.
+- **Director** (`director/director.py`, local Qwen3-8B via MLX): every 5–8 min
+  picks the next section (genre/bpm/key/density/palette/instrument params).
+  The fast genre **audition** (`scripts/smoke/genre_audition.py`) cycles all
+  19 every ~20s for evaluation.
+
+### Visuals — 89 ASCII effects (`visualizer/`)
+- A shared ASCII 3D engine (`a3d.js`): depth-buffered framebuffer, projection,
+  line raster, sprites, fog, fast colour-run flush.
+- **4 worlds** (`worlds.js`): auto-walking DOOM raycaster (corridor-seeking),
+  voxel landscape flythrough, 2D side-scroller, wireframe Battlezone.
+- **85 demoscene effects** (`demoscene.js`): plasma, kefrens, shadebobs, moiré,
+  Outrun road, mandelbrot/julia/burning-ship, fire, glenz, boing, tunnels,
+  metaballs, raymarch, boids, harmonograph, mandala, DLA crystal, smoke,
+  tesseract, radar, truchet, voronoi, life, turmites, … (Amiga/C64/Atari/PC).
+- **Per-appearance variety**: every effect re-randomises speed/phase/colour/
+  pattern + an occasional mirror/flip, so a recurring mode never looks the same.
+- **Moves with the whole music** (not just the beat): per-instrument energy,
+  note flashes and pitch drive every effect and the camera.
+- **Palette** fades to a new curated scheme on every section.
+- **LLM sine-scroller** (`director/scribe.py`): Qwen writes a long moody
+  Amiga-demoscene scroll tied to the current genre/mood; it sine-waves on top,
+  persisting across scene changes.
+- **HUD**: a big always-on top bar — `EFFECT · <name>` and
+  `MUSIC · <genre · mood · bpm · key>`.
+
+## Install (one-time)
 
 ```bash
-brew install --cask supercollider blackhole-16ch     # BlackHole unused until M2
+brew install --cask supercollider blackhole-16ch     # BlackHole = future M2
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
-pip install "mido==1.3.3" "git+https://github.com/jthickstun/anticipation.git"  # MIDI-LLM source only
-python -c "from huggingface_hub import snapshot_download as d; d('mlx-community/Qwen3-8B-4bit'); d('slseanwu/MIDI-LLM_Llama-3.2-1B')"
+pip install "mido==1.3.3" "git+https://github.com/jthickstun/anticipation.git"  # MIDI-LLM only
+python -c "from huggingface_hub import snapshot_download as d; d('mlx-community/Qwen3-8B-4bit')"
 npm install
 ```
 
-> SuperCollider installs to `/Applications/SuperCollider.app`; the CLI is
-> `/Applications/SuperCollider.app/Contents/MacOS/sclang` (override with `$SCLANG`).
-> BlackHole 16ch needs an interactive `sudo` — install it manually when you
-> reach Milestone 2; it is **not** used in Milestone 1.
+> SuperCollider CLI: `/Applications/SuperCollider.app/Contents/MacOS/sclang`
+> (override with `$SCLANG`). Apple Silicon required (MLX). BlackHole/RTMP are
+> Milestone 2 — not used yet.
 
 ## Run
 
 ```bash
-./scripts/start-all.sh        # SC → bridge → director → midi worker
-# open http://localhost:8080
-./scripts/stop-all.sh         # also sweeps any orphan scsynth
+./scripts/start-all.sh        # SuperCollider → bridge → director → midi → scribe
+open http://localhost:8080    # watch + listen
+./scripts/stop-all.sh         # stops everything, sweeps orphans
 ```
 
-Logs + pidfiles in `.run/`.
+Fast genre evaluation instead of the 5–8 min director:
+
+```bash
+.venv/bin/python scripts/smoke/genre_audition.py 20   # cycle all 19, ~20s each
+```
+
+Logs + pidfiles land in `.run/`.
 
 ## Env knobs
 
 | var | default | meaning |
 |-----|---------|---------|
-| `STR_MIDI_SOURCE` | `canned` | `canned` or `midillm` |
-| `STR_SECTION_SEC` | (LLM-chosen 300–480) | override section length, e.g. `45` for testing |
-| `STR_DIRECTOR_MODEL` | `mlx-community/Qwen3-8B-4bit` | director model id |
-| `STR_MIDILLM_MODEL` | `slseanwu/MIDI-LLM_Llama-3.2-1B` | midi model id |
+| `STR_MIDI_SOURCE` | `canned` | `canned` (groove engine) or `midillm` |
+| `STR_SECTION_SEC` | LLM-chosen | override section length, e.g. `45` |
+| `STR_DIRECTOR_MODEL` | `mlx-community/Qwen3-8B-4bit` | director + scribe model |
 | `BRIDGE_HTTP_PORT` | `8080` | bridge HTTP/WS |
 | `SC_OSC_PORT` | `57120` | SuperCollider router in |
 | `VIS_OSC_PORT` | `57130` | SC → bridge |
@@ -64,15 +123,40 @@ Logs + pidfiles in `.run/`.
 ## Smoke tests
 
 ```bash
-/Applications/SuperCollider.app/Contents/MacOS/sclang scripts/smoke/sc-selftest.scd   # 6 synthdefs
-/Applications/SuperCollider.app/Contents/MacOS/sclang scripts/smoke/sc-drone-test.scd # stuck-note safety
-node scripts/smoke/send-test-note.js                                                  # bridge WS fanout
-.venv/bin/python scripts/smoke/fire_osc.py seq 16 0.2                                  # OSC → SC
-.venv/bin/python scripts/smoke/fake-section.py cycle 4 8                               # publish path
+$SCLANG scripts/smoke/sc-compile.scd                 # all 19 SynthDefs build
+$SCLANG scripts/smoke/sc-drone-test.scd              # anti-stuck-note safety
+node scripts/smoke/send-test-note.js                 # bridge WS fanout
+.venv/bin/python scripts/smoke/fire_osc.py seq 16 .2 # OSC → SC
+.venv/bin/python scripts/smoke/fake-section.py cycle 4 8
 ```
 
-## Not in Milestone 1 (deferred)
+## Repo layout
 
-OBS Browser Source, BlackHole routing, YouTube RTMP push, AI-content disclosure
-flag, launchd watchdog / 24-7 reliability, recording. See the plan at
-`~/.claude/plans/we-re-going-to-create-starry-coral.md`.
+```
+midi/        groove engine + MIDI-LLM source + OSC out + worker
+synth/       SuperCollider boot/router + 19 SynthDefs
+director/    section director + scribe (scrolltext) + schema/prompts
+bridge/      Node HTTP+WS + OSC-in + state
+visualizer/  a3d engine + worlds + 85 demoscene effects + scroller + HUD
+scripts/     start-all / stop-all / smoke tests
+```
+
+## Status
+
+**Milestone 1 (local preview) — done.** The full creative pipeline runs
+locally end-to-end. Deferred:
+
+- **M2** — stream to YouTube: OBS/headless-Chromium capture + BlackHole audio
+  routing + ffmpeg RTMP push. (On a Linux host the MLX LLM must be swapped for
+  llama.cpp/vLLM — MLX is Apple-Silicon-only.)
+- **M3** — 24/7 reliability: launchd/watchdog, auto-restart, soak hardening.
+
+Lowest-friction deployment today: a spare/colocated Mac (runs as-is under
+launchd). A Linux cloud box ≈ ~1 day (LLM backend swap); 24/7 YouTube
+streaming is the bigger, deferred chunk.
+
+## Credits / licenses
+
+Qwen3 (Apache-2.0, via `mlx-community`), MIDI-LLM (`slseanwu`, Llama-3.2
+Community License — optional source), `anticipation` (jthickstun),
+SuperCollider (GPL). Generated with Claude Code.

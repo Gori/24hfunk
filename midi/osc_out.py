@@ -28,6 +28,10 @@ class ScSender:
             "/synth/param", [str(synth), str(name), float(value)]
         )
 
+    def select(self, role: str, synthdef: str) -> None:
+        """Pick a per-genre instrument variant for a role."""
+        self.client.send_message("/synth/map", [str(role), str(synthdef)])
+
     def tempo(self, bpm: float) -> None:
         self.client.send_message("/midi/tempo", [float(bpm)])
 

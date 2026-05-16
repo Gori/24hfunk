@@ -11,7 +11,9 @@ GLYPH_SETS = ("abstract_blocks", "ascii_punct", "mixed_unicode", "text_heavy")
 PACINGS = ("still", "slow_drift", "active", "fast")
 GENRES = ("electro_funk", "idm", "synthwave", "neon_dub", "broken_house",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
-          "minneapolis_funk")
+          "minneapolis_funk", "minimal_techno", "detroit_techno",
+          "dub", "steppers_dub", "dub_techno", "roots_reggae",
+          "dub_garage", "uk_garage")
 SCENES = ("raycaster", "glyphfield")
 
 
@@ -157,7 +159,9 @@ class SectionState(_Clamped):
     mood: str = "neutral"
     genre: Literal["electro_funk", "idm", "synthwave", "neon_dub", "broken_house",
                    "lofi", "electro", "eighties_hiphop", "jazz", "funk",
-                   "minneapolis_funk"] = "funk"
+                   "minneapolis_funk", "minimal_techno", "detroit_techno",
+                   "dub", "steppers_dub", "dub_techno", "roots_reggae",
+                   "dub_garage", "uk_garage"] = "funk"
     bpm: int = Field(96, ge=70, le=150)
     key: str = "C minor"
     density: float = Field(0.6, ge=0.0, le=1.0)

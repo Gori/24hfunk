@@ -79,6 +79,25 @@ class Worker:
                     self.sc.param(synth, name, float(value))
         except Exception as e:  # noqa: BLE001
             print(f"[worker] synth_params push failed: {e}")
+        # per-genre instrument variants — set chosen, reset the rest to default
+        roles = ("kick", "snare", "hat", "ohat", "clap", "rim", "perc",
+                 "bass", "lead", "keys")
+        getm = getattr(self.source, "instrument_map", None)
+        m = getm() if callable(getm) else {}
+        try:
+            for r in roles:
+                self.sc.select(r, m.get(r, r))
+        except Exception as e:  # noqa: BLE001
+            print(f"[worker] instrument map push failed: {e}")
+        # per-track genre-dependent FX (fxDrums / fxBass / fxMel)
+        getfx = getattr(self.source, "fx_params", None)
+        if callable(getfx):
+            try:
+                for bus, params in (getfx() or {}).items():
+                    for name, value in params.items():
+                        self.sc.param(bus, name, float(value))
+            except Exception as e:  # noqa: BLE001
+                print(f"[worker] fx params push failed: {e}")
 
     def _serve_ctrl(self):
         disp = Dispatcher()
