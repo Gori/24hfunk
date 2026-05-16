@@ -17,6 +17,6 @@ SynthDef(\keys, { |out=0, amp=0.4, freq=220, cutoff=2600, sus=0.9, drive=1.0, vi
 	var sig  = (body + tine * 0.3);
 	sig = LPF.ar(sig, (cutoff * (0.45 + v * 1.05)).clip(300, 9000));
 	// chords/comp/pad sit louder in the mix vs the (now trimmed) lead
-	sig = (sig * (1 + drive * 0.4)).softclip * 0.72;
+	sig = (sig * (1 + drive * 0.4)).softclip * 1.15;   // chords sit loud
 	Out.ar(out, Pan2.ar(sig * env * amp, pan));
 }).add;

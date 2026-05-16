@@ -512,14 +512,14 @@ class CannedSource:
         for s in steps:
             if rnd.random() < 0.45 + 0.3 * self.energy:
                 for p in vc:
-                    D(s, beat * 0.26, p, 0.34 + rnd.uniform(-0.04, 0.07), CH_KEYS)
+                    D(s, beat * 0.26, p, 0.66 + rnd.uniform(-0.05, 0.08), CH_KEYS)
 
     def _pad(self, D, rnd, beat, ctones):
         # ONE soft sustained voice-led chord under the bar (keys self-
         # terminates). Harmonic body without notes-per-beat — keeps the space.
         if rnd.random() < 0.45 + 0.35 * self.energy:
             for p in self._voicelead(ctones[:4], 64):
-                D(0, beat * 3.4, p, 0.22 + rnd.uniform(-0.03, 0.05), CH_KEYS)
+                D(0, beat * 3.4, p, 0.52 + rnd.uniform(-0.04, 0.06), CH_KEYS)
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
@@ -689,7 +689,7 @@ class CannedSource:
         for s in steps:
             if rnd.random() < prob:
                 for p in self._voicelead(ct[:3], 60):
-                    D(s, beat * 0.18, p, 0.34 + rnd.uniform(-0.04, 0.05), CH_KEYS)
+                    D(s, beat * 0.18, p, 0.62 + rnd.uniform(-0.04, 0.06), CH_KEYS)
 
     def _g_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # one-drop: the weight is on beat 3 (step 8); huge space + dub delay
@@ -759,7 +759,7 @@ class CannedSource:
         if self.on["lead"]:                                       # the dub chord
             for s in ([6] if rnd.random() < 0.6 else [10]):
                 for p in self._voicelead(ct[:4], 60):
-                    D(s, beat * 0.4, p, 0.3 + rnd.uniform(-0.03, 0.05), CH_KEYS)
+                    D(s, beat * 0.4, p, 0.56 + rnd.uniform(-0.04, 0.06), CH_KEYS)
             if rnd.random() < 0.5:
                 self._pad(D, rnd, beat, ct)
 
