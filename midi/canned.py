@@ -641,6 +641,20 @@ class CannedSource:
             idx = rnd.randrange(len(steps))
             D(steps[idx], beat * 0.12, pitches[idx % len(pitches)],
               rnd.uniform(vlo, vhi), CH_PERC, "perc")
+        # occasional FAST roll/flourish — finer than 16ths (32nd = 0.5 step,
+        # 64th = 0.25 step), as a crescendo fill into the bar end. Rare; the
+        # steady spice above is left exactly as is.
+        roll_p = (0.16 if mode == "lots" else 0.05) * (0.7 + e)
+        if steps and rnd.random() < roll_p:
+            sub = rnd.choice([0.5, 0.25, 0.25])       # 32nd or 64th roll
+            n = rnd.choice([4, 5, 6, 8])
+            start = max(9.0, 15.5 - ((n - 1) * sub))  # land at the bar end
+            base = pitches[rnd.randrange(len(pitches))]
+            for k in range(n):
+                v = vlo + (vhi - vlo) * (k / max(1, n - 1)) * 0.9
+                D(start + (k * sub), beat * 0.07,
+                  base + rnd.choice([0, 0, 12, 7]),
+                  min(0.6, v), CH_PERC, "perc")
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
