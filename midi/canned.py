@@ -296,20 +296,20 @@ _PERC = {
     # ---- LOTS: a real percussion part, but a SPARSE SYNCOPATED groove
     # (off-beat accents in the kick/snare gaps) — never a steady
     # subdivision, so it can't read as a second hi-hat.
-    "afro_rnb":     {"mode": "lots", "tone": 0.9,  "prob": 0.8,
-                     "steps": [3, 6, 10, 13], "pitch": [50, 57, 45, 53],
+    "afro_rnb":     {"mode": "lots", "tone": 0.9,  "prob": 0.88,
+                     "steps": [3, 6, 10, 11, 14], "pitch": [50, 57, 45, 53],
                      "syn": {"decay": 0.17, "drive": 1.3, "crush": 0.2}},
-    "roots_reggae": {"mode": "lots", "tone": 0.72, "prob": 0.7,
-                     "steps": [3, 6, 14], "pitch": [48, 55, 52],
+    "roots_reggae": {"mode": "lots", "tone": 0.72, "prob": 0.82,
+                     "steps": [3, 6, 10, 11, 14], "pitch": [48, 55, 52],
                      "syn": {"decay": 0.16, "drive": 1.0, "crush": 0.25}},
-    "funk":         {"mode": "lots", "tone": 0.66, "prob": 0.7,
-                     "steps": [6, 7, 10], "pitch": [53, 48, 57],
+    "funk":         {"mode": "lots", "tone": 0.66, "prob": 0.8,
+                     "steps": [2, 6, 7, 10, 14], "pitch": [53, 48, 57],
                      "syn": {"decay": 0.13, "drive": 1.3, "crush": 0.3}},
-    "uk_garage":    {"mode": "lots", "tone": 0.5,  "prob": 0.55,
-                     "steps": [2, 7, 11], "pitch": [60],
+    "uk_garage":    {"mode": "lots", "tone": 0.5,  "prob": 0.75,
+                     "steps": [2, 7, 10, 11, 14], "pitch": [60],
                      "syn": {"decay": 0.11, "drive": 0.9, "crush": 0.25}},
-    "broken_house": {"mode": "lots", "tone": 0.46, "prob": 0.5,
-                     "steps": [3, 6, 14], "pitch": [60],
+    "broken_house": {"mode": "lots", "tone": 0.46, "prob": 0.72,
+                     "steps": [2, 3, 6, 11, 14], "pitch": [60],
                      "syn": {"decay": 0.12, "drive": 0.9, "crush": 0.25}},
     # ---- NONE: spacious / minimal genres own the space ----
     "dub":            {"mode": "none"},
@@ -620,17 +620,23 @@ class CannedSource:
         steps = pf.get("steps", _PERC_DEF["steps"])
         pitches = pf.get("pitch", [60])
         if mode == "lots":
-            base_p = (0.40 + 0.22 * e) * pf.get("prob", 1.0)
+            base_p = (0.55 + 0.20 * e) * pf.get("prob", 1.0)
             vlo, vhi = 0.34, 0.50
         else:                                    # spice: seasoning, not a part
             if rnd.random() > 0.5:               # skip whole bars often
                 return
             base_p = (0.10 + 0.14 * e) * pf.get("prob", 1.0)
             vlo, vhi = 0.22, 0.34
+        hits = 0
         for idx, s in enumerate(steps):
             if rnd.random() < base_p:
                 D(s, beat * 0.12, pitches[idx % len(pitches)],
                   rnd.uniform(vlo, vhi), CH_PERC, "perc")
+                hits += 1
+        if mode == "lots" and hits == 0 and steps:   # floor: >=1 hit/bar
+            idx = rnd.randrange(len(steps))
+            D(steps[idx], beat * 0.12, pitches[idx % len(pitches)],
+              rnd.uniform(vlo, vhi), CH_PERC, "perc")
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
