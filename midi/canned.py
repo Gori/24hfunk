@@ -239,6 +239,49 @@ _LEAD_STYLE = {
     "eighties_hiphop":  {"notes": 0.85, "fill": 0.5,  "run": 3, "span": 6,  "harm": 0.28},
 }
 
+# Curated rhythmic motifs make the lead sound PLAYED, not random-sampled.
+# A genre maps to a feel; each feel has a few hand-written figures of
+# (degIdx, step16, dur16). degIdx is unused for pitch (the contour drives
+# pitch) but kept so the tuple shape matches everything that reads motif.
+_LEAD_FEEL = {
+    "funk": "funk", "minneapolis_funk": "funk", "electro_funk": "funk",
+    "jazz": "jazz",
+    "broken_house": "stab", "uk_garage": "stab", "dub_garage": "stab",
+    "electro": "stab", "synthwave": "stab",
+    "minimal_techno": "hypno", "detroit_techno": "hypno", "dub_techno": "hypno",
+    "rnb": "lyric", "afro_rnb": "lyric", "indie_rnb": "lyric",
+    "lofi": "lyric", "eighties_hiphop": "lyric",
+    "dub": "space", "neon_dub": "space", "steppers_dub": "space",
+    "roots_reggae": "space",
+}
+_LEAD_RHYTHM = {
+    "funk": [
+        [(0, 0, 2), (1, 3, 1), (2, 6, 2), (1, 10, 1), (0, 11, 1)],
+        [(0, 2, 1), (2, 5, 2), (1, 8, 1), (3, 11, 2), (0, 14, 1)],
+        [(0, 0, 1), (1, 4, 1), (2, 7, 2), (0, 10, 1), (2, 13, 1)],
+    ],
+    "jazz": [
+        [(0, 0, 2), (1, 4, 1), (2, 6, 1), (3, 8, 2), (1, 12, 2)],
+        [(0, 2, 1), (1, 4, 1), (2, 6, 1), (3, 9, 1), (2, 12, 2), (0, 14, 1)],
+    ],
+    "stab": [
+        [(0, 2, 2), (2, 6, 2), (1, 10, 2), (3, 14, 2)],
+        [(0, 0, 1), (2, 6, 2), (0, 10, 1), (2, 14, 2)],
+    ],
+    "hypno": [
+        [(0, 0, 3), (2, 8, 3)],
+        [(0, 0, 2), (1, 6, 2), (0, 12, 2)],
+    ],
+    "lyric": [
+        [(0, 0, 3), (2, 6, 2), (1, 10, 2), (0, 13, 2)],
+        [(0, 2, 2), (1, 6, 2), (3, 10, 3)],
+    ],
+    "space": [
+        [(0, 0, 6)],
+        [(0, 4, 4), (0, 12, 3)],
+    ],
+}
+
 
 class CannedSource:
     name = "canned"
@@ -272,13 +315,13 @@ class CannedSource:
             self.energy = random.uniform(0.3, 0.48)
         if isinstance(d, (int, float)):
             self.energy = max(0.22, min(0.95, 0.6 * self.energy + 0.4 * float(d)))
-        # a per-section melodic motif: list of (chord-tone index, step, dur16)
-        scale = PROFILE.get(self.genre, PROFILE["funk"])[0]
+        # per-section lead motif: pick a curated rhythmic figure for the
+        # genre's feel (intentional syncopation/space), stable across the
+        # section so the phrase recurs and is recognisable.
+        feel = _LEAD_FEEL.get(self.genre, "lyric")
+        variants = _LEAD_RHYTHM.get(feel, _LEAD_RHYTHM["lyric"])
         rr = random.Random(int(self.root * 7 + len(self.genre)))
-        self.motif = []
-        steps = sorted(rr.sample(range(16), rr.choice([3, 4, 4, 5])))
-        for s in steps:
-            self.motif.append((rr.choice([0, 1, 2, 1, 3]), s, rr.choice([1, 2, 2, 3])))
+        self.motif = list(rr.choice(variants))
         self.bar = 0
 
     def synth_params(self) -> dict:
@@ -479,32 +522,50 @@ class CannedSource:
                 D(0, beat * 3.4, p, 0.22 + rnd.uniform(-0.03, 0.05), CH_KEYS)
 
     def _motif(self, D, rnd, beat, sc, ctones):
-        # A fixed per-section melodic phrase built ONLY from the current bar's
-        # CHORD TONES, so it always follows the progression, and repeated every
-        # bar so it is a recognisable riff — not random. Sparse by design: no
-        # pickup runs, no per-bar inversion. A gentle cadence to the root
-        # closes every 4th bar (a musical resolution, not randomisation).
-        if not ctones:
+        # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
+        # intentional syncopation/space) carries a fixed per-section CONTOUR
+        # over the CURRENT bar's CHORD TONES (always follows the changes), as
+        # a 2-bar statement -> answer (the answer resolves to the root), with
+        # a velocity arc toward the phrase peak and at most ONE diatonic
+        # approach note into a strong beat. The phrase plays as written (no
+        # random note-dropping) so it reads as a melody, not noise. Sparse.
+        if not ctones or not self.motif:
             return
         st = _LEAD_STYLE.get(self.genre, _LEAD_DEF)
         cN = len(ctones)
         cseed = random.Random(self.root * 17 + len(self.genre) * 5 + 3)
         shape = _CONTOURS[cseed.randrange(len(_CONTOURS))]
-        base = cseed.choice((0, 0, 1, 2))                  # start root/3rd/5th
-        fire = (0.40 + 0.28 * self.energy) * st["notes"]
-        last = len(self.motif) - 1
-        resolve = (self.bar % 4) == 3
+        base = cseed.choice((0, 0, 1, 2))
+        nN = len(self.motif)
+        degs = [(base + shape[i % len(shape)]) % cN for i in range(nN)]
+        peak = max(range(nN), key=lambda i: degs[i])
+        answer = (self.bar % 2) == 1
+        scset = {(self.root + d) % 12 for d in sc}
+        prev = None
         for i, (ti, s, du) in enumerate(self.motif):
-            if rnd.random() >= fire:
-                continue                                   # leave space
-            deg = 0 if (resolve and i == last) else \
-                (base + shape[i % len(shape)]) % cN
+            deg = degs[i]
+            if answer and i == nN - 1:
+                deg = 0                                # answer -> root
+            elif answer and i == nN - 2 and cN > 1:
+                deg = 1                                # ...approached via 3rd
             pit = ctones[deg] + 12
-            D(s, beat * 0.22 * du, pit, 0.46 + rnd.uniform(-0.04, 0.08),
-              CH_LEAD)
-            if rnd.random() < st["harm"] * 0.5:            # sparse harmony
-                D(s, beat * 0.22 * du, pit - rnd.choice([3, 4, 7]), 0.28,
-                  CH_LEAD)
+            d2p = 1.0 - abs(i - peak) / max(1, nN - 1)
+            vel = (0.42 + 0.20 * d2p + (0.05 if s % 4 == 0 else 0.0)
+                   + rnd.uniform(-0.03, 0.04))
+            if answer and i >= nN - 2:
+                vel -= 0.06                            # softer resolution
+            vel = max(0.20, min(0.86, vel))
+            if (prev is not None and s in (0, 4, 8, 12)
+                    and rnd.random() < 0.18 * st["notes"]):
+                ap = pit - 1                           # one diatonic approach
+                if (ap % 12) not in scset:
+                    ap -= 1
+                D(max(0.0, s - 0.5), beat * 0.09, ap, vel * 0.7, CH_LEAD)
+            D(s, beat * 0.22 * du, pit, vel, CH_LEAD)
+            if rnd.random() < st["harm"] * 0.4:        # sparse soft harmony
+                D(s, beat * 0.22 * du, pit - rnd.choice([3, 4, 7]),
+                  vel * 0.6, CH_LEAD)
+            prev = pit
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
     def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
