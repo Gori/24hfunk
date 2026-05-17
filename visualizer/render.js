@@ -31,6 +31,7 @@
   // one-shot Amiga sinus-scroller: the new song title scrolls past once
   let scrText = '', scrX = 0, scrOn = false, scrPhase = 0, scrLast = '';
   const _env = {};   // reused every frame — no per-frame env object alloc
+  let _dms = 0, _fms = 0;   // diag: draw vs flush ms (last frame)
 
   // curated, deliberately DISTINCT palettes — we fade to the next one on every
   // new music style so the colour world visibly changes each section.
@@ -201,7 +202,7 @@
   }
 
   window.Renderer = {
-    diag() { return { ls: !!(eng && eng._ls), title: active && active.title }; },
+    diag() { return { ls: !!(eng && eng._ls), title: active && active.title, d: _dms, f: _fms }; },
     init(canvas) {
       eng = new window.A3D(canvas);
       buildPool();
@@ -306,10 +307,13 @@
       const isDemo = demoSet.has(active);
       if (active.step) active.step(dt * SPEED * (FXSPEED[active.title] || 1) * (isDemo ? fxTime : 1), env);
       eng.clear(curPal.bg);
+      const _ta = (window.performance || Date).now();
       drawActive(env);              // applies per-appearance symmetry/flip
       drawHud();                    // grid-aligned HUD, top-most
       drawScroller(dt);             // one-shot Amiga song-title scroller
+      const _tb = (window.performance || Date).now();
       eng.flush();
+      _dms = _tb - _ta; _fms = (window.performance || Date).now() - _tb;
     },
   };
 })();
