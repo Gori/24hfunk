@@ -47,10 +47,14 @@
         const x = 1 + ((Math.random() * (N - 2)) | 0);
         const y = 1 + ((Math.random() * (N - 2)) | 0);
         if (this.m[y][x] === 0) {
-          const k = ['lamp', 'barrel', 'imp'][(Math.random() * 3) | 0];
+          const k = ['lamp', 'imp', 'barrel', 'imp', 'imp'][(Math.random() * 5) | 0];
           this.props.push({ x: x + 0.5, z: y + 0.5, kind: k, art: art[k], ph: Math.random() * 6 });
         }
       }
+      // a roaming enemy imp that wanders the corridors AND drifts toward the
+      // player, so it's actually seen up close (not lost in a far cell)
+      this.foe = { x: this.px + 1.5, z: this.pz, ang: 0.6,
+        ph: Math.random() * 6, sp: 1.15, art: art.imp };
     },
     note() { this.flash = Math.min(1, this.flash + 0.5); },
     beat() {},
@@ -81,6 +85,27 @@
       // anti-stuck: if it can't make progress, spin to find an opening
       this._stuck = moved < 1e-4 ? (this._stuck || 0) + dt : 0;
       if (this._stuck > 0.8) { this.ang += 1.7; this._stuck = 0; }
+      // roaming enemy imp: walk forward, steer at walls, gently home on the
+      // player so it stays close/visible; respawn ahead if it drifts away.
+      const f = this.foe;
+      if (f) {
+        const ffx = Math.cos(f.ang), ffz = Math.sin(f.ang);
+        if (this.wall(f.x + ffx * 0.5, f.z + ffz * 0.5)) {
+          f.ang += (Math.random() < 0.5 ? 1 : -1) * 1.6;
+        } else {
+          let da = Math.atan2(this.pz - f.z, this.px - f.x) - f.ang;
+          while (da > Math.PI) da -= 6.283;
+          while (da < -Math.PI) da += 6.283;
+          f.ang += da * 0.5 * dt + (Math.random() - 0.5) * 0.6 * dt;
+          const fsp = f.sp * dt;
+          if (!this.wall(f.x + ffx * fsp, f.z)) f.x += ffx * fsp;
+          if (!this.wall(f.x, f.z + ffz * fsp)) f.z += ffz * fsp;
+        }
+        if (Math.hypot(f.x - this.px, f.z - this.pz) > 9) {
+          f.x = this.px + Math.cos(this.ang) * 2.2;
+          f.z = this.pz + Math.sin(this.ang) * 2.2;
+        }
+      }
       this.flash = Math.max(0, this.flash - dt * 2.2);
     },
     draw(eng, env) {
@@ -129,6 +154,11 @@
           ? scale(acc(env, 2), 0.7 + 0.3 * Math.sin(env.t * 7 + p.ph) + this.flash)
           : (p.kind === 'imp' ? acc(env, 0) : env.pal.fg);
         eng.sprite(p.x, 0.5 + bob, p.z, p.art, col, 0.9);
+      }
+      const f = this.foe;
+      if (f) {
+        eng.sprite(f.x, 0.5 + Math.sin(env.t * 5 + f.ph) * 0.14, f.z, f.art,
+          scale(acc(env, 0), 0.8 + this.flash + env.beat * 0.35), 1.2);
       }
     },
   };
@@ -222,9 +252,13 @@
       c.yaw = 0; c.pitch = 0; c.roll = 0; c.fov = 0.62;
       // the global music camera-swim zooms a flat 2D world far too hard —
       // keep just a hint of it here.
-      // a flat 2D side-scroller should not dolly/zoom with the music at all
-      const fx = eng.fx, _dfov = fx.dfov, _dz = fx.dz;
+      // a flat 2D side-scroller should not dolly/zoom with the music; and
+      // only rotate/sway ~30% as much as the 3D worlds.
+      const fx = eng.fx;
+      const _dfov = fx.dfov, _dz = fx.dz, _dyaw = fx.dyaw,
+        _dpitch = fx.dpitch, _droll = fx.droll;
       fx.dfov = 0; fx.dz = 0;
+      fx.dyaw *= 0.3; fx.dpitch *= 0.3; fx.droll *= 0.3;
       // parallax layers (far -> near) via depth planes
       const layers = [[18, acc(env, 2), 0.25, 'mountains'], [10, acc(env, 1), 0.5, 'city'], [3.5, env.pal.fg, 1, 'ground']];
       for (const [pz, colr, par, kind] of layers) {
@@ -255,6 +289,7 @@
       ][fr];
       eng.sprite(this.sx + 4, this.y + 1.2, 3.4, hero, acc(env, 0), 1.0);
       fx.dfov = _dfov; fx.dz = _dz;
+      fx.dyaw = _dyaw; fx.dpitch = _dpitch; fx.droll = _droll;
       eng.farFog = _ff;
     },
   };
