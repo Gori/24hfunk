@@ -57,17 +57,17 @@
     if (section.key) parts.push(up(section.key));
     hudMusic = parts.filter(Boolean).join('  ·  ');
   }
-  // draw a string through the engine grid, centred, skipping spaces so the
-  // effect shows between words and only the glyphs are opaque (always on top).
+  // draw a string through the engine grid, centred. Spaces are written too
+  // (as cleared cells) so multi-word names stay readable — otherwise the
+  // full-screen effect bleeds through the gap and words look mashed
+  // (e.g. "DETROIT TECHNO" -> "DETROIT<fx>TECHNO").
   function drawHudLine(str, row) {
     if (!str || !eng) return;
     const C = eng.cols, R = eng.rows;
     if (row < 0 || row >= R) return;
     const sx = Math.max(0, (C - str.length) >> 1);
-    for (let i = 0; i < str.length; i++) {
-      const ch = str[i];
-      if (ch === ' ' || sx + i >= C) continue;
-      eng.glyph2d(sx + i, row, ch, HUD_COL);
+    for (let i = 0; i < str.length && sx + i < C; i++) {
+      eng.glyph2d(sx + i, row, str[i], HUD_COL);
     }
   }
   function drawHud() {
