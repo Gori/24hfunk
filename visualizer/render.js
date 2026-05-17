@@ -28,6 +28,8 @@
   // same font/size and snapped to the same cell grid as the effect behind it.
   let hudEffect = '', hudMusic = '';
   const HUD_COL = [240, 240, 248];
+  // one-shot Amiga sinus-scroller: the new song title scrolls past once
+  let scrText = '', scrX = 0, scrOn = false, scrPhase = 0, scrLast = '';
 
   // curated, deliberately DISTINCT palettes — we fade to the next one on every
   // new music style so the colour world visibly changes each section.
@@ -80,6 +82,46 @@
   function drawHud() {
     drawHudLine(hudEffect, 2);
     drawHudLine(hudMusic, eng.rows - 3);
+  }
+  // ---- classic Amiga sinus-scroller: big chunky font, travelling sine
+  // wobble + copper colour-cycle, scrolls the song title past ONCE ----
+  function startScroller(name) {
+    const t = String(name || '').toUpperCase().replace(/[^A-Z ]+/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+    if (!t || !eng) return;
+    scrText = '    ' + t + '    ';
+    scrX = eng.cols + 2; scrOn = true; scrPhase = 0;
+  }
+  function drawScroller(dt) {
+    if (!scrOn || !eng) return;
+    const F = window.Worlds && window.Worlds.FNT5;
+    if (!F) { scrOn = false; return; }
+    const C = eng.cols, R = eng.rows;
+    const S = Math.max(2, Math.min(4, (R / 13) | 0));
+    const GW = 6 * S;
+    scrPhase += dt * 3.2;
+    scrX -= dt * 72;                                   // classic R->L scroll
+    const totalW = scrText.length * GW;
+    if (scrX < -totalW) { scrOn = false; return; }
+    const baseY = (R - 7 * S) >> 1;
+    const acc = (curPal && curPal.accent) || [[255, 255, 255]];
+    const k = 0.6 + Math.min(0.45, beatEnv * 0.5);
+    for (let li = 0; li < scrText.length; li++) {
+      const ch = scrText[li];
+      if (ch === ' ') continue;
+      const lx = (scrX + li * GW) | 0;
+      if (lx >= C || lx + GW < 0) continue;
+      const bmp = F[ch]; if (!bmp) continue;
+      const wob = Math.sin(scrPhase + li * 0.55) * (R * 0.17);
+      const a0 = acc[(li + (scrPhase | 0)) % acc.length] || acc[0];
+      const col = [Math.min(255, a0[0] * k) | 0, Math.min(255, a0[1] * k) | 0,
+        Math.min(255, a0[2] * k) | 0];
+      const oy = (baseY + wob) | 0;
+      for (let ry = 0; ry < 7; ry++) for (let rx = 0; rx < 5; rx++)
+        if (bmp[ry][rx] === '1')
+          for (let s = 0; s < S; s++) for (let q = 0; q < S; q++)
+            eng.glyph2d(lx + rx * S + s, oy + ry * S + q, '█', col);
+    }
   }
 
   let demoSet = new Set();
@@ -168,6 +210,11 @@
     },
     onSection(section, instant) {
       setNowPlaying(section);
+      // a new song -> fire the Amiga scroller once with its title
+      const sn = section && section.name ? String(section.name).trim() : '';
+      if (sn && sn.toLowerCase() !== 'untitled' && sn !== scrLast) {
+        scrLast = sn; startScroller(sn);
+      }
       prevPal = { bg: curPal.bg.slice(), fg: curPal.fg.slice(), accent: curPal.accent.map((x) => x.slice()) };
       // every new music style -> fade to the NEXT distinct curated palette
       // use the LLM's per-song palette (incl. an inverted bright-bg / dark-fg
@@ -249,6 +296,7 @@
       eng.clear(curPal.bg);
       drawActive(env);              // applies per-appearance symmetry/flip
       drawHud();                    // grid-aligned HUD, top-most
+      drawScroller(dt);             // one-shot Amiga song-title scroller
       eng.flush();
     },
   };

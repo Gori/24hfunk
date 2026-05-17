@@ -2116,6 +2116,7 @@
     for (const o of this.ob) px(eng, scx + (o.x / Math.max(1, o.z * 0.5)) * sw, scy - Math.max(0.05, 1 - o.z / ZF) * sh * 0.8, '+', GRN, 190);
   });
   window.Worlds = window.Worlds || {};
+  window.Worlds.FNT5 = FNT5;            // shared 5x7 font (render.js scroller)
   window.Worlds.demos = [
     Plasma, Roto, Stars, Copper, Bobs, Tunnel, Twister, Glenz, Boing,
     CopperBars, StarWarp, SineCols, BobsLissa, WireCube,

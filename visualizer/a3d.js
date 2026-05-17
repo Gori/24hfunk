@@ -176,6 +176,12 @@
     const ctx = this.ctx, ch = this.ch, col = this.col;
     const rows = this.rows, cols = this.cols, cw = this.cw, chh = this.chh;
     const css = this._css || (this._css = new Map());
+    // bound the packed-int -> css-string cache. Palette crossfades +
+    // brightness scaling produce effectively unbounded distinct colours,
+    // so this Map grew forever -> memory creep -> the browser lagged
+    // progressively (only a refresh cleared it). Periodic clear is cheap
+    // (the rgb() string rebuild is trivial) and keeps it bounded.
+    if (css.size > 4096) css.clear();
     ctx.fillStyle = `rgb(${this.bg[0]},${this.bg[1]},${this.bg[2]})`;
     ctx.fillRect(0, 0, this.W, this.H);
     let lastStyle = -1;
