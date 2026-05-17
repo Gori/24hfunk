@@ -4,7 +4,6 @@ const state = {
   bpm: 78,
   notes: [], // ring buffer of recent note-ons
   lastBeat: null,
-  scroll: null, // LLM-generated demoscene scrolltext (from the scribe)
 };
 
 const NOTE_RING = 64;
@@ -12,10 +11,6 @@ const NOTE_RING = 64;
 function setSection(section) {
   state.section = section;
   if (section && typeof section.bpm === 'number') state.bpm = section.bpm;
-}
-
-function setScroll(text) {
-  if (typeof text === 'string' && text.trim()) state.scroll = text.trim();
 }
 
 function pushNote(note) {
@@ -35,8 +30,7 @@ function snapshot() {
     bpm: state.bpm,
     notes: state.notes,
     lastBeat: state.lastBeat,
-    scroll: state.scroll,
   };
 }
 
-module.exports = { state, setSection, setScroll, pushNote, setBeat, snapshot };
+module.exports = { state, setSection, pushNote, setBeat, snapshot };

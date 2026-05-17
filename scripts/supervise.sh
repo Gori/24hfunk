@@ -23,12 +23,5 @@ while true; do
   alive bridge   || boot bridge node bridge/server.js
   alive midi     || boot midi "$PY" -m midi.worker
   alive director || boot director "$PY" -m director.director
-  if ! alive scribe; then
-    if command -v taskpolicy >/dev/null 2>&1; then
-      boot scribe taskpolicy -b "$PY" -m director.scribe
-    else
-      boot scribe nice -n 19 "$PY" -m director.scribe
-    fi
-  fi
   sleep 15
 done

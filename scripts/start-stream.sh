@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Production stream stack — HYBRID: the local LLM director picks the vibe,
-# sections rotate ~60s with the ring-out->breath->drop transition, the scribe
-# writes the scroller. 16 GB-lean (4B models). For 24/7 use supervise.sh.
+# sections rotate ~60s with the ring-out->breath->drop transition.
+# 16 GB-lean (4B model). For 24/7 use supervise.sh.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 RUN=.run; mkdir -p "$RUN"
@@ -24,11 +24,6 @@ start bridge node bridge/server.js
 waitfor "$RUN/bridge.log" "http+ws on" 15 && echo "[stream] bridge ready"
 start midi "$PY" -m midi.worker
 start director "$PY" -m director.director              # 4B, picks the vibe
-if command -v taskpolicy >/dev/null 2>&1; then
-  start scribe taskpolicy -b "$PY" -m director.scribe   # background tier
-else
-  start scribe nice -n 19 "$PY" -m director.scribe
-fi
 
 echo
 echo "  HYBRID stream live — director picks the vibe, ~${STR_SECTION_SEC}s rotation"

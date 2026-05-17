@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 RUN=.run
 
 pids=()
-for name in scribe midi director bridge synth; do
+for name in midi director bridge synth; do
   f="$RUN/$name.pid"
   if [ -f "$f" ]; then
     pid=$(cat "$f")

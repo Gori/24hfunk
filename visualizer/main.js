@@ -38,7 +38,6 @@
       try { m = JSON.parse(ev.data); } catch (e) { return; }
       switch (m.type) {
         case 'snapshot':
-          if (m.scroll) window.Renderer.setScroll(m.scroll);
           if (m.section) {
             window.Renderer.onSection(m.section);
             setNowPlaying(m.section);
@@ -49,9 +48,6 @@
           window.Renderer.onSection(m.section);
           setNowPlaying(m.section);
           stats.section = (m.section && m.section.id) || 'set';
-          break;
-        case 'scroll':
-          window.Renderer.setScroll(m.text);
           break;
         case 'noteon':
           window.Renderer.onNoteOn(m);

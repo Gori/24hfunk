@@ -39,17 +39,6 @@ app.post('/section', (req, res) => {
   res.json({ ok: true });
 });
 
-// LLM scribe pushes the long demoscene scrolltext here
-app.post('/scroll', (req, res) => {
-  const text = req.body && req.body.text;
-  if (typeof text !== 'string' || !text.trim()) {
-    return res.status(400).json({ error: 'expected { text }' });
-  }
-  stateMod.setScroll(text);
-  broadcast({ type: 'scroll', text: text.trim() });
-  res.json({ ok: true });
-});
-
 // smoke test: synthesize a note-on without SC
 app.post('/test/noteon', (req, res) => {
   const b = req.body || {};

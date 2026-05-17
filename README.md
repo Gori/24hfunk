@@ -3,15 +3,14 @@
 A **hermetic, fully-local** machine that improvises endless funk/jazz/electro/dub
 music *and* a matching ASCII demoscene visual, forever, with no network and no
 APIs. Everything runs on one Mac: a groove engine drives SuperCollider synths,
-local LLMs (Qwen via MLX) direct the sections and write the scroller, and a
-browser renders 89 music-reactive ASCII effects.
+a local LLM (Qwen via MLX) directs the sections, and a browser renders 89
+music-reactive ASCII effects.
 
 ```
  midi/  groove engine ──OSC 57120─▶ synth/  SuperCollider ──audio──▶ speakers
    │  (19 genres, funk theory)        │  (per-track FX buses)
    │                                  └─ /vis/* OSC 57130 ─┐
  director/ Qwen ─ section state ─▶ bridge/ Node WS :8080 ◀─┘
- scribe/  Qwen ─ scroll text  ─▶   │
                                    └── WS ──▶ visualizer/  browser  (89 ASCII FX)
 ```
 
@@ -23,11 +22,11 @@ browser renders 89 music-reactive ASCII effects.
 
 | | |
 |---|---|
-| ![DOOM raycaster](docs/screenshots/raycaster.png) | ![Plasma + scroller + HUD](docs/screenshots/plasma.png) |
+| ![DOOM raycaster](docs/screenshots/raycaster.png) | ![Plasma + HUD](docs/screenshots/plasma.png) |
 | ![Voxel landscape](docs/screenshots/landscape.png) | ![Wireframe / tesseract](docs/screenshots/wireframe.png) |
 
-Each shot should show the big top **HUD** (`EFFECT · …` / `MUSIC · genre · mood
-· bpm · key`) and the sine-scroller riding across the bottom-mid.
+Each shot should show the top **HUD** (`EFFECT · …` / `MUSIC · genre · mood
+· bpm · key`).
 
 ## What's going on
 
@@ -71,9 +70,6 @@ Each shot should show the big top **HUD** (`EFFECT · …` / `MUSIC · genre · 
 - **Moves with the whole music** (not just the beat): per-instrument energy,
   note flashes and pitch drive every effect and the camera.
 - **Palette** fades to a new curated scheme on every section.
-- **LLM sine-scroller** (`director/scribe.py`): Qwen writes a long moody
-  Amiga-demoscene scroll tied to the current genre/mood; it sine-waves on top,
-  persisting across scene changes.
 - **HUD**: a big always-on top bar — `EFFECT · <name>` and
   `MUSIC · <genre · mood · bpm · key>`.
 
@@ -95,7 +91,7 @@ npm install
 ## Run
 
 ```bash
-./scripts/start-all.sh        # SuperCollider → bridge → director → midi → scribe
+./scripts/start-all.sh        # SuperCollider → bridge → director → midi
 open http://localhost:8080    # watch + listen
 ./scripts/stop-all.sh         # stops everything, sweeps orphans
 ```
@@ -114,7 +110,7 @@ Logs + pidfiles land in `.run/`.
 |-----|---------|---------|
 | `STR_MIDI_SOURCE` | `canned` | `canned` (groove engine) or `midillm` |
 | `STR_SECTION_SEC` | LLM-chosen | override section length, e.g. `45` |
-| `STR_DIRECTOR_MODEL` | `mlx-community/Qwen3-8B-4bit` | director + scribe model |
+| `STR_DIRECTOR_MODEL` | `mlx-community/Qwen3-8B-4bit` | director model |
 | `BRIDGE_HTTP_PORT` | `8080` | bridge HTTP/WS |
 | `SC_OSC_PORT` | `57120` | SuperCollider router in |
 | `VIS_OSC_PORT` | `57130` | SC → bridge |
@@ -135,9 +131,9 @@ node scripts/smoke/send-test-note.js                 # bridge WS fanout
 ```
 midi/        groove engine + MIDI-LLM source + OSC out + worker
 synth/       SuperCollider boot/router + 19 SynthDefs
-director/    section director + scribe (scrolltext) + schema/prompts
+director/    section director + schema/prompts
 bridge/      Node HTTP+WS + OSC-in + state
-visualizer/  a3d engine + worlds + 85 demoscene effects + scroller + HUD
+visualizer/  a3d engine + worlds + 89 demoscene effects + HUD
 scripts/     start-all / stop-all / smoke tests
 ```
 

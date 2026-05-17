@@ -83,7 +83,7 @@ open http://localhost:8080       # confirm visuals + audio before going live
 
 ## Notes / limits
 
-- 16 GB M1 Pro: director + scribe are the 4B model (defaults) — comfortable.
+- 16 GB M1 Pro: the director is the 4B model (default) — comfortable.
   Close other heavy apps. Don't set `STR_MIDI_SOURCE=midillm` (extra ~3.5 GB).
 - The browser tab must stay open & not be minimised (Browser Source keeps it
   rendering even if hidden, but don't quit Chrome/OBS).

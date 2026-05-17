@@ -176,9 +176,3 @@ class SectionState(_Clamped):
     fx: Fx = Fx()
     palette: Palette = Palette()
     visuals: Visuals = Visuals()
-    scrolltext: str = ""   # long demoscene scroller (usually set by the scribe)
-
-    @field_validator("scrolltext")
-    @classmethod
-    def _scroll_ok(cls, v):
-        return str(v)[:800]

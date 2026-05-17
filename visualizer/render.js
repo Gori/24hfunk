@@ -1,59 +1,7 @@
 // render.js — SceneManager: owns the A3D engine, rotates a big pool of worlds
-// (classic 3D + demoscene effects), lerps the palette, runs the cinematic
-// camera overlay, and draws a PERSISTENT sine-scroller on top that continues
-// across scene changes. window.Renderer keeps main.js's API.
+// (classic 3D + demoscene effects), lerps the palette, and runs the
+// cinematic camera overlay. window.Renderer keeps main.js's API.
 (function () {
-  // compact 5x7 uppercase bitmap font for the scroller
-  const F = {
-    A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
-    B: ['11110', '10001', '11110', '10001', '10001', '10001', '11110'],
-    C: ['01111', '10000', '10000', '10000', '10000', '10000', '01111'],
-    D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
-    E: ['11111', '10000', '11110', '10000', '10000', '10000', '11111'],
-    F: ['11111', '10000', '11110', '10000', '10000', '10000', '10000'],
-    G: ['01111', '10000', '10000', '10111', '10001', '10001', '01111'],
-    H: ['10001', '10001', '11111', '10001', '10001', '10001', '10001'],
-    I: ['11111', '00100', '00100', '00100', '00100', '00100', '11111'],
-    J: ['00111', '00010', '00010', '00010', '10010', '10010', '01100'],
-    K: ['10001', '10010', '11100', '10100', '11010', '10010', '10001'],
-    L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
-    M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
-    N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
-    O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
-    P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
-    Q: ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
-    R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
-    S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
-    T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
-    U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
-    V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
-    W: ['10001', '10001', '10001', '10101', '10101', '11011', '10001'],
-    X: ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
-    Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
-    Z: ['11111', '00010', '00100', '01000', '10000', '10000', '11111'],
-    0: ['01110', '10011', '10101', '10101', '10101', '11001', '01110'],
-    1: ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
-    2: ['01110', '10001', '00001', '00110', '01000', '10000', '11111'],
-    3: ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
-    4: ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
-    5: ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
-    6: ['01110', '10000', '11110', '10001', '10001', '10001', '01110'],
-    7: ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
-    8: ['01110', '10001', '01110', '10001', '10001', '10001', '01110'],
-    9: ['01110', '10001', '10001', '01111', '00001', '00001', '01110'],
-    '.': ['00000', '00000', '00000', '00000', '00000', '01100', '01100'],
-    ',': ['00000', '00000', '00000', '00000', '01100', '01100', '11000'],
-    '!': ['00100', '00100', '00100', '00100', '00100', '00000', '00100'],
-    '-': ['00000', '00000', '00000', '11111', '00000', '00000', '00000'],
-    ':': ['00000', '01100', '01100', '00000', '01100', '01100', '00000'],
-    '*': ['00000', '10101', '01110', '11111', '01110', '10101', '00000'],
-    '/': ['00001', '00010', '00100', '00100', '01000', '10000', '10000'],
-    "'": ['00100', '00100', '01000', '00000', '00000', '00000', '00000'],
-    ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
-  };
-  const DEFAULT_MSG =
-    'STR  //  ASCII DEMOSCENE AUDIOVISUAL  //  GENERATED LIVE  '
-    + '//  GREETINGS TO ALL DEMO SCENERS  //  STAY FUNKY AS FUCK  ...  ';
 
   let eng, active, t0 = performance.now();
   let prevPal = window.Palette.normalize(null);
@@ -63,7 +11,6 @@
   // per-instrument musical energy so visuals move with the WHOLE music
   let bassE = 0, leadE = 0, drumE = 0, hitE = 0, lastPitch = 0.5, mv = 0;
   let pool = [], bag = [], sinceCut = 0, palIdx = 0;
-  let scrollMsg = DEFAULT_MSG, scrollX = 0, llmScroll = null;
   // HUD is drawn THROUGH the ascii engine (glyph2d) so it is literally the
   // same font/size and snapped to the same cell grid as the effect behind it.
   let hudEffect = '', hudMusic = '';
@@ -180,32 +127,6 @@
     return nextActive();
   }
 
-  // Amiga sine scroller: small rigid glyphs scrolling fast R->L; each char's
-  // vertical position rides a sine that is fixed in SCREEN space (slow drift),
-  // so the text visibly travels along a clean standing wave.
-  function drawScroller(env) {
-    const C = eng.cols, R = eng.rows;
-    const PX = 1, GW = 6;                 // 5x7 glyph + 1 spacing
-    const amp = Math.max(3, R * 0.20);
-    const midRow = R * 0.5;
-    const total = scrollMsg.length * GW;
-    scrollX %= total;
-    for (let i = 0; i < scrollMsg.length; i++) {
-      const ch = scrollMsg[i].toUpperCase();
-      const g = F[ch] || F[' '];
-      const charX = (i * GW - scrollX) | 0;
-      if (charX < -GW || charX > C) continue;
-      // sine is a function of SCREEN x (+ slow drift) -> proper travelling wave
-      const off = Math.sin(charX * 0.07 + env.t * 1.1) * amp;
-      const top = (midRow + off - 3.5) | 0;
-      const base = env.pal.accent[(i + ((env.t * 4) | 0)) % env.pal.accent.length];
-      const col = [Math.min(255, base[0] + 55), Math.min(255, base[1] + 55), Math.min(255, base[2] + 55)];
-      for (let ry = 0; ry < 7; ry++) for (let rx = 0; rx < 5; rx++) {
-        if (g[ry][rx] === '1') eng.glyph2d(charX + rx, top + ry, '#', col);
-      }
-    }
-  }
-
   window.Renderer = {
     init(canvas) {
       eng = new window.A3D(canvas);
@@ -224,26 +145,9 @@
       tgtPal = window.Palette.normalize(PALETTES[palIdx]);
       palDur = 4.0;                      // clearly visible crossfade
       palT = 0;
-      // scroller precedence: live LLM scribe text > section.scrolltext >
-      // section text_strings > default. The scribe (if running) wins.
-      if (!llmScroll) {
-        const sc = section && section.scrolltext;
-        const ts = section && section.visuals && section.visuals.text_strings;
-        if (typeof sc === 'string' && sc.trim().length > 20) {
-          scrollMsg = '  ' + sc.trim().toUpperCase() + '   ***   ';
-        } else if (ts && ts.length) {
-          scrollMsg = '  ' + ts.join('   ***   ').toUpperCase()
-            + '   ***   STR DEMOSCENE   ***   ';
-        } else scrollMsg = DEFAULT_MSG;
-      }
-      // NOTE: a music-section change only fades the palette + swaps the
-      // scroller. The visual EFFECT runs on its own independent 30s clock
-      // (see frame()), so visuals and genre change at different rates.
-    },
-    setScroll(text) {
-      if (typeof text !== 'string' || !text.trim()) return;
-      llmScroll = text.trim();
-      scrollMsg = '  ' + llmScroll.toUpperCase().replace(/\s+/g, ' ') + '   ***   ';
+      // NOTE: a music-section change only fades the palette. The visual
+      // EFFECT runs on its own independent 30s clock (see frame()), so
+      // visuals and genre change at different rates.
     },
     onNoteOn(n) {
       const v = (n && n.vel) ? n.vel : 0.7, ch = n ? n.ch : 1;
@@ -271,7 +175,6 @@
       // composite musical motion — beat AND notes AND per-instrument energy
       mv = Math.min(1.6, beatEnv * 0.7 + noteE * 0.7 + drumE * 0.5
         + hitE * 0.4 + bassE * 0.3);
-      scrollX += dt * (34 + mv * 10);          // readable; only a gentle music lilt
 
       // visuals change on their OWN 30s clock, independent of the music genre
       sinceCut += dt;
@@ -301,7 +204,6 @@
       if (active.step) active.step(dt * (isDemo ? fxTime : 1), env);
       eng.clear(curPal.bg);
       drawActive(env);              // applies per-appearance symmetry/flip
-      drawScroller(env);            // persists on top, every frame
       drawHud();                    // grid-aligned HUD, top-most
       eng.flush();
     },

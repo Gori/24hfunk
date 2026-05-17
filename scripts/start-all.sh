@@ -43,17 +43,6 @@ else
   echo "[start] midi/worker.py not present yet — skipping (Phase H)"
 fi
 
-# 5) scribe — LLM author of the demoscene scroller text. Run it in the macOS
-# background scheduling tier (throttled CPU/IO) so its LLM bursts yield to the
-# realtime audio + visuals; fall back to a low `nice`.
-if [ -f director/scribe.py ]; then
-  if command -v taskpolicy >/dev/null 2>&1; then
-    start scribe taskpolicy -b "$PY" -m director.scribe
-  else
-    start scribe nice -n 19 "$PY" -m director.scribe
-  fi
-fi
-
 echo
 echo "  open  http://localhost:${BRIDGE_HTTP_PORT:-8080}"
 echo "  logs  tail -f $RUN/*.log"
