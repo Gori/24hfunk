@@ -274,6 +274,18 @@
   const E = (title, init, drawf) => ({
     title, t: 0,
     reset(eng, s) {
+      // Wipe per-appearance container state. reset() only re-rolled P and
+      // the clocks, so any effect holding a lazily-grown array/typed-array/
+      // Map (this.x = this.x || []) accumulated it across EVERY appearance
+      // for the whole session -> monotonic memory creep that only a page
+      // refresh cleared (the "browser gets slower" bug). Dropping the refs
+      // here makes every appearance start fresh (init re-creates what it
+      // needs); worst case is now a bounded per-appearance sawtooth.
+      for (const k in this) {
+        const val = this[k];
+        if (k !== 'P' && (Array.isArray(val) || ArrayBuffer.isView(val)
+            || val instanceof Map || val instanceof Set)) this[k] = undefined;
+      }
       const r = Math.random;
       this.P = {
         spd: 0.85 + r() * 0.45,       // time speed (tight: ~normal, gentle vary)
