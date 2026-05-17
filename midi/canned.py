@@ -71,7 +71,7 @@ PROFILE = {
         [(0, "min9"), (0, "min9"), (3, "dom9"), (0, "min9")],
         0.30, 0.030, 0.0, 0.008, 0.0, 40),
     "jazz": (DORIAN,
-        [(1, "min7"), (4, "dom9"), (0, "maj7"), (5, "dom7b9")],   # ii V I VI
+        [(1, "min7"), (4, "dom9"), (0, "min7"), (5, "min7")],   # minor ii-V-i-vi
         0.46, 0.030, 0.0, 0.006, 0.0, 60),
     "funk": (DORIAN,
         [(0, "dom7#9"), (0, "dom7#9"), (0, "min7"), (0, "dom7#9")],  # 1-chord vamp
@@ -421,7 +421,7 @@ _LEAD_LEVEL = {
     "electro": 0.80, "uk_garage": 0.85, "minneapolis_funk": 0.86,
     "broken_house": 0.88, "minimal_techno": 0.90, "eighties_hiphop": 0.96,
     # \lead genres
-    "funk": 0.95, "electro_funk": 0.95, "synthwave": 0.99, "jazz": 1.30,
+    "funk": 0.95, "electro_funk": 0.95, "synthwave": 0.99, "jazz": 0.85,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 1.00, "afro_rnb": 1.02, "dub_garage": 1.06,
     "dub_techno": 1.10, "neon_dub": 1.12, "steppers_dub": 1.12,
@@ -784,9 +784,9 @@ class CannedSource:
                 D(max(0.0, s - 0.5), beat * 0.12,
                   ladder[max(0, pi - 1)], vel * 0.65, CH_LEAD)
             D(s, beat * 0.30 * du, pit, vel, CH_LEAD)        # legato
-            if rnd.random() < 0.16:                          # sparse 3rd below
-                D(s, beat * 0.30 * du, pit - rnd.choice([3, 4]),
-                  vel * 0.55, CH_LEAD)
+            if rnd.random() < 0.08:                          # rare 3rd below
+                D(s, beat * 0.30 * du, pit - 3,
+                  vel * 0.5, CH_LEAD)
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
@@ -1145,14 +1145,20 @@ class CannedSource:
                 self._motif(D, rnd, beat, sc, ct)
 
     def _g_afro_rnb(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
-        # afrobeats: a FIXED 3-3-2-ish kick (0, 3, 6, 10), clap on 2 & 4,
-        # steady shaker 16ths, fixed log-drum perc — locked groove.
+        # afrobeats: 3 transcribed kick/snare variations, rotating every
+        # 4-bar phrase. Shaker 16ths + fixed log-drum + clap on the snare
+        # keep the locked afro feel; bass locks to the core.
+        kp, sp = (
+            ((0, 3, 10), (6, 12)),       # pattern 01
+            ((0, 5, 10), (3, 12)),       # pattern 02
+            ((0, 3),     (6, 9, 12)),    # pattern 03 — sparse kick, busy snare
+        )[(self.bar // 4) % 3]
         if self.on["kick"]:
-            for s in (0, 3, 6, 10):
+            for s in kp:
                 D(s, 0.2, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
                   CH_DRUMS, "kick", True)
         if self.on["snare"]:
-            for s in (4, 12):
+            for s in sp:
                 D(s, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
                 D(s, 0.18, CLAP, 0.6, CH_DRUMS, "snare")
             self._ghost_sn(D, rnd, e * 0.4)
