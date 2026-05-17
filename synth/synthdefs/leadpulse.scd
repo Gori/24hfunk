@@ -2,7 +2,7 @@
 // contract (same args + safety env as \lead).
 SynthDef(\leadPulse, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=0.12,
 		wave=0.4, cutoff=4600, decay=0.45, gate=1, maxSustain=6, drive=1.2,
-		glide=0.03, pan=0|
+		glide=0.03, level=1.0, pan=0|
 	var v      = amp.clip(0.05, 1.0);
 	// plucky: tight chip-pluck percussive env (no sustain) for crisp rhythm
 	var env    = EnvGen.kr(Env.perc(0.002, (decay * 1.3).clip(0.05, 0.7), 1, -5), gate, doneAction: 2);
@@ -19,5 +19,5 @@ SynthDef(\leadPulse, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	sig = ((((sig * (1 + drive * 0.4)) + (sig * sig * 0.07)).tanh) * 0.92) * 0.6;
 	// #1-lite: subtle Haas stereo widen
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0065),
-		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.55);
+		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.55 * level);
 }).add;

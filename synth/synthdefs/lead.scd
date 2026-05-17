@@ -11,7 +11,7 @@
 //         gate, maxSustain, drive, glide, pan
 SynthDef(\lead, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=0.8, detune=0.12,
 		wave=0.4, cutoff=4600, decay=0.45, gate=1, maxSustain=6, drive=1.2,
-		glide=0.03, pan=0|
+		glide=0.03, level=1.0, pan=0|
 	var v      = amp.clip(0.05, 1.0);
 	var env    = EnvGen.kr(Env.perc(0.003, (decay * 1.5).clip(0.07, 0.85), 1, -4.5), gate, doneAction: 2);
 	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain, 0.2], \lin), doneAction: 2);
@@ -36,5 +36,5 @@ SynthDef(\lead, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=0.8, detune=0.
 	lc = ((lc + (lc * lc * 0.10)).tanh * 0.92);
 	rc = ((rc + (rc * rc * 0.10)).tanh * 0.92);
 	Out.ar(out, Balance2.ar(LeakDC.ar(lc), LeakDC.ar(rc), pan.clip(-1, 1) * 0.3)
-		* env * safety * amp * 2.55);
+		* env * safety * amp * 2.55 * level);
 }).add;

@@ -2,7 +2,7 @@
 // + safety env as \lead so genre SYNTH_PARAMS apply and no notes hang).
 SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=0.12,
 		wave=0.4, cutoff=4600, decay=0.45, gate=1, maxSustain=6, drive=1.2,
-		glide=0.03, pan=0|
+		glide=0.03, level=1.0, pan=0|
 	var v      = amp.clip(0.05, 1.0);
 	// plucky: percussive env so each FM note plucks and decays (tight rhythm)
 	var env    = EnvGen.kr(Env.perc(0.002, (decay * 1.4).clip(0.06, 0.8), 1, -4.5), gate, doneAction: 2);
@@ -20,5 +20,5 @@ SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=
 	sig = (((sig * (1 + drive * 0.30)) + (sig * sig * 0.09)).tanh) * 0.92;
 	// #1-lite: a subtle Haas widen for stereo body without changing timbre
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0065),
-		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.55);
+		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.55 * level);
 }).add;

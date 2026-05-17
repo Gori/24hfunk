@@ -410,6 +410,25 @@ _DRUM_GLUE = {
     "indie_rnb": (0.22, 0.14),
 }
 
+# Per-genre LEAD output level (pure post-gain `level`, 1.0 = unchanged).
+# Normalises the perceived lead loudness across genres: the 3 lead synths
+# (saw-unison \lead / FM \leadFM / PWM \leadPulse) + each genre's cutoff/
+# drive/decay give very different perceived levels for the same velocity.
+# This trims output ONLY (not velocity) so tone and the visualizer's
+# velocity-driven glyph brightness are unaffected. Tune by ear here.
+_LEAD_LEVEL = {
+    # leadPulse genres tend bright/loud -> trim
+    "electro": 0.80, "uk_garage": 0.85, "minneapolis_funk": 0.86,
+    "broken_house": 0.88, "minimal_techno": 0.90, "eighties_hiphop": 0.96,
+    # \lead genres
+    "funk": 0.95, "electro_funk": 0.95, "synthwave": 0.99, "jazz": 1.30,
+    # leadFM genres tend dark/quiet -> lift
+    "detroit_techno": 1.00, "afro_rnb": 1.02, "dub_garage": 1.06,
+    "dub_techno": 1.10, "neon_dub": 1.12, "steppers_dub": 1.12,
+    "lofi": 1.15, "rnb": 1.18, "roots_reggae": 1.20, "dub": 1.22,
+    "indie_rnb": 1.22,
+}
+
 
 class CannedSource:
     name = "canned"
@@ -466,6 +485,12 @@ class CannedSource:
             merged = dict(sp.get(role, {}))
             merged.update(extra)
             sp[role] = merged
+        # per-genre lead loudness normalisation (output-only trim)
+        lv = _LEAD_LEVEL.get(self.genre)
+        if lv is not None:
+            ld = dict(sp.get("lead", {}))
+            ld["level"] = lv
+            sp["lead"] = ld
         return sp
 
     def instrument_map(self) -> dict:
