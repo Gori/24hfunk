@@ -71,8 +71,8 @@
     }
   }
   function drawHud() {
-    drawHudLine(hudEffect, 1);
-    drawHudLine(hudMusic, eng.rows - 2);
+    drawHudLine(hudEffect, 2);
+    drawHudLine(hudMusic, eng.rows - 3);
   }
 
   let demoSet = new Set();
