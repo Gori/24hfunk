@@ -296,10 +296,21 @@
       // forward the WHOLE env (mv/bass/lead/drum/pitch + future fields) and
       // only override the palette with this effect's accent offset. Dropping
       // mv here made env.mv undefined -> NaN sizes -> black effects.
-      const e2 = base && base.accent ? Object.assign({}, env, {
-        pal: { bg: base.bg, fg: base.fg,
-          accent: base.accent.map((_, i) => base.accent[(i + P.cj) % base.accent.length]) },
-      }) : env;
+      // perf: reuse persistent env/pal/accent objects (this ran Object.assign
+      // + accent.map every frame for the active demo -> constant GC churn).
+      let e2 = env;
+      if (base && base.accent) {
+        const A = base.accent, n = A.length;
+        let ac = this._ac;
+        if (!ac || ac.length !== n) ac = this._ac = new Array(n);
+        for (let i = 0; i < n; i++) ac[i] = A[(i + P.cj) % n];
+        const pal = this._pal || (this._pal = {});
+        pal.bg = base.bg; pal.fg = base.fg; pal.accent = ac;
+        const o = this._e2 || (this._e2 = {});
+        for (const k in env) o[k] = env[k];
+        o.pal = pal;
+        e2 = o;
+      }
       drawf.call(this, eng, e2);
     },
   });
@@ -422,7 +433,7 @@
     const C = eng.cols, R = eng.rows, g = this.g;
     this.acc = (this.acc || 0) + 1;
     if (this.acc % 4 === 0 || this.bt > 0.5) {
-      const n = new Uint8Array(C * R);
+      const n = (this._n && this._n.length === C * R) ? this._n : (this._n = new Uint8Array(C * R)); n.fill(0);
       for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
         let s = 0;
         for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
@@ -1006,7 +1017,7 @@
     const C = eng.cols, R = eng.rows; this.g = new Float32Array(C * R);
     for (let i = 0; i < this.g.length; i++) this.g[i] = Math.random() < 0.5 ? 0 : 1;
   }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, g = this.g, n = new Float32Array(C * R);
+    const C = eng.cols, R = eng.rows, g = this.g, n = (this._n && this._n.length === C * R) ? this._n : (this._n = new Float32Array(C * R));
     for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
       let s = 0;
       for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++)
@@ -1421,7 +1432,7 @@
       if (g[y * C + x]) px(eng, x, y, '*', mul(acc(env, ((x + y) / 5 | 0) % 3), 0.4 + env.beat * 0.4));
   });
   const Plume = E('SMOKE', function (eng) { this.d = new Float32Array(eng.cols * eng.rows); }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, d = this.d, n = new Float32Array(C * R);
+    const C = eng.cols, R = eng.rows, d = this.d, n = (this._n && this._n.length === C * R) ? this._n : (this._n = new Float32Array(C * R)); n.fill(0);
     const src = (C / 2 + Math.sin(this.t) * C * 0.15) | 0;
     for (let k = -2; k <= 2; k++) d[(R - 2) * C + ((src + k + C) % C)] = 1 + env.energy;
     for (let y = 1; y < R - 1; y++) for (let x = 1; x < C - 1; x++) {
@@ -1781,7 +1792,7 @@
     const C = eng.cols, R = eng.rows, g = this.g;
     this.ac = (this.ac || 0) + 1;
     if (this.ac % 3 === 0 || this.bt > 0.5) {
-      const n = new Uint8Array(C * R);
+      const n = (this._n && this._n.length === C * R) ? this._n : (this._n = new Uint8Array(C * R)); n.fill(0);
       for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
         const i = y * C + x, s = g[i];
         if (s === 1) { n[i] = 2; } else if (s === 2) { n[i] = 0; } else {

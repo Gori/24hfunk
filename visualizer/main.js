@@ -74,6 +74,15 @@
     requestAnimationFrame(loop);
   }
 
+  // When the tab is hidden/throttled rAF stalls; without this the lost time
+  // is clamped away every stall and the visual clock falls further behind
+  // real time (motion looks progressively slow until a refresh). Re-zero the
+  // dt baseline on resume so there is no accumulated backlog.
+  function resync() { last = performance.now(); }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resync(); });
+  window.addEventListener('pageshow', resync);
+  window.addEventListener('focus', resync);
+
   setStatus();
   connect();
   requestAnimationFrame(loop);
