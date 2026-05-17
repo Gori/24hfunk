@@ -106,7 +106,11 @@
     if (scrX < -totalW) { scrOn = false; return; }
     const baseY = (R - 7 * S) >> 1;
     const acc = (curPal && curPal.accent) || [[255, 255, 255]];
-    const k = 0.6 + Math.min(0.45, beatEnv * 0.5);
+    // fade the text in on entrance + out on exit (not a hard pop)
+    const span = C + 2 + totalW;
+    const p = ((C + 2) - scrX) / span;
+    const fade = Math.max(0, Math.min(1, p / 0.15, (1 - p) / 0.15));
+    const k = (0.6 + Math.min(0.45, beatEnv * 0.5)) * fade;
     for (let li = 0; li < scrText.length; li++) {
       const ch = scrText[li];
       if (ch === ' ') continue;
@@ -224,7 +228,7 @@
       const lp = section && section.palette;
       const valid = lp && typeof lp.bg === 'string' && typeof lp.fg === 'string';
       tgtPal = window.Palette.normalize(valid ? lp : PALETTES[palIdx]);
-      palDur = 1.6;                 // snappy crossfade between songs
+      palDur = 3.0;                 // crossfade between songs
       if (instant) {
         // page (re)load: RESTORE the song's palette instantly (no fade —
         // the colours are "saved"), and re-reset the active effect so the
