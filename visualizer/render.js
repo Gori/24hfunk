@@ -61,7 +61,13 @@
     const parts = [];
     if (named) parts.push(nm);
     parts.push(up(section.genre));
-    if (section.mood) parts.push(up(section.mood));
+    if (section.mood) {
+      const md = up(section.mood);
+      // the LLM often makes mood == name -> don't show the title twice
+      if (md && (!named || (md !== nm && nm.indexOf(md) < 0 && md.indexOf(nm) < 0))) {
+        parts.push(md);
+      }
+    }
     if (section.bpm) parts.push(`${section.bpm | 0} BPM`);
     if (section.key) parts.push(up(section.key));
     hudMusic = parts.filter(Boolean).join('  ·  ');
