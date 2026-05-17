@@ -3,7 +3,12 @@
 // cinematic camera overlay. window.Renderer keeps main.js's API.
 (function () {
 
-  let eng, active, t0 = performance.now();
+  // GLOBAL movement speed for ALL visual effects. 1.0 = original; 0.7 =
+  // 30% slower. Scales autonomous motion only (effect time, env.t, the
+  // camera swim) — NOT music-synced motion (beat jumps, mv/energy/decays,
+  // palette fade, the scene-rotation clock). One knob, tune freely.
+  let SPEED = 0.7;
+  let eng, active, vT = 0;
   let prevPal = window.Palette.normalize(null);
   let tgtPal = window.Palette.normalize(null);
   let curPal = window.Palette.normalize(null);
@@ -132,7 +137,16 @@
       eng = new window.A3D(canvas);
       buildPool();
       window.addEventListener('resize', () => { eng.resize(); if (active && active.reset) active.reset(eng); });
-      active = nextActive();
+      // LOCAL TESTING: each browser refresh steps to the NEXT effect in the
+      // pool (deterministic walk via localStorage), so you can review them
+      // one by one. In-session rotation still uses the shuffle-bag.
+      let idx = 0;
+      try {
+        idx = (parseInt(window.localStorage.getItem('str_fx_idx'), 10) || 0);
+        if (!(idx >= 0) || idx >= pool.length) idx = 0;
+        window.localStorage.setItem('str_fx_idx', String((idx + 1) % pool.length));
+      } catch (e) { idx = 0; }
+      active = pool[idx] || nextActive();
       if (active.reset) active.reset(eng);
       rerollFX(); announceEffect();
       announceEffect();
@@ -162,7 +176,8 @@
     onBeat() { beatEnv = 1; beatKick = 1; if (active && active.beat) active.beat(); },
     frame(dt) {
       if (!eng) return;
-      const curT = (performance.now() - t0) / 1000;
+      vT += dt * SPEED;                 // slowed autonomous clock
+      const curT = vT;
       if (palT < 1) palT = Math.min(1, palT + dt / palDur);
       curPal = mix(prevPal, tgtPal, ease(palT));
       beatEnv = Math.max(0, beatEnv - dt / 0.26);
@@ -201,7 +216,7 @@
         mv: mv,
       };
       const isDemo = demoSet.has(active);
-      if (active.step) active.step(dt * (isDemo ? fxTime : 1), env);
+      if (active.step) active.step(dt * SPEED * (isDemo ? fxTime : 1), env);
       eng.clear(curPal.bg);
       drawActive(env);              // applies per-appearance symmetry/flip
       drawHud();                    // grid-aligned HUD, top-most

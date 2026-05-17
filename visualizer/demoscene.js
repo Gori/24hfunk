@@ -821,18 +821,46 @@
       px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
     }
   });
-  const Cubes = E('CUBE FIELD', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
-    const drawC = (cx, cy, cz, s) => {
-      const v = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]
-        .map(([x, y, z]) => { const Z = cz; const p = 6 / (6 + Z); return [C / 2 + (cx + x * s) * p * 11, R / 2 + (cy + y * s) * p * 11, Z]; });
-      [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(([i, j]) => {
-        const a = v[i], b = v[j]; eng.line3 && 0;
-        let x0 = a[0] | 0, y0 = a[1] | 0, x1 = b[0] | 0, y1 = b[1] | 0, dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, er = dx - dy, n = dx + dy + 1;
-        while (n-- > 0) { px(eng, x0, y0, '#', mul(acc(env, 0), 0.4 + (1 - a[2] / 30) + env.beat * 0.3), a[2]); if (x0 === x1 && y0 === y1) break; const e2 = 2 * er; if (e2 > -dy) { er -= dy; x0 += sx; } if (e2 < dx) { er += dx; y0 += sy; } }
+  const Cubes = E('CUBE FIELD', function () {
+    this.cb = [];
+    for (let i = 0; i < 11; i++) this.cb.push({
+      ax: (Math.random() * 2 - 1) * 6, ay: (Math.random() * 2 - 1) * 4,
+      z: 1 + Math.random() * 27, rx: Math.random() * 6, ry: Math.random() * 6,
+      rz: Math.random() * 6, vx: (Math.random() - 0.5) * 1.0,
+      vy: (Math.random() - 0.5) * 0.8, vz: (Math.random() - 0.5) * 1.0,
+      s: 0.7 + Math.random() * 1.1, ci: (Math.random() * 3) | 0,
+    });
+    this._lt = 0;
+  }, function (eng, env) {
+    // a corridor of independently TUMBLING cubes streaming past — varied
+    // size/colour/spin, depth-shaded, speed & pulse driven by the music.
+    const C = eng.cols, R = eng.rows, P = this.P;
+    let dt = env.t - (this._lt || env.t); if (dt < 0 || dt > 0.1) dt = 0.016;
+    this._lt = env.t;
+    const spd = (5 + env.mv * 6 + env.beat * 3) * P.spd;
+    const F = Math.min(C, R * 2) * 0.15;
+    const VV = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]];
+    const EE = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+    for (const c of this.cb) {
+      c.z -= spd * dt;
+      c.rx += c.vx * dt * P.dir; c.ry += c.vy * dt; c.rz += c.vz * dt * P.dir;
+      if (c.z < 1) {
+        c.z += 28; c.ax = (Math.random() * 2 - 1) * 7; c.ay = (Math.random() * 2 - 1) * 4.5;
+        c.ci = (Math.random() * 3) | 0; c.s = 0.7 + Math.random() * 1.1;
+      }
+      const cx = Math.cos(c.rx), sx = Math.sin(c.rx), cy = Math.cos(c.ry), sy = Math.sin(c.ry), cz = Math.cos(c.rz), sz = Math.sin(c.rz);
+      const sc = c.s * (1 + env.beat * 0.18);
+      const pr = VV.map(([x, y, z]) => {
+        let y1 = y * cx - z * sx, z1 = y * sx + z * cx;
+        let x1 = x * cy + z1 * sy; z1 = -x * sy + z1 * cy;
+        const x2 = x1 * cz - y1 * sz, y2 = x1 * sz + y1 * cz;
+        const dd = Math.max(0.4, c.z + z1);
+        return [C / 2 + (c.ax + x2 * sc) / dd * F, R / 2 + (c.ay + y2 * sc) / dd * F, c.z + z1];
       });
-    };
-    for (let i = 0; i < 7; i++) { const z = ((i * 4 - this.t * 6 * this.P.spd) % 28 + 28) % 28; drawC(Math.sin(i * 2 + this.t) * 1.5, Math.cos(i * 1.7) * 1, z, 0.6); }
+      const dimf = Math.max(0.2, Math.min(1, 6 / c.z));
+      const col = mul(acc(env, c.ci), 0.25 + dimf * 0.8 + env.beat * 0.25);
+      for (const [i, j] of EE) LN(eng, pr[i][0], pr[i][1], pr[j][0], pr[j][1], '#', col, c.z);
+    }
   });
   const SinScrollDots = E('SINE DOTS', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
