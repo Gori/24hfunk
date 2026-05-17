@@ -20,6 +20,6 @@ SynthDef(\bass, { |out=0, amp=0.8, freq=45, cutoff=600, res=0.2, drive=1.2, sub=
 	var cf     = (cutoff * (0.55 + v * 0.9) * (1 + (fenv * 3 * fEnv))).clip(90, 5500);
 	var pre    = (subOsc + click + upper) * (1 + (drive * 0.32 * defAmt * (0.5 + v * 0.6)));
 	var sig    = MoogFF.ar(pre, cf, (res * 2.6).clip(0, 3.3));       // analog ladder
-	sig = LeakDC.ar(((sig + (sig * sig * 0.05)).tanh) * 0.94);       // gentle asym 2nd stage
+	sig = LeakDC.ar(((sig + (sig * sig * 0.05)).tanh) * 1.18);       // gentle asym 2nd stage (+level: ladder rolloff lost presence)
 	Out.ar(out, Pan2.ar(sig * (aEnv * 0.7 + 0.3) * gEnv * amp, pan));
 }).add;

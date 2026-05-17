@@ -12,7 +12,7 @@ SynthDef(\master, { |in=0, out=0|
 	var drv  = tape * 1.10;
 	var sat  = ((drv + (drv * drv * 0.045)) * 0.98).tanh;
 	var soft = (sat * 0.72) + (LPF.ar(sat, 12000) * 0.28);
-	var comp = Compander.ar(soft, soft, 0.32, 1.0, 0.55, 0.01, 0.20) * 1.16;
+	var comp = Compander.ar(soft, soft, 0.32, 1.0, 0.55, 0.01, 0.20) * 1.10;
 	var wet  = FreeVerb2.ar(comp[0], comp[1], 1.0, 0.5, 0.5);
 	var glue = comp + (wet * 0.025);
 	Out.ar(out, Limiter.ar(LeakDC.ar(glue), 0.97, 0.002));
