@@ -181,7 +181,7 @@ _GENRE_INSTR = {
     "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadFM"},
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
-    "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "lead"},
+    "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadJazz"},
     "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "lead"},
     "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadPulse"},
     "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadPulse"},
@@ -421,7 +421,7 @@ _LEAD_LEVEL = {
     "electro": 0.80, "uk_garage": 0.85, "minneapolis_funk": 0.86,
     "broken_house": 0.88, "minimal_techno": 0.90, "eighties_hiphop": 0.96,
     # \lead genres
-    "funk": 0.95, "electro_funk": 0.95, "synthwave": 0.99, "jazz": 0.85,
+    "funk": 0.95, "electro_funk": 0.95, "synthwave": 0.99, "jazz": 0.30,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 1.00, "afro_rnb": 1.02, "dub_garage": 1.06,
     "dub_techno": 1.10, "neon_dub": 1.12, "steppers_dub": 1.12,
