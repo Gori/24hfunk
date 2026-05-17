@@ -11,6 +11,15 @@
   const lerpC = (a, b, k) => [a[0] + (b[0] - a[0]) * k | 0, a[1] + (b[1] - a[1]) * k | 0, a[2] + (b[2] - a[2]) * k | 0];
   const RMP = ' .:-=+*o%#@█';
   const gly = (b) => RMP[Math.max(0, Math.min(RMP.length - 1, (b * (RMP.length - 1)) | 0))];
+  // current song name (set by render.js from the LLM section.name), sanitised
+  // to the A-Z/space the bitmap font supports. Text effects render THIS.
+  const _song = () => String((window.Worlds && window.Worlds.song) || '')
+    .toUpperCase().replace(/[^A-Z ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const SONG_FULL = () => _song() || 'STR FUNK';
+  const SONG_WORD = () => {
+    const p = _song().split(' ').filter(Boolean);
+    return p.length ? p[(Math.random() * p.length) | 0] : 'STR';
+  };
 
   // ---- 1. PLASMA ----
   const Plasma = {
@@ -586,12 +595,25 @@
   });
   const Spiral = E('COLOR SPIRAL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
+    // perf: a (angle) & d (radius) depend only on x,y — cache the
+    // time-invariant phase (a*4 + d*0.3) and colour angle once; per frame
+    // only sin(phase - t*4) (was atan2+hypot per cell every frame).
+    if (!this._ph || this._pw !== C || this._phh !== R) {
+      this._pw = C; this._phh = R;
+      const ph = this._ph = new Float32Array(C * R);
+      const ca = this._ca = new Float32Array(C * R);
+      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+        const dx = x - C / 2, dy = (y - R / 2) * 2;
+        const a = Math.atan2(dy, dx), d = Math.sqrt(dx * dx + dy * dy);
+        const i = y * C + x;
+        ph[i] = a * 4 + d * 0.3; ca[i] = a * 0.5;
+      }
+    }
+    const ph = this._ph, ca = this._ca, t = this.t, bb = 0.7 + env.beat * 0.4;
     for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
-      const dx = x - C / 2, dy = (y - R / 2) * 2;
-      const a = Math.atan2(dy, dx), d = Math.hypot(dx, dy);
-      const v = Math.sin(a * 4 + d * 0.3 - this.t * 4);
+      const i = y * C + x, v = Math.sin(ph[i] - t * 4);
       if (v > 0) {
-        const g = gly(v), c = mul(acc(env, ((a / 2 + this.t) | 0) % 3 + 3 % 3), 0.3 + v * (0.7 + env.beat * 0.4));
+        const g = gly(v), c = mul(acc(env, ((ca[i] + t) | 0) % 3), 0.3 + v * bb);
         px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
         px(eng, x, y + 1, g, c); px(eng, x + 1, y + 1, g, c);
       }
@@ -723,32 +745,29 @@
       }
     }
   });
-  const OSKAR = {
-    O: ['#####', '#   #', '#   #', '#   #', '#####'],
-    S: ['#####', '#    ', '#####', '    #', '#####'],
-    K: ['#   #', '#  # ', '###  ', '#  # ', '#   #'],
-    A: [' ### ', '#   #', '#####', '#   #', '#   #'],
-    R: ['#### ', '#   #', '#### ', '#  # ', '#   #'],
-  };
   const DVD = E('BOUNCE LOGO', function (eng) {
-    this.w = 'OSKAR';
+    // bounce the SONG NAME (FNT5 full font), auto-scaled/truncated to fit.
+    let w = SONG_FULL(), S = 2;
+    while (S > 1 && w.length * 6 * S > eng.cols - 2) S--;
+    const maxc = Math.max(1, ((eng.cols - 2) / (6 * S)) | 0);
+    if (w.length > maxc) w = w.slice(0, maxc).trim();
+    this.w = w; this.S = S;
     this.x = (eng.cols / 2) | 0; this.y = (eng.rows / 2) | 0;
     this.vx = this.P.dir * 22; this.vy = 14;
   }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, w = this.w, GW = 14;   // 5px*2 + 4 gap
-    const W = w.length * GW;
+    const C = eng.cols, R = eng.rows, w = this.w, S = this.S, GW = 6 * S;
+    const W = w.length * GW, H = 7 * S;
     this.x += this.vx * 0.016 * this.P.spd; this.y += this.vy * 0.016 * this.P.spd;
     if (this.x < 1 || this.x > C - W) { this.vx *= -1; this.ci = (this.ci || 0) + 1; this.x = Math.max(1, Math.min(C - W, this.x)); }
-    if (this.y < 1 || this.y > R - 11) { this.vy *= -1; this.ci = (this.ci || 0) + 1; this.y = Math.max(1, Math.min(R - 11, this.y)); }
+    if (this.y < 1 || this.y > R - H - 1) { this.vy *= -1; this.ci = (this.ci || 0) + 1; this.y = Math.max(1, Math.min(R - H - 1, this.y)); }
     const col = mul(acc(env, (this.ci || 0) % 3), 0.6 + env.beat * 0.4);
     const ox = this.x | 0, oy = this.y | 0;
     for (let li = 0; li < w.length; li++) {
-      const bmp = OSKAR[w[li]]; if (!bmp) continue;
-      const lx = ox + li * GW;
-      for (let ry = 0; ry < 5; ry++) for (let rx = 0; rx < 5; rx++)
-        if (bmp[ry][rx] === '#')
-          for (let s = 0; s < 2; s++) for (let q = 0; q < 2; q++)
-            px(eng, lx + rx * 2 + s, oy + ry * 2 + q, '#', col);
+      const bmp = FNT5[w[li]] || FNT5[' ']; const lx = ox + li * GW;
+      for (let ry = 0; ry < 7; ry++) for (let rx = 0; rx < 5; rx++)
+        if (bmp[ry][rx] === '1')
+          for (let s = 0; s < S; s++) for (let q = 0; q < S; q++)
+            px(eng, lx + rx * S + s, oy + ry * S + q, '#', col);
     }
   });
   const PolarSwirl = E('POLAR SWIRL', null, function (eng, env) {
@@ -1150,10 +1169,8 @@
     Z: ['11111', '00010', '00100', '01000', '10000', '10000', '11111'],
     ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
   };
-  const WORDS = ['STR', 'FUNK', 'ASCII', 'DEMO', 'SCENE', 'NEON', 'GROOVE',
-    'PIXEL', 'CHROME', 'DREAM', 'VOID', 'PULSE'];
   const KineticType = E('KINETIC TYPE', function () {
-    this.w = WORDS[(Math.random() * WORDS.length) | 0]; this.tw = 0; this._lt = 0;
+    this.w = SONG_WORD(); this.tw = 0; this._lt = 0;
   }, function (eng, env) {
     // BIG readable typography: a word rendered from the 5x7 font, letters
     // revealing left->right, scale-pulsing on the beat, each glyph bouncing
@@ -1162,7 +1179,7 @@
     let dt = env.t - (this._lt || env.t); if (dt < 0 || dt > 0.1) dt = 0.016;
     this._lt = env.t; this.tw += dt;
     if (this.bt > 0.6 && this.tw > 0.7 && Math.random() < 0.5) {
-      this.w = WORDS[(Math.random() * WORDS.length) | 0]; this.tw = 0;
+      this.w = SONG_WORD(); this.tw = 0;
       return;
     }
     // base scale to fit ~78% width; gentle entrance overshoot + beat pulse
@@ -1997,8 +2014,7 @@
       px(eng, cx + xx, cy + yy, chk ? '@' : 'o', chk ? mul(acc(env, 0), 0.7 + env.beat * 0.3) : mul(acc(env, 1), 0.5), 300);
     }
   });
-  const WORDS2 = ['STR', 'FUNK', 'AMIGA', 'DEMO', 'GROOVE', 'NEON', 'PIXEL', 'DREAM'];
-  const TextRing = E('TEXT RINGS', function () { this.w = WORDS2[(Math.random() * WORDS2.length) | 0]; }, function (eng, env) {
+  const TextRing = E('TEXT RINGS', function () { this.w = SONG_WORD(); }, function (eng, env) {
     const C = eng.cols, R = eng.rows, w = this.w, n = w.length;
     for (let i = 0; i < 6; i++) {
       const z = (((i * 1.4 - this.t * 2 * this.P.spd) % 9) + 9) % 9 + 0.7;

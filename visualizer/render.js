@@ -51,7 +51,13 @@
   function setNowPlaying(section) {
     if (!section) return;
     const up = (s) => String(s || '').replace(/_/g, ' ').trim().toUpperCase();
-    const parts = [up(section.genre)];
+    const nm = up(section.name);
+    const named = nm && nm !== 'UNTITLED';
+    // expose the song name to the text-based visual effects
+    if (window.Worlds) window.Worlds.song = named ? nm : '';
+    const parts = [];
+    if (named) parts.push(nm);
+    parts.push(up(section.genre));
     if (section.mood) parts.push(up(section.mood));
     if (section.bpm) parts.push(`${section.bpm | 0} BPM`);
     if (section.key) parts.push(up(section.key));
@@ -66,8 +72,9 @@
     const C = eng.cols, R = eng.rows;
     if (row < 0 || row >= R) return;
     const sx = Math.max(0, (C - str.length) >> 1);
+    const col = (curPal && curPal.fg) || HUD_COL;
     for (let i = 0; i < str.length && sx + i < C; i++) {
-      eng.glyph2d(sx + i, row, str[i], HUD_COL);
+      eng.glyph2d(sx + i, row, str[i], col);
     }
   }
   function drawHud() {
@@ -163,9 +170,14 @@
       setNowPlaying(section);
       prevPal = { bg: curPal.bg.slice(), fg: curPal.fg.slice(), accent: curPal.accent.map((x) => x.slice()) };
       // every new music style -> fade to the NEXT distinct curated palette
+      // use the LLM's per-song palette (incl. an inverted bright-bg / dark-fg
+      // look if it chose one); fall back to the curated rotation if absent.
       palIdx = (palIdx + 1) % PALETTES.length;
-      tgtPal = window.Palette.normalize(PALETTES[palIdx]);
-      palDur = 4.0;                      // clearly visible crossfade
+      const lp = section && section.palette;
+      const valid = lp && typeof lp.bg === 'string' && typeof lp.fg === 'string';
+      tgtPal = window.Palette.normalize(valid ? lp : PALETTES[palIdx]);
+      palDur = (valid && lp.transition_sec)
+        ? Math.max(1, Math.min(12, +lp.transition_sec || 4)) : 4.0;
       palT = 0;
       // NOTE: a music-section change only fades the palette. The visual
       // EFFECT runs on its own independent 30s clock (see frame()), so
