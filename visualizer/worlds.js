@@ -252,13 +252,12 @@
       c.yaw = 0; c.pitch = 0; c.roll = 0; c.fov = 0.62;
       // the global music camera-swim zooms a flat 2D world far too hard —
       // keep just a hint of it here.
-      // a flat 2D side-scroller should not dolly/zoom with the music; and
-      // only rotate/sway ~30% as much as the 3D worlds.
+      // a flat 2D side-scroller: NO camera scene movement at all.
       const fx = eng.fx;
       const _dfov = fx.dfov, _dz = fx.dz, _dyaw = fx.dyaw,
-        _dpitch = fx.dpitch, _droll = fx.droll;
-      fx.dfov = 0; fx.dz = 0;
-      fx.dyaw *= 0.3; fx.dpitch *= 0.3; fx.droll *= 0.3;
+        _dpitch = fx.dpitch, _droll = fx.droll, _dx = fx.dx, _dy = fx.dy;
+      fx.dfov = 0; fx.dz = 0; fx.dyaw = 0; fx.dpitch = 0;
+      fx.droll = 0; fx.dx = 0; fx.dy = 0;
       // parallax layers (far -> near) via depth planes
       const layers = [[18, acc(env, 2), 0.25, 'mountains'], [10, acc(env, 1), 0.5, 'city'], [3.5, env.pal.fg, 1, 'ground']];
       for (const [pz, colr, par, kind] of layers) {
@@ -290,6 +289,7 @@
       eng.sprite(this.sx + 4, this.y + 1.2, 3.4, hero, acc(env, 0), 1.0);
       fx.dfov = _dfov; fx.dz = _dz;
       fx.dyaw = _dyaw; fx.dpitch = _dpitch; fx.droll = _droll;
+      fx.dx = _dx; fx.dy = _dy;
       eng.farFog = _ff;
     },
   };

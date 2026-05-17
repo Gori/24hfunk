@@ -8,6 +8,13 @@
   // camera swim) — NOT music-synced motion (beat jumps, mv/energy/decays,
   // palette fade, the scene-rotation clock). One knob, tune freely.
   let SPEED = 0.7;
+  // per-effect motion trim (multiplies SPEED for that title only). 1 = use
+  // the global. >1 faster, <1 slower. Easy to tune per effect.
+  const FXSPEED = {
+    'PLASMA': 1.6, 'ROTOZOOM': 1.6, 'COPPER': 1.6, 'SINE COLUMNS': 1.6,
+    'POLAR SWIRL': 1.6, 'DOT WAVE': 1.6,
+    'GLENZ': 0.55, 'FIREWORKS': 0.55, 'WARP STARS': 0.55,
+  };
   let eng, active, vT = 0;
   let prevPal = window.Palette.normalize(null);
   let tgtPal = window.Palette.normalize(null);
@@ -216,7 +223,7 @@
         mv: mv,
       };
       const isDemo = demoSet.has(active);
-      if (active.step) active.step(dt * SPEED * (isDemo ? fxTime : 1), env);
+      if (active.step) active.step(dt * SPEED * (FXSPEED[active.title] || 1) * (isDemo ? fxTime : 1), env);
       eng.clear(curPal.bg);
       drawActive(env);              // applies per-appearance symmetry/flip
       drawHud();                    // grid-aligned HUD, top-most

@@ -1635,25 +1635,40 @@
       if (d < 2) stack.push([x2, y2, a + sway * 0.5, len * 0.6, d + 1]);
     }
   });
-  const Bolt = E('LIGHTNING', function () { this.seg = []; this.life = 0; }, function (eng, env) {
+  const Bolt = E('LIGHTNING', function () { this.seg = []; this.life = 0; this.cd = 0; }, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    if (this.bt > 0.5 && this.life <= 0) {
-      this.seg = []; let x = Math.random() * C, y = 0;
-      while (y < R && this.seg.length < 200) {
-        const nx = x + (Math.random() - 0.5) * 11, ny = y + 4 + Math.random() * 5;
-        this.seg.push([x, y, nx, ny]);
-        if (Math.random() < 0.18 && this.seg.length < 170) {
-          let fx = nx, fy = ny;
-          for (let k = 0; k < 6 && fy < R; k++) { const gx = fx + (Math.random() - 0.5) * 15, gy = fy + 5 + Math.random() * 5; this.seg.push([fx, fy, gx, gy]); fx = gx; fy = gy; }
+    this.cd = Math.max(0, this.cd - 0.04);
+    if (this.cd <= 0 && (this.bt > 0.5 || (this.life <= 0 && Math.random() < 0.012))) {
+      this.seg = [];
+      const grow = (sx, sy, ang, len, depth) => {
+        let cx = sx, cy = sy, a = ang, steps = 0;
+        while (cy < R && steps++ < 50 && this.seg.length < 280) {
+          a += (Math.random() - 0.5) * 0.7;
+          const nx = cx + Math.cos(a) * len, ny = cy + Math.sin(a) * len;
+          this.seg.push([cx, cy, nx, ny, depth]);
+          if (depth < 2 && Math.random() < 0.15 && this.seg.length < 240)
+            grow(nx, ny, a + (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random()), len * 0.78, depth + 1);
+          cx = nx; cy = ny;
         }
-        x = nx; y = ny;
-      }
-      this.life = 1;
+      };
+      const bolts = 1 + (Math.random() < 0.3 ? 1 : 0);
+      for (let b = 0; b < bolts; b++)
+        grow(C * (0.2 + Math.random() * 0.6), 0, Math.PI / 2 + (Math.random() - 0.5) * 0.5, 4 + Math.random() * 3, 0);
+      this.life = 1; this.cd = 0.5 + Math.random() * 1.3;
     }
-    this.life = Math.max(0, this.life - 0.06);
+    this.life = Math.max(0, this.life - 0.05);
     if (this.life <= 0) return;
-    const c = mul(acc(env, 2), 0.4 + this.life * 0.7);
-    for (const s of this.seg) LN(eng, s[0], s[1], s[2], s[3], '#', c, 200);
+    const fl = this.life, core = [235, 240, 255], halo = mul(acc(env, 2), 0.5 + fl * 0.5);
+    for (let y = 0; y < 4; y++) eng.hspan(y, 0, C - 1, '.', mul(acc(env, 2), 0.04 + fl * 0.18 * (1 - y / 4)), 850);
+    for (const s of this.seg) {
+      const main = s[4] === 0;
+      if (main) {
+        LN(eng, s[0] - 1, s[1], s[2] - 1, s[3], '.', mul(halo, 0.45), 210);
+        LN(eng, s[0] + 1, s[1], s[2] + 1, s[3], '.', mul(halo, 0.45), 210);
+      }
+      LN(eng, s[0], s[1], s[2], s[3], main ? '#' : '|',
+        main ? mul(core, 0.4 + fl * 0.6) : mul(halo, 0.4 + fl * 0.5), 200);
+    }
   });
   const Hilb = E('HILBERT', function () {
     const order = 5, n = 1 << order, N = n * n, pts = [];
@@ -1664,35 +1679,60 @@
         if (ry === 0) { if (rx === 1) { x = q - 1 - x; y = q - 1 - y; } const tm = x; x = y; y = tm; }
         x += q * rx; y += q * ry; t = (t / 4) | 0;
       }
-      pts.push([x, y]);
+      pts.push([x - (n - 1) / 2, y - (n - 1) / 2]);   // centred
     }
     this.pts = pts; this.n = n;
   }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, p = this.pts, n = this.n;
-    const sc = Math.min(C / (n + 1), R / (n + 1)) * (1.5 + this.P.zoom * 0.5);
-    const ox = (C - n * sc) / 2, oy = (R - n * sc) / 2;
-    const head = ((this.t * 140) | 0) % p.length, tail = 240;
-    for (let k = 0; k < tail; k++) {
-      const idx = (head - k + p.length) % p.length, a = p[idx], b = p[(idx + 1) % p.length];
-      LN(eng, ox + a[0] * sc, oy + a[1] * sc, ox + b[0] * sc, oy + b[1] * sc, '#',
-        mul(acc(env, (k >> 5) % 3), 0.25 + (1 - k / tail) * 0.7 + env.beat * 0.3), 300);
+    // the WHOLE curve drawn faint (ghost) with slow rotation + beat pulse,
+    // and 2 bright comets racing along it with long fading trails.
+    const C = eng.cols, R = eng.rows, p = this.pts, n = this.n, P = this.P, L = p.length;
+    const sc = Math.min(C / n, R / n) * (1.4 + P.zoom * 0.6) * (1 + env.beat * 0.10);
+    const rot = this.t * 0.25 * P.dir, cr = Math.cos(rot), sr = Math.sin(rot);
+    const cx = C / 2, cy = R / 2;
+    const SC = (a) => { const X = a[0] * sc, Y = a[1] * sc * 0.62; return [cx + X * cr - Y * sr, cy + X * sr + Y * cr]; };
+    const ghost = mul(acc(env, 0), 0.10 + env.beat * 0.08);
+    for (let i = 0; i < L - 1; i += 2) { const a = SC(p[i]), b = SC(p[i + 1]); LN(eng, a[0], a[1], b[0], b[1], '.', ghost, 600); }
+    for (let cmt = 0; cmt < 2; cmt++) {
+      const head = (((this.t * 170 * P.spd) | 0) + cmt * ((L / 2) | 0)) % L, tail = 150;
+      for (let k = 0; k < tail; k++) {
+        const i = (head - k + L) % L, a = SC(p[i]), b = SC(p[(i + 1) % L]), f = 1 - k / tail;
+        LN(eng, a[0], a[1], b[0], b[1], f > 0.7 ? '#' : f > 0.35 ? '+' : '.',
+          mul(acc(env, (cmt + (i >> 6)) % 3), 0.2 + f * 0.8 + env.beat * 0.3), 300);
+      }
     }
   });
   const Rule30 = E('RULE 30', function (eng) {
-    const C = eng.cols; this.row = new Uint8Array(C); this.row[C >> 1] = 1; this.hist = []; this.ac = 0;
+    const C = eng.cols; this.row = new Uint8Array(C); this.row[C >> 1] = 1;
+    this.hist = []; this.ac = 0; this.rules = [30, 90, 110, 150, 90, 184]; this.ri = 0;
   }, function (eng, env) {
+    // generic Wolfram CA cycling iconic rules (30 chaos, 90 Sierpinski,
+    // 110/150/184) — reseeds + switches rule on a strong beat so you watch
+    // a fresh famous pattern build; cells coloured by generation age.
     const C = eng.cols, R = eng.rows;
     this.ac = (this.ac || 0) + 1;
-    if (this.ac % 2 === 0 || this.bt > 0.5) {
-      const r = this.row, nr = new Uint8Array(C);
-      for (let x = 0; x < C; x++) nr[x] = (r[(x - 1 + C) % C] ^ (r[x] | r[(x + 1) % C])) & 1;
-      this.row = nr; this.hist.push(nr); if (this.hist.length > R) this.hist.shift();
-      if (this.bt > 0.7) { this.row = new Uint8Array(C); this.row[(Math.random() * C) | 0] = 1; }
+    if (this.bt > 0.7 && this.hist.length > 6) {
+      this.ri = (this.ri + 1) % this.rules.length;
+      const rl = this.rules[this.ri];
+      this.row = new Uint8Array(C);
+      if (rl === 30 || rl === 90 || rl === 150) this.row[C >> 1] = 1;
+      else for (let x = 0; x < C; x++) this.row[x] = Math.random() < 0.3 ? 1 : 0;
+      this.hist = [];
     }
-    const H = this.hist;
-    for (let y = 0; y < H.length; y++) {
-      const row = H[H.length - 1 - y], yy = R - 1 - y; if (yy < 0) break;
-      for (let x = 0; x < C; x++) if (row[x]) px(eng, x, yy, '#', mul(acc(env, (x / 8 | 0) % 3), 0.4 + env.beat * 0.4), 500);
+    if (this.ac % 2 === 0) {
+      const rule = this.rules[this.ri], r = this.row, nr = new Uint8Array(C);
+      for (let x = 0; x < C; x++) {
+        const p = (r[(x - 1 + C) % C] << 2) | (r[x] << 1) | r[(x + 1) % C];
+        nr[x] = (rule >> p) & 1;
+      }
+      this.row = nr; this.hist.push(nr); if (this.hist.length > R) this.hist.shift();
+    }
+    const H = this.hist, gen = H.length;
+    const cA = acc(env, 0), cB = acc(env, 2);
+    for (let y = 0; y < gen; y++) {
+      const row = H[gen - 1 - y], yy = R - 1 - y; if (yy < 0) break;
+      const age = 1 - y / R;
+      const col = mul(lerpC(cA, cB, age), 0.34 + age * 0.55 + env.beat * 0.35);
+      for (let x = 0; x < C; x++) if (row[x]) px(eng, x, yy, '#', col, 500);
     }
   });
   const Brain = E('BRIANS BRAIN', function (eng) {
@@ -1830,29 +1870,47 @@
   });
   const PFire = E('PLASMA FIRE', function (eng) { this.w = eng.cols; this.h = eng.rows; this.b = new Float32Array(this.w * this.h); }, function (eng, env) {
     const w = this.w, h = this.h, b = this.b;
-    // net-COOLING divisor (>4) + a hard clamp so the field can never run away
-    // to a full-white screen; modest beat boost on the source row only.
-    const div = 4.18 - env.mv * 0.05 - env.beat * 0.06;
-    for (let x = 0; x < w; x++) b[(h - 1) * w + x] = (Math.random() < 0.82 ? 0.85 : 0.4) + env.beat * 0.12;
-    for (let y = 0; y < h - 1; y++) for (let x = 0; x < w; x++) {
-      const s = (b[(y + 1) * w + ((x - 1 + w) % w)] + b[(y + 1) * w + x] * 2
-        + b[(y + 1) * w + ((x + 1) % w)] + b[Math.min(h - 1, y + 2) * w + x]) / div;
-      b[y * w + x] = s > 1 ? 1 : s;
+    // classic Doom fire: every cell = the cell below (with a small random
+    // lateral drift) MINUS a random decay -> strictly cooling, flames die
+    // out with height so most of the screen stays dark (never a flat
+    // single-colour wall). Sparse hot source = licking tongues.
+    const P = this.P;
+    const sP = (0.50 + env.beat * 0.30) * (0.7 + P.amp * 0.6);
+    const cool = (0.050 + env.mv * 0.02) * (0.75 + P.spd * 0.5);
+    for (let x = 0; x < w; x++) b[(h - 1) * w + x] = (Math.random() < sP) ? (0.85 + Math.random() * 0.15) : 0;
+    for (let y = h - 2; y >= 0; y--) for (let x = 0; x < w; x++) {
+      const r = (Math.random() * 3) | 0;                  // 0..2
+      const sx = (x + r - 1 + w) % w;                     // drift -1..+1
+      const nv = b[(y + 1) * w + sx] - r * cool;
+      b[y * w + x] = nv < 0 ? 0 : nv;
     }
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const v = b[y * w + x]; if (v < 0.08) continue;
-      const col = v > 0.78 ? acc(env, 2) : v > 0.42 ? acc(env, 0) : acc(env, 1);
-      px(eng, x, y, gly(Math.min(1, v)), mul(col, 0.4 + v * 0.8), 500);
+      const v = b[y * w + x]; if (v < 0.10) continue;
+      const col = v > 0.72 ? acc(env, 2) : v > 0.40 ? acc(env, 0) : acc(env, 1);
+      px(eng, x, y, gly(v), mul(col, 0.35 + v * 0.75), 500);
     }
   });
   const Shutter = E('SHUTTER', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows, bands = 8, bh = Math.max(1, (R / bands) | 0);
+    // venetian-blind iris: slats open/close (snapping wide on the beat)
+    // revealing a flowing diagonal colour wash behind; metallic sheen edge.
+    const C = eng.cols, R = eng.rows, P = this.P;
+    const bands = 6 + (P.variant % 4), bh = Math.max(2, (R / bands) | 0);
+    this.snap = Math.max(0, (this.snap || 0) - 0.05);
+    if (this.bt > 0.5) this.snap = 1;
+    const c0 = acc(env, 0), c1 = acc(env, 1), c2 = acc(env, 2);
     for (let y = 0; y < R; y++) {
-      const bi = (y / bh) | 0;
-      const open = Math.sin(this.t * 2 * this.P.spd + bi * 0.7) * 0.5 + 0.5;
-      if ((y % bh) / bh < open) {
-        eng.hspan(y, 0, C - 1, gly(0.45 + 0.4 * (Math.sin(y * 0.3 + this.t * 4) * 0.5 + 0.5)),
-          mul(acc(env, bi % 3), 0.32 + env.beat * 0.4), 500);
+      const bi = (y / bh) | 0, inb = y - bi * bh;
+      let open = (Math.sin(this.t * 1.6 * P.spd + bi * 0.6) * 0.5 + 0.5) * 0.7 + this.snap * 0.35;
+      if (open > 1) open = 1;
+      const lit = Math.max(1, (bh * open) | 0);
+      if (inb < lit) {
+        const hue = Math.sin(y * 0.16 + this.t * 2 * P.dir) * 0.5 + 0.5;
+        eng.hspan(y, 0, C - 1, gly(0.5 + 0.4 * hue),
+          mul(lerpC(c0, c2, hue), 0.4 + 0.45 * hue + env.beat * 0.4), 500);
+      } else if (inb === lit) {
+        eng.hspan(y, 0, C - 1, '─', mul(c1, 0.7 + env.beat * 0.35), 510);
+      } else {
+        eng.hspan(y, 0, C - 1, '·', mul(c1, 0.12), 510);
       }
     }
   });
@@ -1919,10 +1977,10 @@
       rx: Math.random() * 6, ry: Math.random() * 6, vrx: (Math.random() - 0.5) * 1.4, vry: (Math.random() - 0.5) * 1.4,
       sc: 0.7 + Math.random() * 0.7 });
     this.st = [];
-    for (let i = 0; i < 150; i++) this.st.push({ x: (Math.random() * 2 - 1) * 1.4, y: (Math.random() * 2 - 1) * 1.4, z: 0.3 + Math.random() * ZF });
-    this.ob = [this.spawn(), this.spawn(), this.spawn()];
+    for (let i = 0; i < 80; i++) this.st.push({ x: (Math.random() * 2 - 1) * 1.4, y: (Math.random() * 2 - 1) * 1.4, z: 0.3 + Math.random() * ZF });
+    this.ob = [this.spawn(), this.spawn()];
     for (const o of this.ob) o.geo = this.mkv(o.t);
-    this.planet = { z: ZF * 1.5, x: (Math.random() * 2 - 1) * 2.5, y: (Math.random() * 2 - 1) * 1.2, r: 1.6 };
+    this.planet = { z: ZF * 4, x: (Math.random() * 2 - 1) * 3, y: (Math.random() * 2 - 1) * 1.4, r: 1.8 };
     this.las = 0; this._lt = 0;
   }, function (eng, env) {
     const C = eng.cols, R = eng.rows, ZF = this.ZF;
@@ -1939,7 +1997,7 @@
         b > 0.7 ? '@' : b > 0.4 ? '*' : '.', mul(WHT, 0.28 + b * 0.72), s.z);
     }
     const pl = this.planet; pl.z -= spd * dt * 0.12;
-    if (pl.z < 2.2) { pl.z = ZF * 1.6; pl.x = (Math.random() * 2 - 1) * 2.5; pl.y = (Math.random() * 2 - 1) * 1.2; }
+    if (pl.z < 2.2) { pl.z = ZF * 4; pl.x = (Math.random() * 2 - 1) * 3; pl.y = (Math.random() * 2 - 1) * 1.4; }
     const ppx = C / 2 + pl.x / pl.z * F, ppy = hY - pl.y / pl.z * F, ppr = pl.r / pl.z * F;
     if (ppr > 1.5) {
       for (let aa = 0; aa < 6.283; aa += 0.09) px(eng, ppx + Math.cos(aa) * ppr, ppy + Math.sin(aa) * ppr * 0.62, '#', DIM, pl.z);
@@ -1975,10 +2033,6 @@
     for (let aa = 0; aa < 6.283; aa += 0.09) px(eng, scx + Math.cos(aa) * sw, scy + Math.sin(aa) * sh, '.', [70, 120, 70], 200);
     LN(eng, scx - sw, scy, scx + sw, scy, '.', [58, 96, 58], 199);
     for (const o of this.ob) px(eng, scx + (o.x / Math.max(1, o.z * 0.5)) * sw, scy - Math.max(0.05, 1 - o.z / ZF) * sh * 0.8, '+', GRN, 190);
-    for (let k = 0; k < 4; k++) {
-      const wb = (C * 0.08 * (Math.sin(env.t * 1.7 + k * 1.3) * 0.5 + 0.5)) | 0;
-      for (let x = 0; x < wb; x++) { px(eng, 3 + x, dy + (k % 2) * 2, '#', GRN, 190); px(eng, C - 4 - x, dy + (k % 2) * 2, '#', [220, 170, 110], 190); }
-    }
   });
   window.Worlds = window.Worlds || {};
   window.Worlds.demos = [
