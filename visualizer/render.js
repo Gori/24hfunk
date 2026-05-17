@@ -14,6 +14,7 @@
     'PLASMA': 1.6, 'ROTOZOOM': 1.6, 'COPPER': 1.6, 'SINE COLUMNS': 1.6,
     'POLAR SWIRL': 1.6, 'DOT WAVE': 1.6,
     'GLENZ': 0.55, 'FIREWORKS': 0.55, 'WARP STARS': 0.55,
+    'E1M1': 1.7,
   };
   let eng, active, vT = 0;
   let prevPal = window.Palette.normalize(null);

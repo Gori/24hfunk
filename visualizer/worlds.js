@@ -43,7 +43,7 @@
         barrel: [' __ ', '|##|', '|##|', '|__|'],
         imp: [' ^^ ', '/oo\\', ' \\/ ', ' /\\ '],
       };
-      for (let i = 0; i < 26; i++) {
+      for (let i = 0; i < 72; i++) {
         const x = 1 + ((Math.random() * (N - 2)) | 0);
         const y = 1 + ((Math.random() * (N - 2)) | 0);
         if (this.m[y][x] === 0) {
@@ -51,10 +51,13 @@
           this.props.push({ x: x + 0.5, z: y + 0.5, kind: k, art: art[k], ph: Math.random() * 6 });
         }
       }
-      // a roaming enemy imp that wanders the corridors AND drifts toward the
-      // player, so it's actually seen up close (not lost in a far cell)
-      this.foe = { x: this.px + 1.5, z: this.pz, ang: 0.6,
-        ph: Math.random() * 6, sp: 1.15, art: art.imp };
+      // roaming enemy imps that wander the corridors AND drift toward the
+      // player, so they're actually seen up close (not lost in far cells)
+      this.foes = [];
+      for (let i = 0; i < 2; i++) this.foes.push({
+        x: this.px + 1.5 + i * 1.2, z: this.pz, ang: 0.6 + i * 2,
+        ph: Math.random() * 6, sp: 1.05 + Math.random() * 0.3, art: art.imp,
+      });
     },
     note() { this.flash = Math.min(1, this.flash + 0.5); },
     beat() {},
@@ -87,8 +90,7 @@
       if (this._stuck > 0.8) { this.ang += 1.7; this._stuck = 0; }
       // roaming enemy imp: walk forward, steer at walls, gently home on the
       // player so it stays close/visible; respawn ahead if it drifts away.
-      const f = this.foe;
-      if (f) {
+      for (const f of this.foes) {
         const ffx = Math.cos(f.ang), ffz = Math.sin(f.ang);
         if (this.wall(f.x + ffx * 0.5, f.z + ffz * 0.5)) {
           f.ang += (Math.random() < 0.5 ? 1 : -1) * 1.6;
@@ -155,11 +157,9 @@
           : (p.kind === 'imp' ? acc(env, 0) : env.pal.fg);
         eng.sprite(p.x, 0.5 + bob, p.z, p.art, col, 0.9);
       }
-      const f = this.foe;
-      if (f) {
+      for (const f of this.foes)
         eng.sprite(f.x, 0.5 + Math.sin(env.t * 5 + f.ph) * 0.14, f.z, f.art,
           scale(acc(env, 0), 0.8 + this.flash + env.beat * 0.35), 1.2);
-      }
     },
   };
 
