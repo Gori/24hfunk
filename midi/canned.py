@@ -847,14 +847,14 @@ class CannedSource:
         for s in steps:
             if rnd.random() < 0.45 + 0.3 * self.energy:
                 for p in vc:
-                    D(s, beat * 0.26, p, 0.50 + rnd.uniform(-0.04, 0.07), CH_KEYS)
+                    D(s, beat * 0.26, p, 0.575 + rnd.uniform(-0.04, 0.07), CH_KEYS)
 
     def _pad(self, D, rnd, beat, ctones):
         # ONE soft sustained voice-led chord under the bar (keys self-
         # terminates). Harmonic body without notes-per-beat — keeps the space.
         if rnd.random() < 0.45 + 0.35 * self.energy:
             for p in self._voicelead(ctones[:4], 52):       # octave lower
-                D(0, beat * 3.4, p, 0.37 + rnd.uniform(-0.03, 0.05), CH_KEYS)
+                D(0, beat * 3.4, p, 0.425 + rnd.uniform(-0.03, 0.05), CH_KEYS)
 
     def _perc(self, D, rnd, beat, e):
         # Dedicated percussion layer, dropped into the groove's GAPS (its
@@ -1127,7 +1127,7 @@ class CannedSource:
         for s in steps:
             if rnd.random() < prob:
                 for p in self._voicelead(ct[:3], 48):       # octave lower
-                    D(s, beat * 0.18, p, 0.48 + rnd.uniform(-0.04, 0.05), CH_KEYS)
+                    D(s, beat * 0.18, p, 0.55 + rnd.uniform(-0.04, 0.05), CH_KEYS)
 
     def _g_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # one-drop: the weight is on beat 3 (step 8); huge space + dub delay
@@ -1197,7 +1197,7 @@ class CannedSource:
         if self.on["lead"]:                                       # the dub chord
             for s in ([6] if rnd.random() < 0.6 else [10]):
                 for p in self._voicelead(ct[:4], 48):       # octave lower
-                    D(s, beat * 0.4, p, 0.43 + rnd.uniform(-0.03, 0.05), CH_KEYS)
+                    D(s, beat * 0.4, p, 0.49 + rnd.uniform(-0.03, 0.05), CH_KEYS)
             if rnd.random() < 0.5:
                 self._pad(D, rnd, beat, ct)
 

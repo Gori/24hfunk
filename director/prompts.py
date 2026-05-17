@@ -67,8 +67,11 @@ instruments.lead  : {enabled, amp 0..1, fmRatio 0.5..4, fmIndex 0..4, wave 0..1,
 
 fx : {reverb 0..0.9, delay 0..0.7, delayTime 0.05..0.75}
 
-palette.bg / palette.fg : "#rrggbb" (bg dark; fg bright). Be colourful and
-                          distinct per genre/mood — not always blue-grey.
+palette.bg / palette.fg : "#rrggbb". Usually a dark bg + bright fg, but
+                          you MAY occasionally INVERT it (a bright/pale bg
+                          with a dark, near-black fg) for a striking look.
+                          Be colourful + distinct per genre/mood — not
+                          always blue-grey.
 palette.accent          : array of 2-3 "#rrggbb"
 palette.transition_sec  : float 4..20
 
