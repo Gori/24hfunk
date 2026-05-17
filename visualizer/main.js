@@ -10,13 +10,14 @@
 
   const musicEl = document.getElementById('hud-music');
 
-  let _fps = 0, _heap = 0, _ms = 0;
+  let _fps = 0, _heap = 0, _ms = 0, _ls = '?', _wr = 0, _wc = 0, _gap = 0;
   function setStatus() {
     document.body.classList.toggle('live', connected);
     statusEl.textContent =
-      `${connected ? 'live' : 'offline'}  ·  section ${stats.section}  ·  ` +
+      `${connected ? 'live' : 'offline'}  ·  ${stats.section}  ·  ` +
       `notes ${stats.notes}  ·  beat ${stats.lastBeat ?? '—'}  ·  ` +
-      `${_fps}fps  ·  ${_ms}ms/f${_heap ? '  ·  ' + _heap + 'MB' : ''}`;
+      `${_fps}fps  ·  ${_ms}ms/f  ·  g${_gap}ms  ·  ls:${_ls}  ·  ` +
+      `ws${_wr}/s${_heap ? '  ·  ' + _heap + 'MB' : ''}`;
   }
 
   // Big "what music is playing" HUD line, from the live SectionState.
@@ -63,23 +64,34 @@
         case 'heartbeat':
           break;
       }
-      setStatus();
+      _wc++;            // WS msg counter (status now updates 1x/s in loop,
+                        // not per message — no per-message DOM reflow)
     };
   }
 
   let last = performance.now();
-  let _fc = 0, _ft = last;
+  let _fc = 0, _ft = last, _wmax = 0, _gmax = 0;
   function loop(now) {
-    let dt = (now - last) / 1000;
+    const gap = now - last;             // rAF interval (paint-bound if big)
+    let dt = gap / 1000;
     last = now;
     if (dt > 0.1) dt = 0.1; // clamp after tab-hide
+    const t0 = performance.now();
     window.Renderer.frame(dt);
-    // 1s FPS + JS-heap readout (Chrome) so a slow-creep can be SEEN
+    const w = performance.now() - t0;   // actual JS frame work (was unmeasured)
+    if (w > _wmax) _wmax = w;
+    if (gap > _gmax) _gmax = gap;
     _fc++;
     if (now - _ft >= 1000) {
-      _fps = Math.round((_fc * 1000) / (now - _ft));
-      _fc = 0; _ft = now;
+      const span = now - _ft;
+      _fps = Math.round((_fc * 1000) / span);
+      _ms = Math.round(_wmax);
+      _gap = Math.round(_gmax);
+      _wr = Math.round((_wc * 1000) / span);
+      _wmax = 0; _gmax = 0; _wc = 0; _fc = 0; _ft = now;
       if (performance.memory) _heap = (performance.memory.usedJSHeapSize / 1048576) | 0;
+      const d = window.Renderer.diag && window.Renderer.diag();
+      _ls = d ? (d.ls ? 'Y' : 'N') : '?';
       setStatus();
     }
     requestAnimationFrame(loop);

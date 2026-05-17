@@ -201,6 +201,7 @@
   }
 
   window.Renderer = {
+    diag() { return { ls: !!(eng && eng._ls), title: active && active.title }; },
     init(canvas) {
       eng = new window.A3D(canvas);
       buildPool();
