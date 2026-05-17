@@ -171,7 +171,7 @@
 
   // ---- 9. GLENZ VECTOR (rotating solid wireframe) ----
   const Glenz = {
-    title: 'GLENZ', t: 0, reset() { this.t = 0; }, note() {}, beat() { this.t += 0.3; },
+    title: 'GLENZ', t: 0, reset() { this.t = 0; }, note() {}, beat() {},
     step(dt) { this.t += dt; },
     draw(eng, env) {
       const C = eng.cols, R = eng.rows, s = Math.min(C, R * 2) * 0.22;

@@ -8,7 +8,7 @@ RUN=.run; mkdir -p "$RUN"
 SCLANG="${SCLANG:-/Applications/SuperCollider.app/Contents/MacOS/sclang}"
 PY=.venv/bin/python
 export PYTHONUNBUFFERED=1
-export STR_SECTION_SEC="${STR_SECTION_SEC:-120}"    # ~2 min per song/section
+export STR_SECTION_SEC="${STR_SECTION_SEC:-30}"     # 30s while testing (prod: 120)
 # STR_AUDIO_DEVICE (optional): route SC to a capture device for streaming,
 #   e.g.  export STR_AUDIO_DEVICE="BlackHole 16ch"   (see STREAMING.md)
 

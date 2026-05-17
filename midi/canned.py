@@ -976,25 +976,38 @@ class CannedSource:
             self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.8)
 
     def _g_uk_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
-        # 2-step: syncopated kick, snare on 2 & 4, shuffled hats, organ stabs
+        # CLASSIC 2-STEP: skippy syncopated kick (the "one" + the off-beat,
+        # NOT four-to-the-floor), snare+clap backbeat on 2 & 4 with a flam,
+        # swung GAPPY hats + offbeat open-hat pushes, organ/vocal stabs.
         if self.on["kick"]:
-            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
-            for s in (6, 10, 11):
-                if rnd.random() < 0.4 + 0.3 * e:
-                    D(s, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", True)        # the one
+            if rnd.random() < 0.85:                                        # & of 3 -> the 2-step signature
+                D(10, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.45 + 0.3 * e:                              # & of 2 variation
+                D(6, 0.16, KICK, self._main(rnd), CH_DRUMS, "kick")
+            if rnd.random() < 0.25:                                        # late skip
+                D(14, 0.14, KICK, self._ghost(rnd) + 0.2, CH_DRUMS, "kick")
         if self.on["snare"]:
-            for s in (4, 12):
+            for s in (4, 12):                                              # backbeat 2 & 4
                 D(s, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
-                if rnd.random() < 0.5:
-                    D(s, 0.18, CLAP, 0.65, CH_DRUMS, "snare")
-            self._ghost_sn(D, rnd, e * 0.6)
+                D(s, 0.18, CLAP, 0.6 + 0.1 * e, CH_DRUMS, "snare")         # layered clap
+                if rnd.random() < 0.4:
+                    D(s - 0.5, 0.05, SNARE, self._ghost(rnd), CH_DRUMS, "snare")  # flam
+            self._ghost_sn(D, rnd, e * 0.5)
         if self.on["hat"]:
-            self._hats(D, rnd, e, (2, 6, 10, 14))
-        if self.on["bass"]:                                       # syncopated garage sub
-            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 14, 15])
+            for s in (0, 3, 4, 7, 8, 11, 12, 15):                          # swung, gappy
+                if rnd.random() < 0.7 + 0.2 * e:
+                    D(s, 0.035, HAT,
+                      (self._main(rnd) if s in (4, 12) else self._ghost(rnd) + 0.1) * 0.85,
+                      CH_DRUMS, "hat")
+            for s in (2, 6, 10, 14):                                       # offbeat open-hat push
+                if rnd.random() < (0.7 if s in (6, 14) else 0.4):
+                    D(s, 0.14, OHAT, self._main(rnd) * 0.75, CH_DRUMS, "hat")
+        if self.on["bass"]:                                                # syncopated garage sub
+            self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 10, 11, 14, 15])
         if self.on["lead"]:
             self._comp(D, rnd, beat, ct, [3, 6, 10, 14])
-            if rnd.random() < 0.4:
+            if rnd.random() < 0.35:
                 self._motif(D, rnd, beat, sc, ct)
 
     def _g_dub_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
