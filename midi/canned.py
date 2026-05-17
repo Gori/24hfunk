@@ -1059,33 +1059,32 @@ class CannedSource:
             self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.8)
 
     def _g_uk_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
-        # CLASSIC 2-STEP: skippy syncopated kick (the "one" + the off-beat,
-        # NOT four-to-the-floor), snare+clap backbeat on 2 & 4 with a flam,
-        # swung GAPPY hats + offbeat open-hat pushes, organ/vocal stabs.
+        # CLASSIC 2-STEP, transcribed from the reference clip (deterministic
+        # 2-bar loop; the synthdefs add the per-hit life). Per bar, 16ths:
+        #   kick   : 1 and the "& of 3"            (steps 0, 10)
+        #   snare  : 909 backbeat on 2 & 4         (steps 4, 12)
+        #   606    : RIM ghosts a-of-2 / e-of-3    (steps 7, 9)
+        #   open   : every offbeat "&"             (steps 2, 6, 10, 14)
+        #   closed : the beat + its "e"            (steps 0,1,4,5,8,9,12,13)
+        #   bar 2  : adds a RIM turnaround fill     (steps 14, 15)
         if self.on["kick"]:
-            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", True)        # the one
-            if rnd.random() < 0.85:                                        # & of 3 -> the 2-step signature
-                D(10, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
-            if rnd.random() < 0.45 + 0.3 * e:                              # & of 2 variation
-                D(6, 0.16, KICK, self._main(rnd), CH_DRUMS, "kick")
-            if rnd.random() < 0.25:                                        # late skip
-                D(14, 0.14, KICK, self._ghost(rnd) + 0.2, CH_DRUMS, "kick")
+            D(0,  0.2,  KICK, self._acc(rnd),  CH_DRUMS, "kick", True)     # the "one"
+            D(10, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)     # & of 3
         if self.on["snare"]:
-            for s in (4, 12):                                              # backbeat 2 & 4
+            for s in (4, 12):                                              # 909 backbeat
                 D(s, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
-                D(s, 0.18, CLAP, 0.6 + 0.1 * e, CH_DRUMS, "snare")         # layered clap
-                if rnd.random() < 0.4:
-                    D(s - 0.5, 0.05, SNARE, self._ghost(rnd), CH_DRUMS, "snare")  # flam
-            self._ghost_sn(D, rnd, e * 0.5)
+            for s in (7, 9):                                               # 606 ghosts
+                D(s, 0.06, RIM, self._ghost(rnd) + 0.12, CH_DRUMS, "snare")
+            if self.bar % 2 == 1:                                          # 2-bar end fill
+                for s in (14, 15):
+                    D(s, 0.05, RIM, self._ghost(rnd) + 0.14, CH_DRUMS, "snare")
         if self.on["hat"]:
-            for s in (0, 3, 4, 7, 8, 11, 12, 15):                          # swung, gappy
-                if rnd.random() < 0.7 + 0.2 * e:
-                    D(s, 0.035, HAT,
-                      (self._main(rnd) if s in (4, 12) else self._ghost(rnd) + 0.1) * 0.85,
-                      CH_DRUMS, "hat")
-            for s in (2, 6, 10, 14):                                       # offbeat open-hat push
-                if rnd.random() < (0.7 if s in (6, 14) else 0.4):
-                    D(s, 0.14, OHAT, self._main(rnd) * 0.75, CH_DRUMS, "hat")
+            for s in (0, 4, 8, 12):                                        # closed: the beat
+                D(s, 0.035, HAT, self._main(rnd) * 0.7, CH_DRUMS, "hat")
+            for s in (1, 5, 9, 13):                                        # closed: the "e"
+                D(s, 0.03, HAT, self._ghost(rnd) + 0.08, CH_DRUMS, "hat")
+            for s in (2, 6, 10, 14):                                       # open: every offbeat
+                D(s, 0.14, OHAT, self._main(rnd) * 0.8, CH_DRUMS, "hat")
         if self.on["bass"]:                                                # syncopated garage sub
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 10, 11, 14, 15])
         if self.on["lead"]:
