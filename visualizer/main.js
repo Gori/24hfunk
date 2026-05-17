@@ -39,7 +39,7 @@
       switch (m.type) {
         case 'snapshot':
           if (m.section) {
-            window.Renderer.onSection(m.section);
+            window.Renderer.onSection(m.section, true); // restore instantly, no fade
             setNowPlaying(m.section);
             stats.section = m.section.id || 'set';
           }

@@ -166,7 +166,7 @@
       rerollFX(); announceEffect();
       announceEffect();
     },
-    onSection(section) {
+    onSection(section, instant) {
       setNowPlaying(section);
       prevPal = { bg: curPal.bg.slice(), fg: curPal.fg.slice(), accent: curPal.accent.map((x) => x.slice()) };
       // every new music style -> fade to the NEXT distinct curated palette
@@ -178,7 +178,16 @@
       tgtPal = window.Palette.normalize(valid ? lp : PALETTES[palIdx]);
       palDur = (valid && lp.transition_sec)
         ? Math.max(1, Math.min(12, +lp.transition_sec || 4)) : 4.0;
-      palT = 0;
+      if (instant) {
+        // page (re)load: RESTORE the song's palette instantly (no fade —
+        // the colours are "saved"), and re-reset the active effect so the
+        // song-name text visuals pick up the title immediately.
+        const clone = (p) => ({ bg: p.bg.slice(), fg: p.fg.slice(), accent: p.accent.map((x) => x.slice()) });
+        prevPal = clone(tgtPal); curPal = clone(tgtPal); palT = 1;
+        if (active && active.reset) { active.reset(eng); announceEffect(); }
+      } else {
+        palT = 0;
+      }
       // NOTE: a music-section change only fades the palette. The visual
       // EFFECT runs on its own independent 30s clock (see frame()), so
       // visuals and genre change at different rates.
