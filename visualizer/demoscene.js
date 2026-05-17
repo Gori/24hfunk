@@ -647,11 +647,28 @@
 
   // ---- batch 2: more scene classics (each varied via this.P) ----
   const RotBars = E('ROTO BARS', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows, P = this.P;
+    // fluid bars: a snaking baseline + 3 travelling sine octaves (different
+    // speeds/directions) so it undulates organically; amplitude & scroll
+    // breathe with the music. One vspan/column -> very cheap, smooth.
+    const C = eng.cols, R = eng.rows, P = this.P, t = this.t;
+    const sp = P.dir * (2 + env.mv * 3) * P.spd;
+    const f1 = 0.05 * P.k1, f2 = 0.11 * P.k2, f3 = 0.21;
+    const amp = (0.30 + 0.20 * Math.sin(t * 0.7) + env.beat * 0.22 + env.mv * 0.18) * P.amp;
     for (let x = 0; x < C; x++) {
-      const v = Math.sin(x * 0.12 * P.amp + this.t * 3 * P.dir) * 0.5 + 0.5;
-      const h = (v * R * 0.7 * P.amp) | 0, cy = R / 2;
-      for (let y = cy - h; y < cy + h; y++) px(eng, x, y, gly(v), mul(acc(env, x % 3), 0.3 + v * (0.7 + env.beat * 0.5)));
+      const base = R * 0.5 + Math.sin(x * f1 + t * 0.8) * R * 0.16 * P.warp
+        + Math.sin(x * 0.03 - t * 0.5) * R * 0.08;
+      const w = Math.sin(x * f1 + t * sp)
+        + 0.55 * Math.sin(x * f2 - t * sp * 1.7)
+        + 0.30 * Math.sin(x * f3 + t * sp * 2.6);
+      const v = (w + 1.85) / 3.7;
+      const h = Math.max(1, (v * R * amp) | 0);
+      const y0 = (base - h) | 0, y1 = (base + h) | 0;
+      const ci = (x * 0.05 + t * 0.6) | 0;
+      const cap = mul(acc(env, (ci + 1) % 3), 0.7 + env.beat * 0.3);
+      eng.vspan(x, y0, y1, gly(0.3 + v * 0.7),
+        mul(lerpC(acc(env, ((ci % 3) + 3) % 3), acc(env, (ci + 1) % 3), v),
+          0.28 + v * (0.72 + env.beat * 0.45)), 500);
+      px(eng, x, y0, '#', cap, 480); px(eng, x, y1, '#', cap, 480);
     }
   });
   const StarCyl = E('STAR CYLINDER', function () { this.s = []; for (let i = 0; i < 220; i++) this.s.push({ a: Math.random() * 6.28, z: Math.random() * 10, r: 0.6 + Math.random() * 0.5 }); }, function (eng, env) {
