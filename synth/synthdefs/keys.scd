@@ -23,6 +23,6 @@ SynthDef(\keys, { |out=0, amp=0.4, freq=220, cutoff=2600, sus=0.9, drive=1.0, vi
 	var cf    = (cutoff * (0.40 + v * 0.55) * Rand(0.93, 1.07)).clip(280, 4200);
 	var pre   = (body + (tine * 0.18)) * (1 + drive * 0.35);
 	var sig   = MoogFF.ar(pre, cf, 0.7);                             // analog ladder
-	sig = ((sig + (sig * sig * 0.04)).tanh) * 1.30 * Rand(0.96, 1.05);
+	sig = ((sig + (sig * sig * 0.04)).tanh) * 0.98 * Rand(0.96, 1.05);
 	Out.ar(out, Pan2.ar(sig * env * amp, pan));
 }).add;

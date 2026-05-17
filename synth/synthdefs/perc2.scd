@@ -47,7 +47,7 @@ SynthDef(\perc2, { |out=0, amp=0.5, freq=220, decay=0.18, drive=1.0,
 	// spot (like a real percussion ensemble laid across the stage) — and
 	// since the pattern varies pitch per hit this paints a coherent moving
 	// stereo groove. Plus a slow image sway + a touch of life.
-	Out.ar(out, Pan2.ar(LeakDC.ar(sig) * env * amp * 0.7,
+	Out.ar(out, Pan2.ar(LeakDC.ar(sig) * env * amp * 0.92,
 		(pan + ((((f0.cpsmidi % 12) / 12) * 1.7) - 0.85)
 		 + (LFNoise1.kr(0.08) * 0.16) + Rand(-0.12, 0.12)).clip(-0.95, 0.95)));
 }).add;
