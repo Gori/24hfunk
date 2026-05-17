@@ -54,6 +54,13 @@ harmony       : int 0..3 — which of the genre's 4 chord-progression
                 variants to use (0 = its signature, 1-3 = alternates /
                 vamps / turnarounds). VARY it across sections for
                 harmonic variety, just like you vary the key.
+structure     : int 0..3 — arrangement: how instruments enter and
+                break. 0 = classic build (bass+drums, then keys,
+                then lead; periodic breakdowns), 1 = quick (in
+                fast), 2 = long/spacious (slow staggered build,
+                dubby drops — fits dub/ambient/downtempo), 3 =
+                DJ-tool/minimal (tight, frequent short drops, lead
+                late). Pick what fits the genre + mood; vary it.
 name          : a short evocative TRACK TITLE, 2-4 words, Title Case
                 (e.g. "Chrome Alley", "Slow Tide", "Night Bus") that
                 fits the mood + genre. This is the song's name.
@@ -105,6 +112,7 @@ EXAMPLE = """{
   "key": "G minor",
   "density": 0.72,
   "harmony": 1,
+  "structure": 0,
   "name": "Chrome Alley",
   "instruments": {
     "kick":  {"enabled": true, "amp": 0.95, "fmRatio": 1.0, "fmIndex": 2.0, "decay": 0.3},
@@ -140,8 +148,10 @@ def build_user_prompt(
             f"mood, density, instruments, fx, palette and visuals that fit "
             f"{forced_genre}, and make it clearly different from any recent "
             f"sections above. Give it a distinctive `name` (2-4 word track "
-            f"title) and pick a `harmony` 0-3 that differs from the recent "
-            f"sections so the chord progression varies."
+            f"title), a `harmony` 0-3 that differs from the recent sections "
+            f"so the chord progression varies, and a `structure` 0-3 that "
+            f"fits {forced_genre} (spacious genres -> 2, tight/club -> 3, "
+            f"funk/pop -> 0 or 1)."
         )
     elif history:
         ctx += ("Make the next section clearly DIFFERENT — switch genre, move "

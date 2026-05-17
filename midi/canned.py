@@ -576,6 +576,28 @@ _LEAD_LEVEL = {
 }
 
 
+# Song STRUCTURE: instruments enter staggered, then periodic breaks. Entry
+# offsets are in "units" (U bars); U is larger for spacious genres so their
+# builds are longer. One archetype per section — chosen by the LLM
+# `structure` 0..3 (else seeded rotation), same pattern as `harmony`.
+_STRUCT = [
+    # 0 classic build: bass+drums, keys +1U, lead +2U; breakdown every 8U
+    {"in": {"bass": 0, "drums": 0, "keys": 1, "lead": 2},
+     "brk": {"every": 8, "len": 2, "drop": ["drums", "lead"]}},
+    # 1 quick: in fast, lead +1U; rare lead drop
+    {"in": {"bass": 0, "drums": 0, "keys": 0, "lead": 1},
+     "brk": {"every": 16, "len": 2, "drop": ["lead"]}},
+    # 2 long / spacious: slow staggered build, dubby breakdowns
+    {"in": {"bass": 0, "drums": 1, "keys": 2, "lead": 3},
+     "brk": {"every": 12, "len": 4, "drop": ["drums", "lead"]}},
+    # 3 DJ-tool / minimal: tight, frequent 2-bar drum drops, lead late
+    {"in": {"bass": 0, "drums": 0, "keys": 1, "lead": 4},
+     "brk": {"every": 4, "len": 2, "drop": ["drums"]}},
+]
+_SPACIOUS = {"dub", "steppers_dub", "dub_techno", "neon_dub", "roots_reggae",
+             "minimal_techno", "lofi", "indie_rnb"}
+
+
 class CannedSource:
     name = "canned"
 
@@ -584,9 +606,17 @@ class CannedSource:
         self.root = 0
         self.genre = "funk"
         self.energy = 0.5
-        self.on = {"kick": True, "snare": True, "hat": True, "bass": True, "lead": True}
+        self.on = {"kick": True, "snare": True, "hat": True, "bass": True,
+                   "lead": True, "keys": True}
         self.bar = 0
         self.motif = []
+        # arrangement defaults — no-op (everything on) until prime() sets them
+        self.base_on = dict(self.on)
+        self._in = {}
+        self._bk_start = 10 ** 9
+        self._bk_every = 16
+        self._bk_len = 0
+        self._bk_drop = []
 
     def prime(self, section: dict) -> None:
         self.bpm = float(section.get("tempo") or section.get("bpm") or 100)
@@ -627,6 +657,25 @@ class CannedSource:
             self.prog_sel = int(h) % n if h is not None else self._sec % n
         except (TypeError, ValueError):
             self.prog_sel = self._sec % n
+        # SONG STRUCTURE: pick an arrangement archetype (LLM `structure`
+        # 0..3, else seeded rotation) and materialise it into absolute
+        # bars. U (intro unit) is longer for spacious genres.
+        ns = len(_STRUCT)
+        sx = section.get("structure")
+        try:
+            self.struct_sel = int(sx) % ns if sx is not None else self._sec % ns
+        except (TypeError, ValueError):
+            self.struct_sel = self._sec % ns
+        u = 8 if self.genre in _SPACIOUS else 4
+        st = _STRUCT[self.struct_sel]
+        self._in = {r: st["in"][r] * u for r in st["in"]}
+        bk = st["brk"]
+        self._bk_every = max(4, bk["every"] * u)
+        self._bk_len = bk["len"]
+        self._bk_drop = bk["drop"]
+        # never break until the whole arrangement is in + a bar of groove
+        self._bk_start = max(self._in.values()) + max(4, u)
+        self.base_on = dict(self.on)
 
     def synth_params(self) -> dict:
         # copy (do not mutate the module table) + inject the genre's perc2
@@ -723,8 +772,33 @@ class CannedSource:
             print(f"[canned] {self.genre} error: {e}")
             return Phrase(notes=[], length=4 * beat)
 
+    def _arr_on(self, role, b):
+        """Is `role` allowed this bar (staggered entry + periodic breaks)?"""
+        if b < self._in.get(role, 0):
+            return False
+        if b >= self._bk_start:
+            pos = (b - self._bk_start) % self._bk_every
+            if pos < self._bk_len and role in self._bk_drop:
+                return False
+        return True
+
+    def _apply_arrangement(self, b):
+        """Per-bar instrument gate = section base enables AND the
+        arrangement (drums = kick/snare/hat as one group)."""
+        base = self.base_on
+        dr = self._arr_on("drums", b)
+        self.on = {
+            "kick":  base["kick"] and dr,
+            "snare": base["snare"] and dr,
+            "hat":   base["hat"] and dr,
+            "bass":  base["bass"] and self._arr_on("bass", b),
+            "lead":  base["lead"] and self._arr_on("lead", b),
+            "keys":  base.get("keys", True) and self._arr_on("keys", b),
+        }
+
     def _build(self) -> Phrase:
         b = self.bar
+        self._apply_arrangement(b)
         rnd = random.Random(b * 8419 + hash(self.genre) % 9973)
         beat = 60.0 / max(50.0, min(180.0, self.bpm))
         s16 = 0.25 * beat
@@ -756,7 +830,7 @@ class CannedSource:
 
         # soft sustained harmonic pad on the keys voice (energy-gated, not on
         # the spikier genres) — body without density, keeps the space.
-        if self.on["lead"] and self.genre not in ("neon_dub", "electro"):
+        if self.on.get("keys", True) and self.genre not in ("neon_dub", "electro"):
             self._pad(D, rnd, beat, ctones)
 
         # dedicated percussion layer (per-genre: none / rare spice / lots)
@@ -839,6 +913,8 @@ class CannedSource:
         return out
 
     def _comp(self, D, rnd, beat, ctones, steps, oct_shift=12):
+        if not self.on.get("keys", True):
+            return                                  # keys not in yet / break
         # voice-led top voicing on the KEYS voice (smooth chord motion, no
         # crowding the lead). Same hit count = harmony, not density.
         vc = self._voicelead(ctones, 48 + oct_shift)   # an octave lower
@@ -850,6 +926,8 @@ class CannedSource:
                     D(s, beat * 0.26, p, 0.575 + rnd.uniform(-0.04, 0.07), CH_KEYS)
 
     def _pad(self, D, rnd, beat, ctones):
+        if not self.on.get("keys", True):
+            return                                  # keys not in yet / break
         # ONE soft sustained voice-led chord under the bar (keys self-
         # terminates). Harmonic body without notes-per-beat — keeps the space.
         if rnd.random() < 0.45 + 0.35 * self.energy:
@@ -1123,6 +1201,8 @@ class CannedSource:
                 self._motif(D, rnd, beat, sc, ct)
 
     def _skank(self, D, rnd, beat, ct, steps, prob=0.7):
+        if not self.on.get("keys", True):
+            return                                  # keys not in yet / break
         # off-beat reggae/dub organ chord skank on the KEYS voice
         for s in steps:
             if rnd.random() < prob:

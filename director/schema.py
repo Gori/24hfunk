@@ -170,6 +170,9 @@ class SectionState(_Clamped):
     # composition choice: which of the genre's 4 researched chord
     # progressions to use (0=signature .. 3=alt/turnaround)
     harmony: int = Field(0, ge=0, le=3)
+    # arrangement archetype: how instruments enter (staggered) + breaks
+    # (0=classic build, 1=quick, 2=long/spacious, 3=DJ-tool/minimal)
+    structure: int = Field(0, ge=0, le=3)
     # a short evocative track title — drives the HUD + text visuals
     name: str = "untitled"
 

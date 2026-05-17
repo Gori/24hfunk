@@ -8,7 +8,7 @@ RUN=.run; mkdir -p "$RUN"
 SCLANG="${SCLANG:-/Applications/SuperCollider.app/Contents/MacOS/sclang}"
 PY=.venv/bin/python
 export PYTHONUNBUFFERED=1
-export STR_SECTION_SEC="${STR_SECTION_SEC:-30}"    # 30s while testing (prod: 120)
+export STR_SECTION_SEC="${STR_SECTION_SEC:-180}"   # ~3 min per song (a few minutes)
 
 alive() { local p; p=$(cat "$RUN/$1.pid" 2>/dev/null) || return 1; kill -0 "$p" 2>/dev/null; }
 boot() { local n="$1"; shift; echo "[watch $(date +%T)] (re)start $n"; ( "$@" ) >>"$RUN/$n.log" 2>&1 & echo $! >"$RUN/$n.pid"; }

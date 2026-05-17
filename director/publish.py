@@ -57,6 +57,7 @@ def publish(section: SectionState) -> None:
             "key": section.key,
             "density": section.density,
             "harmony": section.harmony,      # LLM's chord-progression choice
+            "structure": section.structure,  # LLM's arrangement archetype
             "name": section.name,
             "instruments": enabled,
         })],
