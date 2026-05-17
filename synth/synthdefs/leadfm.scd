@@ -20,5 +20,5 @@ SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=
 	sig = (((sig * (1 + drive * 0.30)) + (sig * sig * 0.09)).tanh) * 0.92;
 	// #1-lite: a subtle Haas widen for stereo body without changing timbre
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0065),
-		pan.clip(-1, 1) * 0.3) * env * safety * amp * 0.85);
+		pan.clip(-1, 1) * 0.3) * env * safety * amp * 1.7);
 }).add;

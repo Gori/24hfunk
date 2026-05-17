@@ -19,5 +19,5 @@ SynthDef(\leadPulse, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	sig = ((((sig * (1 + drive * 0.4)) + (sig * sig * 0.07)).tanh) * 0.92) * 0.6;
 	// #1-lite: subtle Haas stereo widen
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0065),
-		pan.clip(-1, 1) * 0.3) * env * safety * amp * 0.85);
+		pan.clip(-1, 1) * 0.3) * env * safety * amp * 1.7);
 }).add;

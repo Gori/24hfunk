@@ -36,5 +36,5 @@ SynthDef(\lead, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=0.8, detune=0.
 	lc = ((lc + (lc * lc * 0.10)).tanh * 0.92);
 	rc = ((rc + (rc * rc * 0.10)).tanh * 0.92);
 	Out.ar(out, Balance2.ar(LeakDC.ar(lc), LeakDC.ar(rc), pan.clip(-1, 1) * 0.3)
-		* env * safety * amp * 0.85);
+		* env * safety * amp * 1.7);
 }).add;
