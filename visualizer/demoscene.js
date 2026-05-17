@@ -1359,10 +1359,18 @@
   });
   const BallPit = E('BALL PIT', function (eng) { this.b = []; for (let i = 0; i < 22; i++) this.b.push({ x: Math.random() * eng.cols, y: Math.random() * eng.rows * 0.5, vx: (Math.random() - 0.5) * 2, vy: 0 }); }, function (eng, env) {
     const C = eng.cols, R = eng.rows;
+    // cap bounce speed so the peak height stays on screen (h = v^2/2g),
+    // give a modest ONE-SHOT beat kick on contact, and clamp the ceiling.
+    const G = 0.06, vmax = Math.sqrt(2 * G * R * 0.8);
     for (const p of this.b) {
-      p.vy += 0.06; p.x += p.vx; p.y += p.vy;
+      p.vy += G; p.x += p.vx; p.y += p.vy;
       if (p.x < 1 || p.x > C - 1) { p.vx *= -0.9; p.x = Math.max(1, Math.min(C - 1, p.x)); }
-      if (p.y > R - 2) { p.y = R - 2; p.vy *= -0.7; p.vx *= 0.96; if (this.bt > 0.5) p.vy -= 1.5 + env.mv * 2; }
+      if (p.y > R - 2) {
+        p.y = R - 2; p.vy = -Math.abs(p.vy) * 0.72; p.vx *= 0.96;
+        if (this.bt > 0.5) p.vy -= 0.4 + env.mv * 0.6;
+        if (p.vy < -vmax) p.vy = -vmax;       // hard cap -> peak stays on screen
+      }
+      if (p.y < 1) { p.y = 1; p.vy = Math.abs(p.vy) * 0.5; }
       for (let dy = -1; dy <= 1; dy++) for (let dx = -2; dx <= 2; dx++)
         if (dx * dx / 4 + dy * dy <= 1) px(eng, p.x + dx, p.y + dy, dx || dy ? 'o' : '@', mul(acc(env, 0), 0.6 + env.beat * 0.4), 200);
     }
