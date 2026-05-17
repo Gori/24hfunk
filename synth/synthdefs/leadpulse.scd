@@ -9,7 +9,8 @@ SynthDef(\leadPulse, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain, 0.2], \lin), doneAction: 2);
 	var vib    = SinOsc.kr(6.0) * 0.009 * EnvGen.kr(Env([0, 0, 1], [0.14, 0.5]));
 	var port   = EnvGen.kr(Env([-1, 0], [glide.clip(0, 0.25) + 0.01], -4)) * 0.04;  // #8
-	var f      = freq * (1 + vib + port);
+	var drift  = LFNoise2.kr(0.17) * 0.0018;          // subtle analog detune
+	var f      = freq * (1 + vib + port + drift);
 	var pw     = SinOsc.kr(0.7 + wave * 4).range(0.15, 0.85);
 	var sig    = Pulse.ar(f, pw) + (Pulse.ar(f * (1 + detune * 0.04), pw) * 0.5);
 	// slightly softened: less octave-buzz harmonic, lower top, less drive

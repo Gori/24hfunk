@@ -13,7 +13,8 @@ SynthDef(\leadJazz, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detun
 	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain, 0.3], \lin), doneAction: 2);
 	var vib    = SinOsc.kr(4.5) * 0.005 * EnvGen.kr(Env([0, 0, 1], [0.24, 0.7]));
 	var port   = EnvGen.kr(Env([-1, 0], [glide.clip(0, 0.25) + 0.01], -4)) * 0.03;
-	var f      = freq * (1 + vib + port);
+	var drift  = LFNoise2.kr(0.15) * 0.0016;          // subtle analog detune
+	var f      = freq * (1 + vib + port + drift);
 	// a brief bell/tine strike on attack, then a pure-ish warm tone
 	var strike = EnvGen.kr(Env.perc(0.002, 0.45, 1, -4));
 	var mod    = SinOsc.ar(f * 3.0) * f * (0.35 + fmIndex * 0.10) * strike;

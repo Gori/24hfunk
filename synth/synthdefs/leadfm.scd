@@ -9,7 +9,8 @@ SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=
 	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain, 0.2], \lin), doneAction: 2);
 	var vib    = SinOsc.kr(5.5) * 0.008 * EnvGen.kr(Env([0, 0, 1], [0.18, 0.6]));
 	var port   = EnvGen.kr(Env([-1, 0], [glide.clip(0, 0.25) + 0.01], -4)) * 0.04;  // #8
-	var f      = freq * (1 + vib + port);
+	var drift  = LFNoise2.kr(0.17) * 0.0018;          // subtle analog detune
+	var f      = freq * (1 + vib + port + drift);
 	var iEnv   = EnvGen.kr(Env.perc(0.004, decay, 0.6, -3), gate);
 	// slightly softened: a touch less FM index and brightness
 	var mod    = SinOsc.ar(f * (fmRatio + 0.001)) * f * (fmIndex * 3.3 + wave * 5)
