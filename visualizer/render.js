@@ -30,6 +30,7 @@
   const HUD_COL = [240, 240, 248];
   // one-shot Amiga sinus-scroller: the new song title scrolls past once
   let scrText = '', scrX = 0, scrOn = false, scrPhase = 0, scrLast = '';
+  const _env = {};   // reused every frame — no per-frame env object alloc
 
   // curated, deliberately DISTINCT palettes — we fade to the next one on every
   // new music style so the colour world visibly changes each section.
@@ -223,8 +224,7 @@
       const lp = section && section.palette;
       const valid = lp && typeof lp.bg === 'string' && typeof lp.fg === 'string';
       tgtPal = window.Palette.normalize(valid ? lp : PALETTES[palIdx]);
-      palDur = (valid && lp.transition_sec)
-        ? Math.max(1, Math.min(12, +lp.transition_sec || 4)) : 4.0;
+      palDur = 1.6;                 // snappy crossfade between songs
       if (instant) {
         // page (re)load: RESTORE the song's palette instantly (no fade —
         // the colours are "saved"), and re-reset the active effect so the
@@ -254,8 +254,10 @@
       if (!eng) return;
       vT += dt * SPEED;                 // slowed autonomous clock
       const curT = vT;
-      if (palT < 1) palT = Math.min(1, palT + dt / palDur);
-      curPal = mix(prevPal, tgtPal, ease(palT));
+      if (palT < 1) {
+        palT = Math.min(1, palT + dt / palDur);
+        curPal = mix(prevPal, tgtPal, ease(palT));
+      } else { curPal = tgtPal; }   // steady state: no per-frame palette alloc
       beatEnv = Math.max(0, beatEnv - dt / 0.26);
       beatKick = Math.max(0, beatKick - dt / 0.13);
       noteE = Math.max(0, noteE - dt * 1.6);
@@ -284,13 +286,12 @@
       eng.fx.dy = (beatKick + bassE * 0.6) * 0.18;
       eng.fx.dz = mv * 0.22 + bassE * 0.2;
 
-      const env = {
-        pal: curPal, t: curT,
-        beat: Math.min(1.4, beatEnv * 0.9 + noteE * 0.6 + hitE * 0.5),  // = music motion
-        energy: Math.min(1.4, noteE + drumE * 0.4),
-        hit: hitE, bass: bassE, lead: leadE, drum: drumE, pitch: lastPitch,
-        mv: mv,
-      };
+      const env = _env;                 // reused — no per-frame object alloc
+      env.pal = curPal; env.t = curT;
+      env.beat = Math.min(1.4, beatEnv * 0.9 + noteE * 0.6 + hitE * 0.5);
+      env.energy = Math.min(1.4, noteE + drumE * 0.4);
+      env.hit = hitE; env.bass = bassE; env.lead = leadE; env.drum = drumE;
+      env.pitch = lastPitch; env.mv = mv;
       const isDemo = demoSet.has(active);
       if (active.step) active.step(dt * SPEED * (FXSPEED[active.title] || 1) * (isDemo ? fxTime : 1), env);
       eng.clear(curPal.bg);

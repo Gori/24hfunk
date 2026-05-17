@@ -10,11 +10,13 @@
 
   const musicEl = document.getElementById('hud-music');
 
+  let _fps = 0, _heap = 0;
   function setStatus() {
     document.body.classList.toggle('live', connected);
     statusEl.textContent =
       `${connected ? 'live' : 'offline'}  ·  section ${stats.section}  ·  ` +
-      `notes ${stats.notes}  ·  beat ${stats.lastBeat ?? '—'}`;
+      `notes ${stats.notes}  ·  beat ${stats.lastBeat ?? '—'}  ·  ` +
+      `${_fps}fps${_heap ? '  ·  ' + _heap + 'MB' : ''}`;
   }
 
   // Big "what music is playing" HUD line, from the live SectionState.
@@ -66,11 +68,20 @@
   }
 
   let last = performance.now();
+  let _fc = 0, _ft = last;
   function loop(now) {
     let dt = (now - last) / 1000;
     last = now;
     if (dt > 0.1) dt = 0.1; // clamp after tab-hide
     window.Renderer.frame(dt);
+    // 1s FPS + JS-heap readout (Chrome) so a slow-creep can be SEEN
+    _fc++;
+    if (now - _ft >= 1000) {
+      _fps = Math.round((_fc * 1000) / (now - _ft));
+      _fc = 0; _ft = now;
+      if (performance.memory) _heap = (performance.memory.usedJSHeapSize / 1048576) | 0;
+      setStatus();
+    }
     requestAnimationFrame(loop);
   }
 
