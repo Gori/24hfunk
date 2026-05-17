@@ -198,6 +198,152 @@ _GENRE_INSTR = {
 }
 
 
+# Four researched chord-progression variants per genre, as (scale_degree,
+# quality) into the genre's PROFILE scale. Designed from genre harmony
+# references (funk/jazz/neo-soul/house/techno/dub/garage/synthwave) and kept
+# consonant with each genre's melodic scale (the lead/comp draw chord tones,
+# so out-of-scale tones clash — see the rnb/jazz dissonance fix). A bluesy
+# dominant tonic in funk is intentional genre signature, not a bug. One
+# variant is chosen per section (LLM `harmony` 0..3, else rotated).
+# Sources: pianowithjonny/guitarbased (funk), jazz-library/openmusictheory
+# (jazz ii-V-I & turnarounds), orangecandymusic/pickupmusic (neo-soul),
+# landr/richardpryn (lofi), attackmagazine/benrainey (deep house),
+# musicradar/attackmagazine (Detroit/minimal techno), emastered/unison
+# (synthwave), splice/orphiq (reggae/dub), futureproducers/loopmasters
+# (UK garage), native-instruments (boom-bap), melodigging (electro-funk).
+_PROGRESSIONS = {
+    # ---- DORIAN genres (i=min, signature major IV=dom, bIII/bVII=maj) ----
+    "electro_funk": [
+        [(0, "min9"), (0, "min9"), (3, "dom9"), (4, "min7")],
+        [(0, "min9"), (0, "min9"), (0, "min9"), (0, "min9")],
+        [(0, "min7"), (6, "maj9"), (0, "min7"), (6, "maj9")],
+        [(0, "min9"), (3, "dom9"), (0, "min9"), (3, "dom9")],
+    ],
+    "broken_house": [
+        [(0, "min9"), (3, "dom9"), (4, "min7"), (0, "min9")],
+        [(0, "min9"), (6, "maj9"), (2, "maj9"), (3, "dom9")],
+        [(0, "min7"), (4, "min7"), (2, "maj7"), (0, "min7")],
+        [(0, "min9"), (2, "maj9"), (0, "min9"), (2, "maj9")],
+    ],
+    "lofi": [
+        [(1, "min7"), (3, "dom7"), (2, "maj7"), (0, "min7")],
+        [(0, "min9"), (2, "maj9"), (3, "dom9"), (0, "min9")],
+        [(0, "min7"), (6, "maj9"), (2, "maj7"), (3, "dom7")],
+        [(1, "min7"), (4, "min7"), (2, "maj9"), (0, "min9")],
+    ],
+    "eighties_hiphop": [
+        [(0, "min9"), (0, "min9"), (3, "dom9"), (0, "min9")],
+        [(0, "min7"), (2, "maj7"), (3, "dom7"), (0, "min7")],
+        [(1, "min7"), (3, "dom7"), (2, "maj7"), (0, "min7")],
+        [(0, "min9"), (6, "maj9"), (0, "min9"), (6, "maj9")],
+    ],
+    "jazz": [
+        [(1, "min7"), (4, "dom9"), (0, "min7"), (0, "min7")],
+        [(0, "min9"), (0, "min9"), (2, "maj9"), (0, "min9")],
+        [(0, "min9"), (0, "min9"), (3, "dom9"), (0, "min9")],
+        [(0, "min7"), (6, "maj9"), (1, "min7"), (4, "dom9")],
+    ],
+    "funk": [
+        [(0, "dom9"), (0, "dom9"), (0, "dom7#9"), (0, "dom9")],
+        [(0, "min9"), (3, "dom9"), (0, "min9"), (3, "dom9")],
+        [(0, "min7"), (6, "maj9"), (3, "dom9"), (0, "min7")],
+        [(0, "min9"), (0, "min9"), (0, "min9"), (0, "min9")],
+    ],
+    "minneapolis_funk": [
+        [(0, "min9"), (2, "maj9"), (3, "dom9"), (0, "min9")],
+        [(0, "min9"), (0, "min9"), (3, "dom9"), (3, "dom9")],
+        [(0, "min7"), (6, "maj9"), (0, "min7"), (6, "maj9")],
+        [(0, "min9"), (3, "dom9"), (6, "maj9"), (0, "min9")],
+    ],
+    "detroit_techno": [
+        [(0, "min9"), (2, "maj9"), (4, "min7"), (3, "dom9")],
+        [(0, "min9"), (6, "maj9"), (2, "maj9"), (4, "min7")],
+        [(0, "min7"), (0, "min7"), (2, "maj9"), (6, "maj9")],
+        [(0, "min9"), (4, "min7"), (2, "maj9"), (0, "min9")],
+    ],
+    "uk_garage": [
+        [(0, "min9"), (2, "maj9"), (3, "dom9"), (0, "min9")],
+        [(1, "min7"), (3, "dom9"), (2, "maj9"), (0, "min9")],
+        [(0, "min9"), (6, "maj9"), (4, "min7"), (0, "min9")],
+        [(0, "min9"), (3, "dom9"), (2, "maj9"), (4, "min7")],
+    ],
+    "dub_garage": [
+        [(0, "min9"), (0, "min9"), (3, "dom9"), (4, "min7")],
+        [(0, "min7"), (6, "maj9"), (0, "min7"), (6, "maj9")],
+        [(0, "min9"), (0, "min9"), (0, "min9"), (0, "min9")],
+        [(0, "min9"), (3, "dom9"), (0, "min9"), (3, "dom9")],
+    ],
+    "rnb": [
+        [(0, "min9"), (3, "dom9"), (2, "maj9"), (4, "min7")],
+        [(0, "min9"), (6, "maj9"), (2, "maj9"), (4, "min7")],
+        [(1, "min7"), (3, "dom9"), (0, "min9"), (0, "min9")],
+        [(0, "min9"), (2, "maj9"), (3, "dom9"), (0, "min9")],
+    ],
+    "afro_rnb": [
+        [(0, "min9"), (2, "maj9"), (3, "dom9"), (0, "min9")],
+        [(0, "min9"), (3, "dom9"), (0, "min9"), (3, "dom9")],
+        [(0, "min7"), (6, "maj9"), (2, "maj9"), (3, "dom9")],
+        [(0, "min9"), (4, "min7"), (2, "maj9"), (0, "min9")],
+    ],
+    # ---- NAT_MINOR genres (i=min, bIII/bVI=maj, bVII=dom, iv/v=min) ----
+    "synthwave": [
+        [(0, "min9"), (5, "maj7"), (2, "maj7"), (6, "dom7")],
+        [(0, "min9"), (6, "dom7"), (5, "maj7"), (6, "dom7")],
+        [(0, "min9"), (2, "maj9"), (5, "maj7"), (6, "dom7")],
+        [(0, "min7"), (3, "min7"), (5, "maj7"), (4, "min7")],
+    ],
+    "neon_dub": [
+        [(0, "min9"), (0, "min9"), (3, "min7"), (0, "min9")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+        [(0, "min9"), (5, "maj7"), (0, "min9"), (5, "maj7")],
+        [(0, "min7"), (6, "dom7"), (0, "min7"), (6, "dom7")],
+    ],
+    "minimal_techno": [
+        [(0, "min9"), (0, "min9"), (0, "min7"), (0, "min9")],
+        [(0, "min9"), (0, "min9"), (0, "min9"), (0, "min9")],
+        [(0, "min7"), (0, "min7"), (5, "maj7"), (0, "min7")],
+        [(0, "min9"), (0, "min9"), (6, "dom7"), (0, "min9")],
+    ],
+    "dub": [
+        [(0, "min7"), (0, "min7"), (3, "min7"), (0, "min7")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+        [(0, "min9"), (5, "maj7"), (0, "min9"), (5, "maj7")],
+        [(0, "min7"), (6, "dom7"), (5, "maj7"), (0, "min7")],
+    ],
+    "steppers_dub": [
+        [(0, "min7"), (0, "min7"), (4, "min7"), (0, "min7")],
+        [(0, "min9"), (0, "min9"), (3, "min7"), (0, "min9")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+        [(0, "min7"), (6, "dom7"), (0, "min7"), (6, "dom7")],
+    ],
+    "dub_techno": [
+        [(0, "min9"), (0, "min9"), (0, "min7"), (0, "min9")],
+        [(0, "min9"), (0, "min9"), (0, "min9"), (0, "min9")],
+        [(0, "min7"), (3, "min7"), (0, "min7"), (3, "min7")],
+        [(0, "min9"), (5, "maj7"), (0, "min9"), (5, "maj7")],
+    ],
+    "roots_reggae": [
+        [(0, "min7"), (3, "min7"), (4, "min7"), (0, "min7")],
+        [(0, "min7"), (5, "maj7"), (6, "dom7"), (0, "min7")],
+        [(0, "min9"), (3, "min9"), (0, "min9"), (3, "min9")],
+        [(0, "min7"), (6, "dom7"), (5, "maj7"), (4, "min7")],
+    ],
+    "indie_rnb": [
+        [(0, "min9"), (5, "maj7"), (3, "min9"), (4, "min7")],
+        [(0, "min9"), (2, "maj9"), (5, "maj7"), (0, "min9")],
+        [(0, "min7"), (6, "dom7"), (5, "maj7"), (2, "maj9")],
+        [(0, "min9"), (3, "min7"), (2, "maj9"), (0, "min9")],
+    ],
+    # ---- PHRYGIAN genre (i=min, bII=maj signature, bIII=dom) ----
+    "electro": [
+        [(0, "min7"), (0, "min7"), (1, "maj7"), (0, "min7")],
+        [(0, "min7"), (1, "maj9"), (0, "min7"), (1, "maj9")],
+        [(0, "min7"), (6, "min7"), (5, "maj7"), (0, "min7")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+    ],
+}
+
+
 def _key_pc(key: str) -> int:
     k = (key or "C minor").strip().lower().split()
     return _PC.get(k[0] if k else "c", 0)
@@ -470,6 +616,17 @@ class CannedSource:
         rr = random.Random(int(self.root * 7 + len(self.genre)))
         self.motif = list(rr.choice(variants))
         self.bar = 0
+        # which of the 4 researched progressions this section uses: the LLM's
+        # composition choice (`harmony` 0..3); absent -> rotate so all four
+        # are heard over a run.
+        self._sec = getattr(self, "_sec", -1) + 1
+        banks = _PROGRESSIONS.get(self.genre)
+        n = len(banks) if banks else 1
+        h = section.get("harmony")
+        try:
+            self.prog_sel = int(h) % n if h is not None else self._sec % n
+        except (TypeError, ValueError):
+            self.prog_sel = self._sec % n
 
     def synth_params(self) -> dict:
         # copy (do not mutate the module table) + inject the genre's perc2
@@ -533,7 +690,11 @@ class CannedSource:
         Adds a secondary-dominant turnaround on the last bar (harmonic
         motion, no extra notes) — keeps the music interesting, not denser.
         """
-        prog = PROFILE.get(self.genre, PROFILE["funk"])[1]
+        banks = _PROGRESSIONS.get(self.genre)
+        if banks:
+            prog = banks[getattr(self, "prog_sel", 0) % len(banks)]
+        else:
+            prog = PROFILE.get(self.genre, PROFILE["funk"])[1]
         sc = self._scale()
         if prog_idx % 4 == 3:
             rr = random.Random(prog_idx * 131 + self.root + len(self.genre))
@@ -1073,11 +1234,11 @@ class CannedSource:
         if self.on["snare"]:
             for s in (4, 12):                                              # 909 backbeat
                 D(s, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
-            for s in (7, 9):                                               # 606 ghosts
-                D(s, 0.06, RIM, self._ghost(rnd) + 0.12, CH_DRUMS, "snare")
+            for s in (7, 9):                                               # 606 snare — a real hit, not a ghost
+                D(s, 0.06, RIM, self._acc(rnd), CH_DRUMS, "snare", True)
             if self.bar % 2 == 1:                                          # 2-bar end fill
                 for s in (14, 15):
-                    D(s, 0.05, RIM, self._ghost(rnd) + 0.14, CH_DRUMS, "snare")
+                    D(s, 0.05, RIM, self._main(rnd), CH_DRUMS, "snare")
         if self.on["hat"]:
             for s in (0, 4, 8, 12):                                        # closed: the beat
                 D(s, 0.035, HAT, self._main(rnd) * 0.7, CH_DRUMS, "hat")

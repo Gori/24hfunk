@@ -167,11 +167,22 @@ class SectionState(_Clamped):
     bpm: int = Field(96, ge=70, le=150)
     key: str = "C minor"
     density: float = Field(0.6, ge=0.0, le=1.0)
+    # composition choice: which of the genre's 4 researched chord
+    # progressions to use (0=signature .. 3=alt/turnaround)
+    harmony: int = Field(0, ge=0, le=3)
+    # a short evocative track title — drives the HUD + text visuals
+    name: str = "untitled"
 
     @field_validator("genre", mode="before")
     @classmethod
     def _genre_ok(cls, v):
         return v if v in GENRES else "electro_funk"
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _name_ok(cls, v):
+        v = str(v or "").strip()
+        return v[:40] if v else "untitled"
     instruments: Instruments = Instruments()
     fx: Fx = Fx()
     palette: Palette = Palette()

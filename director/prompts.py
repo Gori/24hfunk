@@ -50,6 +50,13 @@ bpm           : int 68..160 (lofi 70-90, funk 96-112, house 120-128,
                 rnb 68-92, afro_rnb 100-114, indie_rnb 70-88)
 key           : musical key string (e.g. "F# minor")
 density       : float 0..1  (idm/funk 0.6-0.9, dub/lofi 0.3-0.55)
+harmony       : int 0..3 — which of the genre's 4 chord-progression
+                variants to use (0 = its signature, 1-3 = alternates /
+                vamps / turnarounds). VARY it across sections for
+                harmonic variety, just like you vary the key.
+name          : a short evocative TRACK TITLE, 2-4 words, Title Case
+                (e.g. "Chrome Alley", "Slow Tide", "Night Bus") that
+                fits the mood + genre. This is the song's name.
 
 instruments.kick  : {enabled, amp 0..1, fmRatio 0.5..3, fmIndex 0..8, decay 0.1..0.8}
 instruments.snare : {enabled, amp 0..1, tone 0..1, decay 0.05..0.5}
@@ -84,6 +91,8 @@ EXAMPLE = """{
   "bpm": 104,
   "key": "G minor",
   "density": 0.72,
+  "harmony": 1,
+  "name": "Chrome Alley",
   "instruments": {
     "kick":  {"enabled": true, "amp": 0.95, "fmRatio": 1.0, "fmIndex": 2.0, "decay": 0.3},
     "snare": {"enabled": true, "amp": 0.6, "tone": 0.45, "decay": 0.16},
@@ -117,7 +126,9 @@ def build_user_prompt(
             f'"genre" field to exactly "{forced_genre}". Choose bpm, key, '
             f"mood, density, instruments, fx, palette and visuals that fit "
             f"{forced_genre}, and make it clearly different from any recent "
-            f"sections above."
+            f"sections above. Give it a distinctive `name` (2-4 word track "
+            f"title) and pick a `harmony` 0-3 that differs from the recent "
+            f"sections so the chord progression varies."
         )
     elif history:
         ctx += ("Make the next section clearly DIFFERENT — switch genre, move "
