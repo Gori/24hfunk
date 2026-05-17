@@ -305,7 +305,7 @@
       if (init) init.call(this, eng, s);
     },
     note() { this.nt = 1; },
-    beat() { this.bt = 1; this.t += 0.12 * this.P.spd; },
+    beat(b) { this.bt = 1; this.t += 0.12 * this.P.spd; if (b && typeof b.beat === 'number') this._bi = b.beat; },
     step(dt) {
       this.t += dt * this.P.spd;
       this.bt = Math.max(0, (this.bt || 0) - dt * 4);
@@ -650,19 +650,19 @@
       }
     }
   });
-  const Burst3D = E('DOT EXPLOSION', function () { this.p = []; this._arm = false; }, function (eng, env) {
+  const Burst3D = E('DOT EXPLOSION', function () { this.p = []; }, function (eng, env) {
     const C = eng.cols, R = eng.rows, p = this.p;
     const burst = () => { for (let i = 0; i < 60; i++) p.push({ x: 0, y: 0, z: 0, vx: Math.random() - 0.5, vy: Math.random() - 0.5, vz: Math.random() - 0.5, l: 1 }); };
-    // explode on the BPM beat: beat() fires every 16th (router sends
-    // /vis/beat per 16th), so latch rising edges and burst every 4th =
-    // one explosion per quarter-note beat, locked to tempo.
-    if (this.bt > 0.5) {
-      if (!this._arm) {
-        this._bn = (this._bn || 0) + 1;
-        if (this._bn % 4 === 1 && p.length < 600) burst();
-      }
-      this._arm = true;
-    } else if (this.bt < 0.2) this._arm = false;
+    // explode locked to the REAL audio beat clock: the bridge sends
+    // /vis/beat per 16th -> this._bi (0..15) via the E-factory beat().
+    // Burst once on each quarter-note pulse (steps 0,4,8,12). The old
+    // this.bt-envelope latch never re-armed at normal tempos -> not in
+    // sync; this fires off the same TempoClock as the synths.
+    const bi = this._bi;
+    if (typeof bi === 'number' && bi !== this._lbi) {
+      this._lbi = bi;
+      if ((bi & 3) === 0 && p.length < 600) burst();
+    }
     if (p.length === 0) burst();
     let w = 0;                                   // in-place compact, no realloc
     for (let r = 0; r < p.length; r++) {

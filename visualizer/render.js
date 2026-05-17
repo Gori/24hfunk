@@ -259,7 +259,7 @@
       else leadE = Math.min(1.5, leadE + 0.3 + v * 0.35);
       if (active && active.note) active.note(n);
     },
-    onBeat() { beatEnv = 1; beatKick = 1; if (active && active.beat) active.beat(); },
+    onBeat(m) { beatEnv = 1; beatKick = 1; if (active && active.beat) active.beat(m); },
     frame(dt) {
       if (!eng) return;
       vT += dt * SPEED;                 // slowed autonomous clock
