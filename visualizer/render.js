@@ -32,6 +32,7 @@
   let scrText = '', scrX = 0, scrOn = false, scrPhase = 0, scrLast = '';
   const _env = {};   // reused every frame — no per-frame env object alloc
   let _dms = 0, _fms = 0;   // diag: draw vs flush ms (last frame)
+  let _plot0 = null, _op = null;   // pristine eng.plot + a bound-ONCE copy
 
   // curated, deliberately DISTINCT palettes — we fade to the next one on every
   // new music style so the colour world visibly changes each section.
@@ -174,7 +175,14 @@
   function drawActive(env) {
     const isDemo = demoSet.has(active);
     if (!isDemo || fxSym === 0 && !fxFlip) { active.draw(eng, env); return; }
-    const C = eng.cols, R = eng.rows, op = eng.plot.bind(eng);
+    // op is the SINGLE bound-once original plot (never re-bound), and we
+    // restore eng.plot to the pristine method — NOT to a bound wrapper.
+    // The old code did `op = eng.plot.bind(eng)` + `finally eng.plot = op`,
+    // so every wrapped frame bound the *previous* bound fn -> an
+    // ever-growing chain of nested binds that every plot() call had to
+    // walk: per-plot cost grew linearly over the whole session (heavy
+    // effects collapsed, tiny memory, only a reload reset it).
+    const C = eng.cols, R = eng.rows, op = _op;
     eng.plot = (x, y, g, c, z) => {
       x |= 0; y |= 0;
       if (fxFlip) y = R - 1 - y;
@@ -184,7 +192,7 @@
       if (fxSym >= 3) op(C - 1 - x, R - 1 - y, g, c, z);
       if (fxSym === 4) { op(y * (C / R) | 0, x * (R / C) | 0, g, c, z); }
     };
-    try { active.draw(eng, env); } finally { eng.plot = op; }
+    try { active.draw(eng, env); } finally { eng.plot = _plot0; }
   }
   function mix(a, b, k) {
     const L = window.Palette.lerpRgb;
@@ -205,6 +213,8 @@
     diag() { return { ls: !!(eng && eng._ls), title: active && active.title, d: _dms, f: _fms }; },
     init(canvas) {
       eng = new window.A3D(canvas);
+      _plot0 = eng.plot;            // pristine prototype plot (for restore)
+      _op = eng.plot.bind(eng);     // bound ONCE — never re-bound per frame
       buildPool();
       window.addEventListener('resize', () => { eng.resize(); if (active && active.reset) active.reset(eng); });
       // LOCAL TESTING: each browser refresh steps to the NEXT effect in the
