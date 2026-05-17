@@ -1064,20 +1064,72 @@
   });
 
   // ===== batch 4: 20 fresh, original visual languages =====
+  // compact 5x7 uppercase bitmap font (for big readable kinetic type)
+  const FNT5 = {
+    A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+    B: ['11110', '10001', '11110', '10001', '10001', '10001', '11110'],
+    C: ['01111', '10000', '10000', '10000', '10000', '10000', '01111'],
+    D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+    E: ['11111', '10000', '11110', '10000', '10000', '10000', '11111'],
+    F: ['11111', '10000', '11110', '10000', '10000', '10000', '10000'],
+    G: ['01111', '10000', '10000', '10111', '10001', '10001', '01111'],
+    H: ['10001', '10001', '11111', '10001', '10001', '10001', '10001'],
+    I: ['11111', '00100', '00100', '00100', '00100', '00100', '11111'],
+    J: ['00111', '00010', '00010', '00010', '10010', '10010', '01100'],
+    K: ['10001', '10010', '11100', '10100', '11010', '10010', '10001'],
+    L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+    M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+    N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+    O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+    P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+    Q: ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+    R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+    S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+    T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+    U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+    V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+    W: ['10001', '10001', '10001', '10101', '10101', '11011', '10001'],
+    X: ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
+    Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+    Z: ['11111', '00010', '00100', '01000', '10000', '10000', '11111'],
+    ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
+  };
   const WORDS = ['STR', 'FUNK', 'ASCII', 'DEMO', 'SCENE', 'NEON', 'GROOVE',
     'PIXEL', 'CHROME', 'DREAM', 'VOID', 'PULSE'];
-  const KineticType = E('KINETIC TYPE', function () { this.w = WORDS[(Math.random() * WORDS.length) | 0]; }, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
-    if (this.bt > 0.6 && Math.random() < 0.5) this.w = WORDS[(Math.random() * WORDS.length) | 0];
-    const w = this.w, sz = 3 + Math.round(2 + Math.sin(this.t * 2) * 1.5 + env.mv * 3);
-    const tot = w.length * (sz + 1), ox = (C - tot) / 2;
-    for (let i = 0; i < w.length; i++) {
-      const jit = (this.bt) * (Math.sin(i * 9.7) * 6);
-      const cx = ox + i * (sz + 1), cy = R / 2 - sz / 2 + Math.sin(this.t * 3 + i) * 2 + jit;
-      const col = mul(acc(env, i % 3), 0.5 + env.beat * 0.5);
-      for (let yy = 0; yy < sz; yy++) for (let xx = 0; xx < sz; xx++)
-        if ((xx + yy) % 2 === 0 || xx === 0 || yy === 0)
-          px(eng, cx + xx, cy + yy, w[i], col, 200);
+  const KineticType = E('KINETIC TYPE', function () {
+    this.w = WORDS[(Math.random() * WORDS.length) | 0]; this.tw = 0; this._lt = 0;
+  }, function (eng, env) {
+    // BIG readable typography: a word rendered from the 5x7 font, letters
+    // revealing left->right, scale-pulsing on the beat, each glyph bouncing
+    // + a beat kick, colour cycling. Reads as a word, not noise.
+    const C = eng.cols, R = eng.rows, w = this.w, n = w.length;
+    let dt = env.t - (this._lt || env.t); if (dt < 0 || dt > 0.1) dt = 0.016;
+    this._lt = env.t; this.tw += dt;
+    if (this.bt > 0.6 && this.tw > 0.7 && Math.random() < 0.5) {
+      this.w = WORDS[(Math.random() * WORDS.length) | 0]; this.tw = 0;
+      return;
+    }
+    // base scale to fit ~78% width; gentle entrance overshoot + beat pulse
+    const fitS = Math.max(2, Math.min(7, (C * 0.78 / (n * 6)) | 0));
+    const ent = Math.min(1, this.tw * 3);
+    const grow = ent < 1 ? (0.35 + 0.85 * ent - 0.20 * Math.sin(ent * Math.PI)) : 1;
+    const s = Math.max(1, (fitS * grow * (1 + env.beat * 0.16 + env.mv * 0.10)) | 0);
+    const gw = 6 * s, totW = n * gw - s;
+    const ox = ((C - totW) / 2) | 0, oy = ((R - 7 * s) / 2) | 0;
+    const ci = (env.t * 2) | 0;
+    for (let i = 0; i < n; i++) {
+      if (this.tw * 9 < i) break;                       // staggered reveal
+      const g = FNT5[w[i]] || FNT5[' '];
+      const kick = this.bt * (Math.sin(i * 2.3) * 0.5 + 0.5) * s * 1.6;
+      const bob = Math.sin(env.t * 3 + i * 0.9) * s * 0.5;
+      const lx = ox + i * gw, ly = (oy + bob - kick) | 0;
+      const col = mul(acc(env, (i + ci) % 3), 0.55 + env.beat * 0.45);
+      for (let ry = 0; ry < 7; ry++) for (let rx = 0; rx < 5; rx++) {
+        if (g[ry][rx] !== '1') continue;
+        const bx = lx + rx * s, by = ly + ry * s;
+        for (let q = 0; q < s; q++) for (let p = 0; p < s; p++)
+          px(eng, bx + p, by + q, '█', col, 200);
+      }
     }
   });
   const Turmites = E('TURMITES', function (eng) {
@@ -1636,17 +1688,6 @@
       px(eng, C / 2 + x * Rr * 1.2, R / 2 + y * Rr, '.', mul(acc(env, (i / 150 | 0) % 3), 0.35 + env.beat * 0.5), 300);
     }
   });
-  const MoireRings = E('MOIRE RINGS', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows;
-    const ax = C / 2 + Math.sin(this.t) * C * 0.16, bx = C / 2 - Math.sin(this.t * 0.8) * C * 0.16;
-    const ring = (cx, cy, ci) => {
-      for (let r = 3; r < R * 0.95; r += 3) {
-        const st = Math.max(0.12, 1.6 / r);
-        for (let a = 0; a < 6.283; a += st) px(eng, cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.6, '.', mul(acc(env, ci), 0.28 + env.beat * 0.4), 400);
-      }
-    };
-    ring(ax, R / 2, 0); ring(bx, R / 2, 1);
-  });
   const VecTun = E('VECTOR TUNNEL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, sides = 4 + (this.P.variant % 3);
     for (let i = 0; i < 16; i++) {
@@ -1817,29 +1858,81 @@
       }
     }
   });
-  const Elite = E('ELITE', function () { this.stars = []; for (let i = 0; i < 70; i++) this.stars.push([Math.random(), Math.random()]); }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, BLK = [6, 7, 12], WHT = [210, 215, 225], GRN = [120, 235, 130];
+  const Elite = E('ELITE', function () {
+    const ZF = 16; this.ZF = ZF;
+    this.mkv = (t) => {
+      if (t === 1) return { V: [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]],
+        E: [[4, 0], [4, 2], [4, 1], [4, 3], [5, 0], [5, 2], [5, 1], [5, 3], [0, 2], [2, 1], [1, 3], [3, 0]] };
+      if (t === 2) { const j = () => (Math.random() - 0.5) * 0.5;
+        return { V: [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]].map(([x, y, z]) => [x + j(), y + j(), z + j()]),
+          E: [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]] }; }
+      return { V: [[0, 0, 1.7], [-1.5, 0, -0.9], [1.5, 0, -0.9], [0, 0.5, -0.9], [0, -0.35, -0.9], [-0.5, 0, -1.2], [0.5, 0, -1.2]],
+        E: [[0, 1], [0, 2], [1, 2], [0, 3], [0, 4], [1, 5], [2, 6], [3, 5], [3, 6], [4, 5], [4, 6], [5, 6]] };
+    };
+    this.spawn = () => ({ t: (Math.random() * 3) | 0, x: (Math.random() * 2 - 1) * 4, y: (Math.random() * 2 - 1) * 2.5,
+      z: 8 + Math.random() * ZF, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.25,
+      rx: Math.random() * 6, ry: Math.random() * 6, vrx: (Math.random() - 0.5) * 1.4, vry: (Math.random() - 0.5) * 1.4,
+      sc: 0.7 + Math.random() * 0.7 });
+    this.st = [];
+    for (let i = 0; i < 150; i++) this.st.push({ x: (Math.random() * 2 - 1) * 1.4, y: (Math.random() * 2 - 1) * 1.4, z: 0.3 + Math.random() * ZF });
+    this.ob = [this.spawn(), this.spawn(), this.spawn()];
+    for (const o of this.ob) o.geo = this.mkv(o.t);
+    this.planet = { z: ZF * 1.5, x: (Math.random() * 2 - 1) * 2.5, y: (Math.random() * 2 - 1) * 1.2, r: 1.6 };
+    this.las = 0; this._lt = 0;
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, ZF = this.ZF;
+    const BLK = [6, 7, 12], WHT = [214, 219, 230], DIM = [120, 126, 150], GRN = [110, 235, 130];
+    let dt = env.t - (this._lt || env.t); if (dt < 0 || dt > 0.1) dt = 0.016; this._lt = env.t;
+    const spd = (2.2 + env.mv * 4 + env.beat * 1.6) * this.P.spd;
+    const F = C * 0.62 * (0.85 + this.P.zoom * 0.3), hY = R * 0.44;
     BG(eng, BLK);
-    for (const s of this.stars) px(eng, s[0] * C, s[1] * (R - 7), '.', WHT, 800);
-    const pcx = C * 0.78, pcy = R * 0.30, pr = Math.min(C, R * 2) * 0.13;
-    for (let a = 0; a < 6.283; a += 0.10) px(eng, pcx + Math.cos(a) * pr, pcy + Math.sin(a) * pr * 0.6, '#', WHT, 600);
-    for (let a = -1; a <= 1; a += 0.5) LN(eng, pcx - pr, pcy + a * pr * 0.3, pcx + pr, pcy + a * pr * 0.3, '.', [110, 115, 130], 590);
-    const a = this.t * 0.6, b = this.t * 0.4, s = Math.min(C, R * 2) * 0.16;
-    const V = [[0, 0, 2], [-1.6, 0, -1], [1.6, 0, -1], [0, 0.5, -1], [0, -0.4, -1], [-0.6, 0, -1.4], [0.6, 0, -1.4]].map(([x, y, z]) => {
-      let y1 = y * Math.cos(a) - z * Math.sin(a), z1 = y * Math.sin(a) + z * Math.cos(a);
-      let x1 = x * Math.cos(b) - z1 * Math.sin(b); z1 = x * Math.sin(b) + z1 * Math.cos(b);
-      const p = 3 / (3 + z1); return [C / 2 + x1 * s * p * 2, R * 0.42 - y1 * s * p * 2];
-    });
-    [[0, 1], [0, 2], [1, 2], [0, 3], [0, 4], [1, 5], [2, 6], [3, 5], [3, 6], [4, 5], [4, 6], [5, 6]]
-      .forEach(([i, j]) => LN(eng, V[i][0], V[i][1], V[j][0], V[j][1], '#', WHT, 300));
+    for (const s of this.st) {
+      const z0 = s.z; s.z -= spd * dt * 1.5;
+      if (s.z < 0.25) { s.z = ZF; s.x = (Math.random() * 2 - 1) * 1.4; s.y = (Math.random() * 2 - 1) * 1.4; continue; }
+      const b = 1 - s.z / ZF;
+      LN(eng, C / 2 + s.x / z0 * F, hY - s.y / z0 * F, C / 2 + s.x / s.z * F, hY - s.y / s.z * F,
+        b > 0.7 ? '@' : b > 0.4 ? '*' : '.', mul(WHT, 0.28 + b * 0.72), s.z);
+    }
+    const pl = this.planet; pl.z -= spd * dt * 0.12;
+    if (pl.z < 2.2) { pl.z = ZF * 1.6; pl.x = (Math.random() * 2 - 1) * 2.5; pl.y = (Math.random() * 2 - 1) * 1.2; }
+    const ppx = C / 2 + pl.x / pl.z * F, ppy = hY - pl.y / pl.z * F, ppr = pl.r / pl.z * F;
+    if (ppr > 1.5) {
+      for (let aa = 0; aa < 6.283; aa += 0.09) px(eng, ppx + Math.cos(aa) * ppr, ppy + Math.sin(aa) * ppr * 0.62, '#', DIM, pl.z);
+      for (let li = -0.6; li <= 0.6; li += 0.6) LN(eng, ppx - ppr, ppy + li * ppr * 0.62, ppx + ppr, ppy + li * ppr * 0.62, '.', mul(DIM, 0.7), pl.z - 0.01);
+    }
+    for (const o of this.ob) {
+      o.z -= spd * dt; o.x += o.vx * dt; o.y += o.vy * dt;
+      o.rx += o.vrx * dt * this.P.dir; o.ry += o.vry * dt;
+      if (o.z < 1.1) { Object.assign(o, this.spawn()); o.geo = this.mkv(o.t); continue; }
+      const ca = Math.cos(o.rx), sa = Math.sin(o.rx), cb = Math.cos(o.ry), sb = Math.sin(o.ry);
+      const P2 = o.geo.V.map(([x, y, z]) => {
+        let y1 = y * ca - z * sa, z1 = y * sa + z * ca;
+        let x1 = x * cb - z1 * sb; z1 = x * sb + z1 * cb;
+        const cz = Math.max(0.3, o.z + z1 * o.sc);
+        return [C / 2 + (o.x + x1 * o.sc) / cz * F, hY - (o.y + y1 * o.sc) / cz * F];
+      });
+      const dimf = Math.max(0.25, Math.min(1, 2.4 / o.z));
+      const col = mul(WHT, 0.3 + dimf * 0.8 + env.beat * 0.2);
+      o.geo.E.forEach(([i, j]) => LN(eng, P2[i][0], P2[i][1], P2[j][0], P2[j][1], '#', col, o.z));
+    }
+    const ccx = (C / 2) | 0, ccy = hY | 0;
+    LN(eng, ccx - 4, ccy, ccx - 1, ccy, '-', GRN, 40); LN(eng, ccx + 1, ccy, ccx + 4, ccy, '-', GRN, 40);
+    LN(eng, ccx, ccy - 3, ccx, ccy - 1, '|', GRN, 40); LN(eng, ccx, ccy + 1, ccx, ccy + 3, '|', GRN, 40);
+    px(eng, ccx, ccy, '+', GRN, 38);
+    this.las = this.bt > 0.5 ? 1 : Math.max(0, this.las - 0.12);
+    if (this.las > 0.05) {
+      const lc = mul([255, 95, 95], 0.5 + this.las * 0.6);
+      LN(eng, 1, R - 7, ccx, ccy, '/', lc, 35); LN(eng, C - 2, R - 7, ccx, ccy, '\\', lc, 35);
+    }
     const dy = R - 5;
-    for (let y = dy; y < R; y++) eng.hspan(y, 0, C - 1, '-', [58, 60, 74], 250);
-    const scx = C / 2, scy = R - 3, sw = C * 0.15, sh = 2.2;
-    for (let aa = 0; aa < 6.283; aa += 0.10) px(eng, scx + Math.cos(aa) * sw, scy + Math.sin(aa) * sh, '.', [80, 130, 80], 200);
-    for (let k = 0; k < 5; k++) px(eng, scx + Math.sin(this.t * 1.3 + k) * sw * 0.8, scy + Math.cos(this.t + k) * sh * 0.7, '+', GRN, 190);
+    for (let y = dy; y < R; y++) eng.hspan(y, 0, C - 1, '-', [40, 44, 60], 250);
+    const scx = (C / 2) | 0, scy = R - 3, sw = C * 0.16, sh = 2.4;
+    for (let aa = 0; aa < 6.283; aa += 0.09) px(eng, scx + Math.cos(aa) * sw, scy + Math.sin(aa) * sh, '.', [70, 120, 70], 200);
+    LN(eng, scx - sw, scy, scx + sw, scy, '.', [58, 96, 58], 199);
+    for (const o of this.ob) px(eng, scx + (o.x / Math.max(1, o.z * 0.5)) * sw, scy - Math.max(0.05, 1 - o.z / ZF) * sh * 0.8, '+', GRN, 190);
     for (let k = 0; k < 4; k++) {
-      const wbar = (C * 0.10 * (Math.sin(this.t * 1.7 + k * 1.3) * 0.5 + 0.5)) | 0;
-      for (let x = 0; x < wbar; x++) { px(eng, 3 + x, dy + (k % 2) * 2, '#', GRN, 190); px(eng, C - 4 - x, dy + (k % 2) * 2, '#', [210, 160, 110], 190); }
+      const wb = (C * 0.08 * (Math.sin(env.t * 1.7 + k * 1.3) * 0.5 + 0.5)) | 0;
+      for (let x = 0; x < wb; x++) { px(eng, 3 + x, dy + (k % 2) * 2, '#', GRN, 190); px(eng, C - 4 - x, dy + (k % 2) * 2, '#', [220, 170, 110], 190); }
     }
   });
   window.Worlds = window.Worlds || {};
@@ -1858,7 +1951,7 @@
     Mandala, CodeHall, WireRidge, BallPit, DLA, Plume, PendWave, Tesseract,
     Radar, Truchet, Voronoi, BurnShip,
     RotoTex, LutPlasma, FracTree, Bolt, Hilb, Rule30, Brain, Spiro,
-    MoireRings, VecTun, HyperJump, PhongCube, MetaDiscs, Donut, WaveTerr,
+    VecTun, HyperJump, PhongCube, MetaDiscs, Donut, WaveTerr,
     PFire, Shutter, GravWell, BoingShadow, TextRing, Elite, AsmHall,
   ];
 })();

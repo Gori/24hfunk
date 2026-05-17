@@ -282,5 +282,9 @@ variety + music-reactive), plus user-requested additions:
   — an ASCII/Bresenham rendering can't be a faithful replica of that
   pixel-art, so it was cut rather than ship a poor version.
 
-Effect total is now **115** (4 worlds + 111 demoscene). E1M1 also gained
-a roaming enemy imp; STAGE 1-1's music sway was reduced to ~30%.
+Effect total is now **114** (4 worlds + 110 demoscene). MOIRE RINGS was
+also removed (redundant vs MOIRE). ELITE was reworked into a real
+cockpit flight (streaming starfield + approaching wireframe craft +
+scanner). KINETIC TYPE now renders a real 5×7 bitmap font (big,
+readable, beat-kinetic). E1M1 gained a roaming enemy imp; STAGE 1-1's
+music sway was reduced to ~30%.
