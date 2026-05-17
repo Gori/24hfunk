@@ -10,13 +10,13 @@
 
   const musicEl = document.getElementById('hud-music');
 
-  let _fps = 0, _heap = 0;
+  let _fps = 0, _heap = 0, _ms = 0;
   function setStatus() {
     document.body.classList.toggle('live', connected);
     statusEl.textContent =
       `${connected ? 'live' : 'offline'}  ·  section ${stats.section}  ·  ` +
       `notes ${stats.notes}  ·  beat ${stats.lastBeat ?? '—'}  ·  ` +
-      `${_fps}fps${_heap ? '  ·  ' + _heap + 'MB' : ''}`;
+      `${_fps}fps  ·  ${_ms}ms/f${_heap ? '  ·  ' + _heap + 'MB' : ''}`;
   }
 
   // Big "what music is playing" HUD line, from the live SectionState.

@@ -38,6 +38,19 @@
     this.ctx.font = `${this.fontPx}px "JetBrains Mono","SF Mono",Menlo,Monaco,monospace`;
     this.ctx.textBaseline = 'top';
     this.ctx.textAlign = 'left';
+    // Force each glyph to advance EXACTLY one cell via letterSpacing, so
+    // flush can batch a whole run into one fillText (fast) and still stay
+    // grid-aligned — spaces (skipped cells) remain real gaps. (The per-cell
+    // fillText fallback was correct but ran thousands of fillText/frame,
+    // which cumulatively degraded the canvas raster cache -> progressive
+    // slowdown with no JS-heap growth, only a refresh fixed it.)
+    this._ls = ('letterSpacing' in this.ctx);
+    if (this._ls) {
+      this.ctx.fontKerning = 'none';
+      this.ctx.letterSpacing = '0px';
+      const adv = this.ctx.measureText('0').width || this.cw;
+      this.ctx.letterSpacing = (this.cw - adv).toFixed(3) + 'px';
+    }
   };
   const pack = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
 
@@ -171,43 +184,61 @@
   };
 
   A3D.prototype.flush = function () {
-    // tight hot loop: hoisted locals, a persistent packed-int -> css cache,
-    // skip redundant fillStyle writes, no O(n^2) run concatenation.
     const ctx = this.ctx, ch = this.ch, col = this.col;
     const rows = this.rows, cols = this.cols, cw = this.cw, chh = this.chh;
     const css = this._css || (this._css = new Map());
-    // bound the packed-int -> css-string cache. Palette crossfades +
-    // brightness scaling produce effectively unbounded distinct colours,
-    // so this Map grew forever -> memory creep -> the browser lagged
-    // progressively (only a refresh cleared it). Periodic clear is cheap
-    // (the rgb() string rebuild is trivial) and keeps it bounded.
-    if (css.size > 4096) css.clear();
+    if (css.size > 4096) css.clear();      // bound the colour-string cache
     ctx.fillStyle = `rgb(${this.bg[0]},${this.bg[1]},${this.bg[2]})`;
     ctx.fillRect(0, 0, this.W, this.H);
     let lastStyle = -1;
-    // draw EVERY glyph anchored to its own cell (c*cw). Runs were drawn as
-    // one fillText using the font's advance, but fontPx (~1.85*cw) is wider
-    // than a cell, so within a word the glyphs overran the grid and
-    // visually closed the one-cell space gaps (multi-word HUD/text mashed
-    // into one word). Per-cell anchoring bounds overflow to one glyph and
-    // keeps skipped space cells as real gaps. fillStyle still batched.
-    for (let r = 0; r < rows; r++) {
-      const base = r * cols, ry = r * chh;
-      for (let c = 0; c < cols; c++) {
-        const code = ch[base + c];
-        if (code === SPACE) continue;
-        const color = col[base + c];
-        if (color !== lastStyle) {
-          let s = css.get(color);
-          if (s === undefined) {
-            s = 'rgb(' + ((color >> 16) & 255) + ',' + ((color >> 8) & 255)
-              + ',' + (color & 255) + ')';
-            css.set(color, s);
+    const styleOf = (color) => {
+      let s = css.get(color);
+      if (s === undefined) {
+        s = 'rgb(' + ((color >> 16) & 255) + ',' + ((color >> 8) & 255)
+          + ',' + (color & 255) + ')';
+        css.set(color, s);
+      }
+      return s;
+    };
+    if (this._ls) {
+      // FAST PATH: letterSpacing forces advance == cw, so a run of cells
+      // is one grid-aligned fillText. ~10-30 fillText/row instead of one
+      // per cell (the per-cell path cumulatively degraded the canvas
+      // raster cache -> progressive slowdown only a refresh fixed).
+      const scratch = this._scr && this._scr.length >= cols
+        ? this._scr : (this._scr = new Array(cols));
+      for (let r = 0; r < rows; r++) {
+        const base = r * cols, ry = r * chh;
+        let c = 0;
+        while (c < cols) {
+          const code = ch[base + c];
+          if (code === SPACE) { c++; continue; }
+          const color = col[base + c];
+          scratch[0] = code;
+          let len = 1, c2 = c + 1;
+          while (c2 < cols) {
+            const cc = ch[base + c2];
+            if (cc === SPACE || col[base + c2] !== color) break;
+            scratch[len++] = cc; c2++;
           }
-          ctx.fillStyle = s;
-          lastStyle = color;
+          if (color !== lastStyle) { ctx.fillStyle = styleOf(color); lastStyle = color; }
+          ctx.fillText(String.fromCharCode.apply(null,
+            len === scratch.length ? scratch : scratch.slice(0, len)), c * cw, ry);
+          c = c2;
         }
-        ctx.fillText(String.fromCharCode(code), c * cw, ry);
+      }
+    } else {
+      // FALLBACK (no ctx.letterSpacing): per-cell anchoring keeps spacing
+      // correct when the font advance != cw (slower, but rare browsers).
+      for (let r = 0; r < rows; r++) {
+        const base = r * cols, ry = r * chh;
+        for (let c = 0; c < cols; c++) {
+          const code = ch[base + c];
+          if (code === SPACE) continue;
+          const color = col[base + c];
+          if (color !== lastStyle) { ctx.fillStyle = styleOf(color); lastStyle = color; }
+          ctx.fillText(String.fromCharCode(code), c * cw, ry);
+        }
       }
     }
   };
