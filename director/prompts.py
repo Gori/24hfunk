@@ -67,12 +67,22 @@ instruments.lead  : {enabled, amp 0..1, fmRatio 0.5..4, fmIndex 0..4, wave 0..1,
 
 fx : {reverb 0..0.9, delay 0..0.7, delayTime 0.05..0.75}
 
-palette.bg / palette.fg : "#rrggbb". Usually a dark bg + bright fg, but
-                          you MAY occasionally INVERT it (a bright/pale bg
-                          with a dark, near-black fg) for a striking look.
-                          Be colourful + distinct per genre/mood — not
-                          always blue-grey.
-palette.accent          : array of 2-3 "#rrggbb"
+palette : design ONE cohesive, deliberate colour palette per song —
+          like a real art-directed scheme, not random colours.
+          - pick a colour STORY that fits this genre + the song
+            `name`/`mood` (e.g. dub=warm amber/earthy; detroit_techno
+            =steel blue/cyan; rnb=plum/rose/gold; synthwave=magenta+
+            cyan; jazz=sepia/brass; lofi=muted dusty pastels).
+          - bg, fg and the 2-3 accents must HARMONISE: a shared
+            temperature/tonal family, accents related to each other
+            (analogous or a tasteful complementary pop), consistent
+            saturation — they should look chosen together.
+          - strong bg/fg contrast for legibility. Usually dark bg +
+            bright fg, but you MAY occasionally INVERT (bright/pale bg
+            + near-black fg) for a striking look.
+          - distinct per section; never default blue-grey.
+palette.bg / palette.fg : "#rrggbb"
+palette.accent          : array of 2-3 "#rrggbb" (harmonised, see above)
 palette.transition_sec  : float 4..20
 
 visuals.scene        : "raycaster" (default — a 3D ASCII maze world) or
