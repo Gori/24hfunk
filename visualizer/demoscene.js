@@ -753,14 +753,21 @@
   });
   const DVD = E('BOUNCE LOGO', function (eng) {
     // bounce the SONG NAME (FNT5 full font), auto-scaled/truncated to fit.
-    let w = SONG_FULL(), S = 2;
-    while (S > 1 && w.length * 6 * S > eng.cols - 2) S--;
-    const maxc = Math.max(1, ((eng.cols - 2) / (6 * S)) | 0);
-    if (w.length > maxc) w = w.slice(0, maxc).trim();
-    this.w = w; this.S = S;
+    // _fit rebuilds whenever the song changes so it's never stuck on a
+    // stale name (it used to capture once at reset -> 'STR FUNK' on refresh).
+    this._fit = (src) => {
+      let w = src, S = 2;
+      while (S > 1 && w.length * 6 * S > eng.cols - 2) S--;
+      const maxc = Math.max(1, ((eng.cols - 2) / (6 * S)) | 0);
+      if (w.length > maxc) w = w.slice(0, maxc).trim();
+      this.w = w; this.S = S; this._src = src;
+    };
+    this._fit(SONG_FULL());
     this.x = (eng.cols / 2) | 0; this.y = (eng.rows / 2) | 0;
     this.vx = this.P.dir * 22; this.vy = 14;
   }, function (eng, env) {
+    const cur = SONG_FULL();
+    if (cur !== this._src) this._fit(cur);          // song changed -> rebuild
     const C = eng.cols, R = eng.rows, w = this.w, S = this.S, GW = 6 * S;
     const W = w.length * GW, H = 7 * S;
     this.x += this.vx * 0.016 * this.P.spd; this.y += this.vy * 0.016 * this.P.spd;
@@ -1693,18 +1700,18 @@
   const FracTree = E('FRACTAL TREE', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
     const sway = Math.sin(this.t * 1.3) * 0.16 + env.mv * 0.22;
-    const stack = [[C / 2, R - 2, -Math.PI / 2, Math.min(R, C) * 0.16, 0]];
+    const stack = [[C / 2, R - 2, -Math.PI / 2, Math.min(R, C) * 0.30, 0]];
     let guard = 0;
-    while (stack.length && guard++ < 3000) {
+    while (stack.length && guard++ < 7000) {
       const s = stack.pop();
       const x = s[0], y = s[1], a = s[2], len = s[3], d = s[4];
-      if (d > 7 || len < 1.5) continue;
+      if (d > 9 || len < 1.1) continue;
       const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
-      LN(eng, x, y, x2, y2, '#', mul(acc(env, d % 3), 0.3 + (7 - d) * 0.09 + env.beat * 0.3), 300);
+      LN(eng, x, y, x2, y2, '#', mul(acc(env, d % 3), 0.3 + (9 - d) * 0.075 + env.beat * 0.3), 300);
       const na = 0.5 + sway;
-      stack.push([x2, y2, a - na, len * 0.72, d + 1]);
-      stack.push([x2, y2, a + na, len * 0.72, d + 1]);
-      if (d < 2) stack.push([x2, y2, a + sway * 0.5, len * 0.6, d + 1]);
+      stack.push([x2, y2, a - na, len * 0.75, d + 1]);
+      stack.push([x2, y2, a + na, len * 0.75, d + 1]);
+      if (d < 2) stack.push([x2, y2, a + sway * 0.5, len * 0.62, d + 1]);
     }
   });
   const Bolt = E('LIGHTNING', function () { this.seg = []; this.life = 0; this.cd = 0; }, function (eng, env) {
