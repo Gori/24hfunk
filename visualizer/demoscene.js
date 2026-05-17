@@ -641,10 +641,16 @@
   const Burst3D = E('DOT EXPLOSION', function () { this.p = []; this._arm = false; }, function (eng, env) {
     const C = eng.cols, R = eng.rows, p = this.p;
     const burst = () => { for (let i = 0; i < 60; i++) p.push({ x: 0, y: 0, z: 0, vx: Math.random() - 0.5, vy: Math.random() - 0.5, vz: Math.random() - 0.5, l: 1 }); };
-    // one burst per beat (rising-edge latch). Old code spawned 60 dots every
-    // frame bt>0.5 held (~8 frames/beat) -> thousands of runaway particles.
-    if (this.bt > 0.5) { if (!this._arm && p.length < 600) burst(); this._arm = true; }
-    else if (this.bt < 0.2) this._arm = false;
+    // explode on the BPM beat: beat() fires every 16th (router sends
+    // /vis/beat per 16th), so latch rising edges and burst every 4th =
+    // one explosion per quarter-note beat, locked to tempo.
+    if (this.bt > 0.5) {
+      if (!this._arm) {
+        this._bn = (this._bn || 0) + 1;
+        if (this._bn % 4 === 1 && p.length < 600) burst();
+      }
+      this._arm = true;
+    } else if (this.bt < 0.2) this._arm = false;
     if (p.length === 0) burst();
     let w = 0;                                   // in-place compact, no realloc
     for (let r = 0; r < p.length; r++) {
@@ -1775,30 +1781,33 @@
     // 110/150/184) — reseeds + switches rule on a strong beat so you watch
     // a fresh famous pattern build; cells coloured by generation age.
     const C = eng.cols, R = eng.rows;
-    this.ac = (this.ac || 0) + 1;
-    if (this.bt > 0.7 && this.hist.length > 6) {
+    // switch rule + reseed only once the pattern has FILLED the screen
+    // (then on a strong beat) — so the famous CA builds top->bottom across
+    // the whole screen instead of perpetually rebuilding a stub at the
+    // bottom. Grows one generation per frame.
+    if (this.hist.length >= R && this.bt > 0.7) {
       this.ri = (this.ri + 1) % this.rules.length;
       const rl = this.rules[this.ri];
       this.row = new Uint8Array(C);
       if (rl === 30 || rl === 90 || rl === 150) this.row[C >> 1] = 1;
       else for (let x = 0; x < C; x++) this.row[x] = Math.random() < 0.3 ? 1 : 0;
-      this.hist = [];
+      this.hist = [this.row];
     }
-    if (this.ac % 2 === 0) {
+    if (!this.hist.length) this.hist = [this.row];
+    if (this.hist.length < R) {
       const rule = this.rules[this.ri], r = this.row, nr = new Uint8Array(C);
       for (let x = 0; x < C; x++) {
         const p = (r[(x - 1 + C) % C] << 2) | (r[x] << 1) | r[(x + 1) % C];
         nr[x] = (rule >> p) & 1;
       }
-      this.row = nr; this.hist.push(nr); if (this.hist.length > R) this.hist.shift();
+      this.row = nr; this.hist.push(nr);
     }
     const H = this.hist, gen = H.length;
     const cA = acc(env, 0), cB = acc(env, 2);
-    for (let y = 0; y < gen; y++) {
-      const row = H[gen - 1 - y], yy = R - 1 - y; if (yy < 0) break;
-      const age = 1 - y / R;
-      const col = mul(lerpC(cA, cB, age), 0.34 + age * 0.55 + env.beat * 0.35);
-      for (let x = 0; x < C; x++) if (row[x]) px(eng, x, yy, '#', col, 500);
+    for (let y = 0; y < gen; y++) {                 // oldest at TOP, grows down
+      const row = H[y], k = y / R;
+      const col = mul(lerpC(cA, cB, k), 0.34 + k * 0.5 + env.beat * 0.35);
+      for (let x = 0; x < C; x++) if (row[x]) px(eng, x, y, '#', col, 500);
     }
   });
   const Brain = E('BRIANS BRAIN', function (eng) {
