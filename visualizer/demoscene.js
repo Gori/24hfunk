@@ -1296,48 +1296,78 @@
       }
     }
   });
-  const CodeHall = E('JAVASCRIPT', function (eng) { this.rows = []; }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, K = ['def ', 'for(', 'if(', 'return ', 'while ', '{ }', '=> ', 'const ', '0x', '<<', '||', '/* */', 'fn ', 'let '];
-    if (!this.rows.length || (this.bt > 0.5)) { }
+  const CodeHall = E('JAVASCRIPT', function () { this._lo = -1; this._rows = null; }, function (eng, env) {
+    // perf: rebuild the row strings only when the integer scroll offset
+    // changes (~1 frame in 5); precompute the 4 colour tiers per frame
+    // (no per-char mul/acc); draw via glyph2d to bypass the symmetry
+    // multiply (mirrored code is gibberish anyway).
+    const C = eng.cols, R = eng.rows;
     this.off = (this.off || 0) + (0.2 + env.mv * 0.5);
+    const off = this.off | 0;
+    if (off !== this._lo || !this._rows) {
+      const K = ['def ', 'for(', 'if(', 'return ', 'while ', '{ }', '=> ', 'const ', '0x', '<<', '||', '/* */', 'fn ', 'let '];
+      const G = '.abx_0192=+(){}', rows = new Array(R);
+      for (let y = 0; y < R; y++) {
+        const seed = (y + off) * 2654435761 % 100000;
+        const ind = (seed % 6) * 2, len = Math.min(C, 6 + seed % (C - 12));
+        let s = ' '.repeat(ind) + K[seed % K.length];
+        while (s.length < len) s += G[(seed * (s.length + 3)) % 15];
+        rows[y] = { s: s.slice(0, C), ind };
+      }
+      this._rows = rows; this._lo = off;
+    }
+    const bb = 0.5 + env.beat * 0.3, bh = 0.9 + env.beat * 0.3, hY = off % R;
+    const c0n = mul(acc(env, 0), bb), c2n = mul(acc(env, 2), bb);
+    const c0h = mul(acc(env, 0), bh), c2h = mul(acc(env, 2), bh);
     for (let y = 0; y < R; y++) {
-      const seed = (y + (this.off | 0)) * 2654435761 % 100000;
-      const ind = (seed % 6) * 2, len = 6 + seed % (C - 12);
-      let s = ' '.repeat(ind) + K[seed % K.length];
-      while (s.length < len) s += '.abx_0192=+(){}'[(seed * (s.length + 3)) % 15];
-      for (let x = 0; x < s.length && x < C; x++)
-        if (s[x] !== ' ') px(eng, x, y, s[x],
-          mul(acc(env, x < ind + 4 ? 2 : 0), 0.3 + (y === ((this.off | 0) % R) ? 0.6 : 0.2) + env.beat * 0.3), 400);
+      const r = this._rows[y], s = r.s, lim = r.ind + 4, hl = (y === hY);
+      const ck = hl ? c2h : c2n, cb = hl ? c0h : c0n;
+      for (let x = 0; x < s.length; x++) {
+        const ch = s[x];
+        if (ch !== ' ') eng.glyph2d(x, y, ch, x < lim ? ck : cb);
+      }
     }
   });
-  const AsmHall = E('HARDWARE REFERENCE MANUAL', null, function (eng, env) {
+  const AsmHall = E('HARDWARE REFERENCE MANUAL', function () { this._lo = -1; this._rows = null; }, function (eng, env) {
+    // perf: same treatment as JAVASCRIPT — cached rows, precomputed colour
+    // tiers, glyph2d (no symmetry multiply).
     const C = eng.cols, R = eng.rows;
-    const OP = ['move.l ', 'move.w ', 'lea ', 'bsr ', 'rts', 'dc.w ',
-      'addq.l ', 'tst.b ', 'bne.s ', 'bra ', 'and.w ', 'moveq #',
-      'dbf ', 'jsr ', 'eor.w '];
-    const RG = ['d0', 'd1', 'd2', 'a0', 'a1', 'a6', '(a0)+', 'CUSTOM',
-      'COP1LC', 'DMACON', 'BPLCON0', 'COLOR00', 'INTENA'];
-    const CM = ['wait beam', 'set bplptr', 'irq', 'copperlist', 'blit',
-      'audio dma', 'vblank'];
     this.off = (this.off || 0) + (0.18 + env.mv * 0.45) * this.P.spd;
-    for (let y = 0; y < R; y++) {
-      const seed = (y + (this.off | 0)) * 2654435761 % 100000;
-      const ind = (seed % 4) * 2;
-      let s = ' '.repeat(ind) + OP[seed % OP.length];
-      if ((seed >> 3) % 3 === 0) {
-        s += '$DFF' + ((seed % 256).toString(16).toUpperCase().padStart(3, '0'));
-      } else {
-        s += RG[(seed >> 2) % RG.length]
-          + (((seed >> 5) % 2) ? ',' + RG[(seed >> 7) % RG.length] : '');
+    const off = this.off | 0;
+    if (off !== this._lo || !this._rows) {
+      const OP = ['move.l ', 'move.w ', 'lea ', 'bsr ', 'rts', 'dc.w ',
+        'addq.l ', 'tst.b ', 'bne.s ', 'bra ', 'and.w ', 'moveq #',
+        'dbf ', 'jsr ', 'eor.w '];
+      const RG = ['d0', 'd1', 'd2', 'a0', 'a1', 'a6', '(a0)+', 'CUSTOM',
+        'COP1LC', 'DMACON', 'BPLCON0', 'COLOR00', 'INTENA'];
+      const CM = ['wait beam', 'set bplptr', 'irq', 'copperlist', 'blit',
+        'audio dma', 'vblank'];
+      const rows = new Array(R);
+      for (let y = 0; y < R; y++) {
+        const seed = (y + off) * 2654435761 % 100000;
+        const ind = (seed % 4) * 2;
+        let s = ' '.repeat(ind) + OP[seed % OP.length];
+        if ((seed >> 3) % 3 === 0) s += '$DFF' + ((seed % 256).toString(16).toUpperCase().padStart(3, '0'));
+        else s += RG[(seed >> 2) % RG.length] + (((seed >> 5) % 2) ? ',' + RG[(seed >> 7) % RG.length] : '');
+        if ((seed % 7) === 0) s += '   ; ' + CM[(seed >> 4) % CM.length];
+        rows[y] = { s: s.slice(0, C), ind };
       }
-      if ((seed % 7) === 0) s += '   ; ' + CM[(seed >> 4) % CM.length];
-      for (let x = 0; x < s.length && x < C; x++) {
+      this._rows = rows; this._lo = off;
+    }
+    const bb = 0.5 + env.beat * 0.3, bh = 0.9 + env.beat * 0.3, hY = off % R;
+    const t0n = mul(acc(env, 0), bb), t1n = mul(acc(env, 1), bb), t2n = mul(acc(env, 2), bb);
+    const t0h = mul(acc(env, 0), bh), t1h = mul(acc(env, 1), bh), t2h = mul(acc(env, 2), bh);
+    for (let y = 0; y < R; y++) {
+      const r = this._rows[y], s = r.s, lim = r.ind + 6, hl = (y === hY);
+      for (let x = 0; x < s.length; x++) {
         const ch = s[x];
         if (ch === ' ') continue;
-        const ci = (ch === '$') ? 2 : (ch === ';' || ch === ',') ? 1
-          : (x < ind + 6 ? 2 : 0);
-        px(eng, x, y, ch, mul(acc(env, ci),
-          0.3 + (y === ((this.off | 0) % R) ? 0.6 : 0.2) + env.beat * 0.3), 400);
+        let c;
+        if (ch === '$') c = hl ? t2h : t2n;
+        else if (ch === ';' || ch === ',') c = hl ? t1h : t1n;
+        else if (x < lim) c = hl ? t2h : t2n;
+        else c = hl ? t0h : t0n;
+        eng.glyph2d(x, y, ch, c);
       }
     }
   });
