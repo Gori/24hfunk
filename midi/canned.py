@@ -16,7 +16,7 @@ import random
 from midi.source import (CH_BASS, CH_LEAD, CH_KEYS, CH_PERC, CH_DRUMS,
                           Note, Phrase)
 
-KICK, RIM, SNARE, CLAP, HAT, OHAT, PERC = 36, 37, 38, 39, 42, 46, 75
+KICK, RIM, SNARE, CLAP, HAT, OHAT, PERC, RIDE = 36, 37, 38, 39, 42, 46, 75, 51
 
 _PC = {
     "c": 0, "c#": 1, "db": 1, "d": 2, "d#": 3, "eb": 3, "e": 4, "f": 5,
@@ -178,10 +178,10 @@ _GENRE_INSTR = {
     "synthwave":        {"bass": "bass",       "kick": "kick",     "snare": "snare909", "lead": "lead"},
     "neon_dub":         {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadFM"},
     "broken_house":     {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadPulse"},
-    "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadFM"},
+    "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadFM"},
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadPulse"},
-    "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "lead"},
+    "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "lead"},
     "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "lead"},
     "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadPulse"},
     "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadPulse"},
@@ -194,7 +194,7 @@ _GENRE_INSTR = {
     "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadFM"},
     "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadFM"},
     "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadFM"},
-    "indie_rnb":        {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadFM"},
+    "indie_rnb":        {"bass": "bass",       "kick": "kick808",  "snare": "snareBrush", "lead": "leadFM"},
 }
 
 
@@ -365,6 +365,51 @@ _PERC = {
 _PERC_DEF = {"mode": "spice", "tone": 0.45, "prob": 0.35, "steps": [6, 14],
              "pitch": [60], "syn": {"decay": 0.1, "drive": 1.0, "crush": 0.4}}
 
+# Per-genre drum CHARACTER. New synthdef hooks: kick `punch` (boom<->snap,
+# 0.5 neutral), snare `body`/`buzz` (shell weight / wire-tail, 0.5/0.35
+# neutral), hat/ohat `loose` (openness, 0.0 = tight). Only deviations from
+# neutral are listed; absent genres/keys keep the synthdef default sound.
+_DRUM_CHAR = {
+    "funk":             {"kick": {"punch": 0.74}, "snare": {"body": 0.34, "buzz": 0.26}},
+    "minneapolis_funk": {"kick": {"punch": 0.64}, "snare": {"body": 0.42, "buzz": 0.28}},
+    "electro_funk":     {"kick": {"punch": 0.70}, "snare": {"body": 0.32, "buzz": 0.24}, "hat": {"loose": 0.05}},
+    "electro":          {"kick": {"punch": 0.68}, "snare": {"body": 0.30, "buzz": 0.22}, "hat": {"loose": 0.04}},
+    "synthwave":        {"kick": {"punch": 0.44}, "snare": {"body": 0.60, "buzz": 0.42}, "hat": {"loose": 0.16}, "ohat": {"loose": 0.20}},
+    "broken_house":     {"kick": {"punch": 0.62}, "snare": {"body": 0.40, "buzz": 0.30}, "hat": {"loose": 0.05}},
+    "lofi":             {"kick": {"punch": 0.30}, "snare": {"body": 0.60, "buzz": 0.52}, "hat": {"loose": 0.22}, "ohat": {"loose": 0.26}},
+    "eighties_hiphop":  {"kick": {"punch": 0.40}, "snare": {"body": 0.55, "buzz": 0.40}, "hat": {"loose": 0.10}},
+    "jazz":             {"kick": {"punch": 0.28}, "snare": {"body": 0.70, "buzz": 0.62}, "hat": {"loose": 0.24}, "ohat": {"loose": 0.30}},
+    "minimal_techno":   {"kick": {"punch": 0.56}, "snare": {"body": 0.40, "buzz": 0.24}},
+    "detroit_techno":   {"kick": {"punch": 0.54}, "snare": {"body": 0.42, "buzz": 0.26}, "hat": {"loose": 0.04}},
+    "neon_dub":         {"kick": {"punch": 0.30}, "snare": {"body": 0.56, "buzz": 0.50}, "hat": {"loose": 0.18}, "ohat": {"loose": 0.28}},
+    "dub":              {"kick": {"punch": 0.26}, "snare": {"body": 0.58, "buzz": 0.54}, "hat": {"loose": 0.20}, "ohat": {"loose": 0.30}},
+    "steppers_dub":     {"kick": {"punch": 0.30}, "snare": {"body": 0.56, "buzz": 0.50}, "hat": {"loose": 0.18}, "ohat": {"loose": 0.28}},
+    "dub_techno":       {"kick": {"punch": 0.40}, "snare": {"body": 0.50, "buzz": 0.42}, "hat": {"loose": 0.12}, "ohat": {"loose": 0.22}},
+    "roots_reggae":     {"kick": {"punch": 0.30}, "snare": {"body": 0.58, "buzz": 0.50}, "hat": {"loose": 0.18}, "ohat": {"loose": 0.26}},
+    "uk_garage":        {"kick": {"punch": 0.64}, "snare": {"body": 0.40, "buzz": 0.30}, "hat": {"loose": 0.05}},
+    "dub_garage":       {"kick": {"punch": 0.56}, "snare": {"body": 0.46, "buzz": 0.38}, "hat": {"loose": 0.10}, "ohat": {"loose": 0.18}},
+    "rnb":              {"kick": {"punch": 0.42}, "snare": {"body": 0.55, "buzz": 0.40}, "hat": {"loose": 0.12}, "ohat": {"loose": 0.18}},
+    "afro_rnb":         {"kick": {"punch": 0.48}, "snare": {"body": 0.50, "buzz": 0.36}, "hat": {"loose": 0.10}},
+    "indie_rnb":        {"kick": {"punch": 0.36}, "snare": {"body": 0.58, "buzz": 0.46}, "hat": {"loose": 0.16}, "ohat": {"loose": 0.22}},
+}
+
+# Drums-bus glue (\fxdrum): (glue, punch). Punchy styles get more transient
+# lift; spacious/soft styles a gentler, lower glue.
+_DRUM_GLUE_DEF = (0.25, 0.20)
+_DRUM_GLUE = {
+    "funk": (0.32, 0.34), "minneapolis_funk": (0.30, 0.30),
+    "electro_funk": (0.30, 0.32), "electro": (0.30, 0.30),
+    "synthwave": (0.24, 0.16), "broken_house": (0.30, 0.28),
+    "lofi": (0.20, 0.12), "eighties_hiphop": (0.26, 0.20),
+    "jazz": (0.18, 0.12), "minimal_techno": (0.30, 0.26),
+    "detroit_techno": (0.30, 0.26), "neon_dub": (0.20, 0.12),
+    "dub": (0.18, 0.10), "steppers_dub": (0.20, 0.12),
+    "dub_techno": (0.24, 0.16), "roots_reggae": (0.20, 0.12),
+    "uk_garage": (0.32, 0.32), "dub_garage": (0.26, 0.22),
+    "rnb": (0.24, 0.18), "afro_rnb": (0.28, 0.24),
+    "indie_rnb": (0.22, 0.14),
+}
+
 
 class CannedSource:
     name = "canned"
@@ -415,6 +460,12 @@ class CannedSource:
         syn = dict(pf.get("syn", _PERC_DEF["syn"]))
         syn["tone"] = float(pf.get("tone", _PERC_DEF["tone"]))
         sp["perc2"] = syn
+        # per-genre drum character — copy inner dicts so the module
+        # SYNTH_PARAMS table is never mutated
+        for role, extra in _DRUM_CHAR.get(self.genre, {}).items():
+            merged = dict(sp.get(role, {}))
+            merged.update(extra)
+            sp[role] = merged
         return sp
 
     def instrument_map(self) -> dict:
@@ -439,6 +490,9 @@ class CannedSource:
             "fxPerc": {"reverb": b("reverb") * 0.55, "delay": b("delay") * 0.5,
                        "delayTime": b("delayTime"), "width": b("width") * 0.9},
         }
+        gl, pu = _DRUM_GLUE.get(self.genre, _DRUM_GLUE_DEF)
+        out["fxDrums"]["glue"] = gl
+        out["fxDrums"]["punch"] = pu
         ov = _FX_SIG.get(self.genre)
         if ov:
             for bus, d in ov.items():
@@ -784,9 +838,13 @@ class CannedSource:
 
     def _g_jazz(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["hat"]:
-            for s in (0, 4, 6, 8, 12, 14):                 # swung ride
-                D(s, 0.06, HAT, self._main(rnd) if s in (4, 12) else self._ghost(rnd) + 0.15, CH_DRUMS, "hat")
-            if rnd.random() < 0.5:
+            for s in (0, 4, 6, 8, 12, 14):                 # swung jazz ride
+                D(s, 0.5, RIDE,
+                  self._main(rnd) if s in (4, 12) else self._ghost(rnd) + 0.2,
+                  CH_DRUMS, "hat")
+            if rnd.random() < 0.3:                          # occasional bell
+                D(rnd.choice([6, 14]), 0.4, RIDE, self._main(rnd), CH_DRUMS, "hat")
+            if rnd.random() < 0.35:
                 D(10, 0.18, OHAT, 0.4, CH_DRUMS, "hat")
         if self.on["snare"]:
             for s in (4, 12):

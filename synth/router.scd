@@ -16,11 +16,11 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~gated     = Set[\bass, \lead];              // ROLES that hold a gate (need noteoff)
 // role -> actual SynthDef (genre picks variants via /synth/map). Default = self.
 ~roleMap = IdentityDictionary.new;
-[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \bass, \lead, \keys].do { |r|
+[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \ride, \bass, \lead, \keys].do { |r|
 	~roleMap[r] = r };
 
 ~params = IdentityDictionary.new;            // synth -> IdentityDictionary(param->value)
-[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \bass, \lead, \keys].do { |k|
+[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \ride, \bass, \lead, \keys].do { |k|
 	~params[k] = IdentityDictionary.new };
 
 ~active = IdentityDictionary.new;            // "chan_pitch" -> Synth (gated only)
@@ -36,6 +36,7 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	{ pitch == 39 } { \clap }
 	{ #[42, 44].includes(pitch) } { \hat }
 	{ pitch == 46 } { \ohat }
+	{ #[51, 53, 59].includes(pitch) } { \ride }
 	{ #[75, 76, 77].includes(pitch) } { \perc }
 	{ \hat };
 };
@@ -49,14 +50,14 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~fxSynths  = IdentityDictionary.new;
 [\drums, \bass, \mel, \perc].do { |g|
 	~fxBuses[g] = Bus.audio(Server.default, 2);
-	~fxSynths[g] = Synth.tail(Server.default, \fx,
+	~fxSynths[g] = Synth.tail(Server.default, (g == \drums).if(\fxdrum, \fx),
 		[\in, ~fxBuses[g].index, \out, ~masterBus.index]);
 };
 ~master = Synth.tail(Server.default, \master,
 	[\in, ~masterBus.index, \out, 0]);
 // which FX bus each role feeds
 ~busFor = IdentityDictionary.new;
-[\kick, \snare, \hat, \ohat, \clap, \rim, \perc].do { |r| ~busFor[r] = \drums };
+[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \ride].do { |r| ~busFor[r] = \drums };
 ~busFor[\bass]  = \bass;
 ~busFor[\lead]  = \mel;
 ~busFor[\keys]  = \mel;
@@ -96,7 +97,7 @@ OSCdef(\noteon, { |msg|
 		freq = pitch.midicps;
 		if(role == \drums) { role = ~drumFor.(pitch) };
 		def = ~roleMap[role] ? role;                 // genre-chosen variant
-		if(#[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \perc2].includes(role)) {
+		if(#[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \ride, \perc2].includes(role)) {
 			Synth(def, ~argsFor.(role, freq, vel), ~instGrp);   // one-shot
 		} {
 			if(~monoFor[ch] == role) {
