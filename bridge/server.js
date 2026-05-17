@@ -12,7 +12,15 @@ const VIS_OSC_PORT = parseInt(process.env.VIS_OSC_PORT || '57130', 10);
 
 const app = express();
 app.use(express.json({ limit: '256kb' }));
-app.use(express.static(path.join(__dirname, '..', 'visualizer')));
+// no-store: the visualizer is edited constantly while the 24/7 stream
+// runs, so every browser reload MUST fetch the latest JS/CSS — never a
+// cached copy (stale assets made every browser-only fix look broken).
+app.use(express.static(path.join(__dirname, '..', 'visualizer'), {
+  etag: false,
+  lastModified: false,
+  cacheControl: false,
+  setHeaders: (res) => res.set('Cache-Control', 'no-store'),
+}));
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/live' });

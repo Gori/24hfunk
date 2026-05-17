@@ -54,10 +54,18 @@
       // roaming enemy imps that wander the corridors AND drift toward the
       // player, so they're actually seen up close (not lost in far cells)
       this.foes = [];
-      for (let i = 0; i < 2; i++) this.foes.push({
-        x: this.px + 1.5 + i * 1.2, z: this.pz, ang: 0.6 + i * 2,
-        ph: Math.random() * 6, sp: 1.05 + Math.random() * 0.3, art: art.imp,
-      });
+      for (let i = 0; i < 2; i++) {
+        let fx = this.px + 1.5 + i * 1.2, fz = this.pz, a = 0.6 + i * 2;
+        for (let ti = 0; ti < 16; ti++) {            // place into an OPEN cell
+          const tx = this.px + Math.cos(a) * (1.5 + i), tz = this.pz + Math.sin(a) * (1.5 + i);
+          if (!this.wall(tx, tz)) { fx = tx; fz = tz; break; }
+          a += 1.3;
+        }
+        this.foes.push({
+          x: fx, z: fz, ang: a,
+          ph: Math.random() * 6, sp: 1.05 + Math.random() * 0.3, art: art.imp,
+        });
+      }
     },
     note() { this.flash = Math.min(1, this.flash + 0.5); },
     beat() {},
@@ -65,6 +73,11 @@
     _probe(a) {                       // free distance along heading a
       let d = 0;
       while (d < 6 && !this.wall(this.px + Math.cos(a) * d, this.pz + Math.sin(a) * d)) d += 0.35;
+      return d;
+    },
+    _foeProbe(f, a) {                 // free distance ahead of a foe
+      let d = 0;
+      while (d < 4 && !this.wall(f.x + Math.cos(a) * d, f.z + Math.sin(a) * d)) d += 0.35;
       return d;
     },
     step(dt) {
@@ -91,21 +104,33 @@
       // roaming enemy imp: walk forward, steer at walls, gently home on the
       // player so it stays close/visible; respawn ahead if it drifts away.
       for (const f of this.foes) {
-        const ffx = Math.cos(f.ang), ffz = Math.sin(f.ang);
-        if (this.wall(f.x + ffx * 0.5, f.z + ffz * 0.5)) {
-          f.ang += (Math.random() < 0.5 ? 1 : -1) * 1.6;
-        } else {
-          let da = Math.atan2(this.pz - f.z, this.px - f.x) - f.ang;
-          while (da > Math.PI) da -= 6.283;
-          while (da < -Math.PI) da += 6.283;
-          f.ang += da * 0.5 * dt + (Math.random() - 0.5) * 0.6 * dt;
-          const fsp = f.sp * dt;
-          if (!this.wall(f.x + ffx * fsp, f.z)) f.x += ffx * fsp;
-          if (!this.wall(f.x, f.z + ffz * fsp)) f.z += ffz * fsp;
+        // home toward the player + a little wander, THEN derive heading
+        let da = Math.atan2(this.pz - f.z, this.px - f.x) - f.ang;
+        while (da > Math.PI) da -= 6.283;
+        while (da < -Math.PI) da += 6.283;
+        f.ang += da * 0.6 * dt + (Math.random() - 0.5) * 0.7 * dt;
+        let ffx = Math.cos(f.ang), ffz = Math.sin(f.ang);
+        // wall ahead -> turn toward the more open side (don't clip through)
+        if (this.wall(f.x + ffx * 0.6, f.z + ffz * 0.6)) {
+          const lp = this._foeProbe(f, f.ang - 1.2), rp = this._foeProbe(f, f.ang + 1.2);
+          f.ang += (lp > rp ? -1 : 1) * 2.4 * dt + 0.7;
+          ffx = Math.cos(f.ang); ffz = Math.sin(f.ang);
         }
+        // axis-separated move with a body margin so it can't nose into walls
+        const fsp = f.sp * dt;
+        let fm = 0;
+        if (!this.wall(f.x + ffx * (0.34 + fsp), f.z)) { f.x += ffx * fsp; fm += Math.abs(ffx * fsp); }
+        if (!this.wall(f.x, f.z + ffz * (0.34 + fsp))) { f.z += ffz * fsp; fm += Math.abs(ffz * fsp); }
+        f._st = fm < 1e-4 ? (f._st || 0) + dt : 0;
+        if (f._st > 0.6) { f.ang += 1.9; f._st = 0; }   // cornered -> spin out
+        // respawn ahead of the player, but only into an OPEN cell
         if (Math.hypot(f.x - this.px, f.z - this.pz) > 9) {
-          f.x = this.px + Math.cos(this.ang) * 2.2;
-          f.z = this.pz + Math.sin(this.ang) * 2.2;
+          for (let ti = 0; ti < 10; ti++) {
+            const a = this.ang + (Math.random() - 0.5) * 1.4;
+            const r = 2 + Math.random() * 1.6;
+            const rx = this.px + Math.cos(a) * r, rz = this.pz + Math.sin(a) * r;
+            if (!this.wall(rx, rz)) { f.x = rx; f.z = rz; f.ang = a; f._st = 0; break; }
+          }
         }
       }
       this.flash = Math.max(0, this.flash - dt * 2.2);

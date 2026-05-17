@@ -453,7 +453,7 @@
         n[y * C + x] = (a && (s === 2 || s === 3)) || (!a && s === 3) ? 1 : 0;
       }
       if (this.bt > 0.5) for (let k = 0; k < 30; k++) n[(Math.random() * n.length) | 0] = 1;
-      this.g = n;
+      this.g = n; this._n = g;          // ping-pong: old field -> next scratch
     }
     for (let y = 0; y < R; y++) for (let x = 0; x < C; x++)
       if (this.g[y * C + x]) px(eng, x, y, env.beat > 0.4 ? '#' : 'o', mul(acc(env, 0), 0.6 + env.beat * 0.4));
@@ -1057,7 +1057,7 @@
         px(eng, x, y + 1, gC, cC); px(eng, x + 1, y + 1, gC, cC);
       }
     }
-    this.g = n;
+    this.g = n; this._n = g;            // ping-pong: old field -> next scratch
   });
   const MetaLit = E('META LIT', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, t = this.t;
@@ -1464,7 +1464,7 @@
       let v = (d[(y + 1) * C + x] * 0.5 + d[(y + 1) * C + ((x + 1) % C)] * 0.2 + d[(y + 1) * C + ((x - 1 + C) % C)] * 0.2 + d[y * C + x] * 0.1) * 0.985;
       n[y * C + ((sx % C + C) % C)] = Math.max(n[y * C + ((sx % C + C) % C)], v);
     }
-    this.d = n;
+    this.d = n; this._n = d;            // ping-pong: old field -> next scratch
     for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { const v = n[y * C + x]; if (v > 0.05) px(eng, x, y, gly(Math.min(1, v)), mul(acc(env, v > 0.6 ? 2 : 0), 0.2 + Math.min(0.85, v))); }
   });
   const PendWave = E('PENDULUM WAVE', null, function (eng, env) {
@@ -1831,7 +1831,7 @@
         }
       }
       if (this.bt > 0.6) for (let q = 0; q < 24; q++) n[(Math.random() * n.length) | 0] = 1;
-      this.g = n;
+      this.g = n; this._n = g;          // ping-pong: old field -> next scratch
     }
     for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
       const v = this.g[y * C + x];
