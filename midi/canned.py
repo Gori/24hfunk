@@ -578,11 +578,32 @@ _LEAD_LEVEL = {
 # Per-genre CHORD (CH_KEYS) loudness multiplier. keys is not in the
 # SYNTH_PARAMS plumbing, so this is applied to the chord note velocity
 # in _comp/_pad/_skank (default 1.0 = unchanged).
+# Genres you explicitly set keep their value; every other genre's chords
+# are brought down to 0.75 = the average of the asked-for reductions
+# (rnb 0.64, minimal_techno 0.80, roots_reggae 0.80). dub stays at 1.2
+# (that was a deliberate chord *raise*, not a reduction).
 _KEYS_LEVEL = {
     "dub": 1.2,
     "rnb": 0.64,
     "minimal_techno": 0.8,
     "roots_reggae": 0.8,
+    "afro_rnb": 0.75,
+    "broken_house": 0.75,
+    "detroit_techno": 0.75,
+    "dub_garage": 0.75,
+    "dub_techno": 0.75,
+    "eighties_hiphop": 0.75,
+    "electro": 0.75,
+    "electro_funk": 0.75,
+    "funk": 0.75,
+    "indie_rnb": 0.75,
+    "jazz": 0.75,
+    "lofi": 0.75,
+    "minneapolis_funk": 0.75,
+    "neon_dub": 0.75,
+    "steppers_dub": 0.75,
+    "synthwave": 0.75,
+    "uk_garage": 0.75,
 }
 
 
