@@ -69,10 +69,21 @@
     };
   }
 
+  // Hard 60fps cap. On a 120/144Hz panel an uncapped rAF renders 2-2.4x
+  // more frames than needed; a steady 60 is smoother than a wobbling 75+
+  // and frees headroom for the heavy effects. nextDraw advances by exactly
+  // one frame each render so the long-run rate is a true 60 (per-frame
+  // jitter only when the panel refresh isn't a multiple of 60).
+  const FRAME_MS = 1000 / 60;
   let last = performance.now();
+  let nextDraw = last;
   let _fc = 0, _ft = last, _wmax = 0, _gmax = 0, _dmax = 0, _fxmax = 0;
   function loop(now) {
-    const gap = now - last;             // rAF interval (paint-bound if big)
+    requestAnimationFrame(loop);        // keep the chain alive on every tick
+    if (now < nextDraw - 1) return;     // 1ms epsilon — drop this frame
+    nextDraw += FRAME_MS;
+    if (now > nextDraw) nextDraw = now + FRAME_MS;  // fell behind -> resync
+    const gap = now - last;             // since last *rendered* frame
     let dt = gap / 1000;
     last = now;
     if (dt > 0.1) dt = 0.1; // clamp after tab-hide
@@ -99,14 +110,13 @@
       if (performance.memory) _heap = (performance.memory.usedJSHeapSize / 1048576) | 0;
       setStatus();
     }
-    requestAnimationFrame(loop);
   }
 
   // When the tab is hidden/throttled rAF stalls; without this the lost time
   // is clamped away every stall and the visual clock falls further behind
   // real time (motion looks progressively slow until a refresh). Re-zero the
   // dt baseline on resume so there is no accumulated backlog.
-  function resync() { last = performance.now(); }
+  function resync() { last = nextDraw = performance.now(); }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) resync(); });
   window.addEventListener('pageshow', resync);
   window.addEventListener('focus', resync);
