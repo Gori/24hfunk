@@ -19,6 +19,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 
 from midi.osc_out import ScSender
 from midi.canned import CannedSource
+from midi.recorder import SongRecorder
 from midi.source import CH_BASS, CH_LEAD
 
 CTRL_PORT = int(os.environ.get("MIDI_CTRL_OSC_PORT", "57121"))
@@ -50,6 +51,7 @@ class Worker:
     def __init__(self):
         self.sc = ScSender()
         self.source = make_source()
+        self.rec = SongRecorder()
         self.min_buffer = getattr(self.source, "min_buffer", 2.5)
         self._pending_section = None
         self._lock = threading.Lock()
@@ -114,6 +116,7 @@ class Worker:
         self.source.prime(_DEFAULT_SECTION)
         self.sc.tempo(float(_DEFAULT_SECTION["bpm"]))
         self._push_synth_params()
+        self.rec.start(_DEFAULT_SECTION, time.monotonic())
 
         heap = []  # (abs_time, seq, kind, ch, pitch, vel)
         seq = 0
@@ -146,10 +149,12 @@ class Worker:
 
             if pend_new is not None and now() >= swap_at:
                 self.sc.panic()
+                self.rec.flush()                 # finished song -> .mid
                 self.source.prime(pend_new)
                 self.sc.tempo(float(pend_new.get("bpm")
                                     or pend_new.get("tempo") or 78))
                 self._push_synth_params()
+                self.rec.start(pend_new, now())  # begin the next song
                 heap.clear()
                 horizon = now() + 0.10
                 print(f"[worker] dropped: {pend_new.get('genre')} "
@@ -174,24 +179,39 @@ class Worker:
             # emit everything due
             t = now()
             while heap and heap[0][0] <= t:
-                _, _, kind, ch, pitch, vel = heapq.heappop(heap)
+                et, _, kind, ch, pitch, vel = heapq.heappop(heap)
                 if kind == "on":
                     self.sc.note_on(ch, pitch, vel)
+                    self.rec.note_on(ch, pitch, vel, et)
                 else:
                     self.sc.note_off(ch, pitch)
+                    self.rec.note_off(ch, pitch, et)
 
             time.sleep(0.004)
+
+        self.rec.flush()                         # save the final song
 
     def stop(self):
         self._running = False
 
 
 def main():
+    import signal
+
     w = Worker()
+
+    def _shutdown(_sig, _frm):
+        w.stop()
+        w.rec.flush()                            # save the in-progress song
+        print("\n[worker] stopped")
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, _shutdown)
     try:
         w.run()
     except KeyboardInterrupt:
         w.stop()
+        w.rec.flush()
         print("\n[worker] stopped")
 
 
