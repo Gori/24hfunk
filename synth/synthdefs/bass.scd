@@ -6,7 +6,7 @@
 //     asymmetric 2nd stage). Gain-matched to the old clean version.
 // params: amp(vel), freq, cutoff, res, drive, sub, glide, fenv, decay, gate, t_trig, pan
 SynthDef(\bass, { |out=0, amp=0.8, freq=45, cutoff=600, res=0.2, drive=1.2, sub=0.85,
-		glide=0.06, fenv=0.4, decay=0.5, gate=1, t_trig=1, pan=0|
+		glide=0.06, fenv=0.4, decay=0.5, gate=1, t_trig=1, level=1.0, pan=0|
 	var v      = amp.clip(0.05, 1.0);
 	var gEnv   = EnvGen.kr(Env.asr(0.006, 1.0, 0.12), gate);
 	var aEnv   = EnvGen.kr(Env.perc(0.004, decay, 1, -4), t_trig);
@@ -21,5 +21,5 @@ SynthDef(\bass, { |out=0, amp=0.8, freq=45, cutoff=600, res=0.2, drive=1.2, sub=
 	var pre    = (subOsc + click + upper) * (1 + (drive * 0.32 * defAmt * (0.5 + v * 0.6)));
 	var sig    = MoogFF.ar(pre, cf, (res * 2.6).clip(0, 3.3));       // analog ladder
 	sig = LeakDC.ar(((sig + (sig * sig * 0.05)).tanh) * 2.25);       // gentle asym 2nd stage (+50% level)
-	Out.ar(out, Pan2.ar(sig * (aEnv * 0.7 + 0.3) * gEnv * amp, pan));
+	Out.ar(out, Pan2.ar(sig * (aEnv * 0.7 + 0.3) * gEnv * amp * level, pan));
 }).add;
