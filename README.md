@@ -144,6 +144,149 @@ visualizer/  a3d engine + 4 worlds + 99 demoscene effects + HUD
 scripts/     start-all / stop-all / smoke tests
 ```
 
+## Genre reference
+
+All 21 genres the director can pick. *Scale* is the mode the melody/harmony
+draw from; *groove* is the swing/pocket feel; *voices* are the per-genre
+kick·snare·bass·lead SynthDef picks (the LLM still tunes their params,
+progression bank, structure and palette per song).
+
+| Genre | Character | Scale · groove | Voices (kick·snare·bass·lead) |
+|---|---|---|---|
+| `funk` | Hard one-chord vamp on a dom7#9 — the canonical "the one" funk | Dorian · swung | kickHard · snare · bassFM · lead |
+| `electro_funk` | Min9→dom electro-funk with an FM pluck bass and crisp backbeat | Dorian · swung | kickHard · snare · bassFM · lead |
+| `minneapolis_funk` | Prince-style synth-funk: punchy square bass, bright pulse lead | Dorian · swung | kickHard · snare909 · bassSquare · leadPulse |
+| `synthwave` | Wistful 80s neon: maj7 lifts, straight pulse, clean lead | Aeolian · straight | kick · snare909 · bass · lead |
+| `eighties_hiphop` | Boom-bap min9 vamp, 808 kick, 909 snare, pulse lead | Dorian · swung | kick808 · snare909 · bass · leadPulse |
+| `electro` | Cold Phrygian electro: 808 kick, 909 snare, square bass | Phrygian · straight | kick808 · snare909 · bassSquare · leadPulse |
+| `broken_house` | Shuffled broken-beat house, maj7/dom9 lift, square bass | Dorian · heavily shuffled | kickHard · snare909 · bassSquare · leadPulse |
+| `minimal_techno` | Stripped hypnotic min9 loop, dry tight kit, square sub | Aeolian · straight | kick · snare909 · bassSquare · leadPulse |
+| `detroit_techno` | Soulful machine-funk: maj9 colour, FM bass + FM lead | Dorian · straight | kick · snare909 · bassFM · leadFM |
+| `dub_techno` | Deep chord-stab techno, long FM lead, sub bass | Aeolian · straight | kick808 · snare909 · bass · leadFM |
+| `jazz` | Brush-kit ii–V–I swing, vibraphone-mallet lead, room keys | Dorian · heavy triplet swing | kick · snareBrush · bass · leadJazz |
+| `lofi` | Lazy late-night ii–V, brushed snare, mellow FM lead | Dorian · swung (laid back) | kick · snareBrush · bass · leadFM |
+| `rnb` | Smooth modern R&B, min9→dom9 changes, warm subtle lead | Dorian · swung | kick · snare · bass · lead |
+| `afro_rnb` | Afro-R&B lilt, maj9/dom9 colour, FM bass + FM lead | Dorian · swung | kick · snare909 · bassFM · leadFM |
+| `indie_rnb` | Hazy indie-R&B: maj7/maj9, 808 kick, brushed snare | Aeolian · swung | kick808 · snareBrush · bass · leadFM |
+| `neon_dub` | Neon-lit dub: min9/min7, 808 kick, long FM lead | Aeolian · swung | kick808 · snare · bass · leadFM |
+| `dub` | Heavy roots dub, sub bass, sparse 808 kick, echoing lead | Aeolian · swung | kick808 · snare · bass · leadFM |
+| `steppers_dub` | Four-on-the-floor steppers dub, driving sub | Aeolian · light swing | kick808 · snare · bass · leadFM |
+| `roots_reggae` | One-drop roots reggae, maj7 lift, off-beat feel | Aeolian · swung (one-drop) | kick · snare · bass · leadFM |
+| `uk_garage` | Skippy 2-step garage, swung hats, FM bass, pulse lead | Dorian · heavy 2-step swing | kickHard · snare909 · bassFM · leadPulse |
+| `dub_garage` | Dubwise garage: 2-step swing meets deep FM lead | Dorian · heavy 2-step swing | kickHard · snare909 · bassFM · leadFM |
+
+## Effect reference
+
+The visual pool the engine shuffles through: **4 worlds** (3D scenes) +
+**99 demoscene effects**. Every appearance re-randomises speed/phase/colour
+and may mirror/flip, and all of them react to the music.
+
+| Effect | What it is |
+|---|---|
+| `DOOM` *(world)* | Auto-walking corridor-seeking DOOM-style raycaster |
+| `LAND` *(world)* | Voxel-landscape flythrough (Comanche-style heightmap) |
+| `SIDE` *(world)* | Parallax 2D side-scroller |
+| `WIRE` *(world)* | Wireframe Battlezone vector world |
+| `RASTER BARS` | Classic copper/raster colour bars sweeping the screen |
+| `KEFRENS BARS` | Kefrens "bar" recursion fanning down the screen |
+| `SHADEBOBS` | Trailing additive blob sprites (shadebobs) |
+| `MOIRE` | Interfering line grids producing moiré patterns |
+| `VECTOR ROAD` | Outrun-style perspective road into the horizon |
+| `MANDELBROT` | Animated Mandelbrot set zoom |
+| `WORMHOLE` | Flight down a textured wormhole tunnel |
+| `LIFE` | Conway's Game of Life cellular automaton |
+| `AURORA` | Drifting aurora-curtain colour bands |
+| `RIPPLE` | Concentric water-ripple interference |
+| `DNA HELIX` | Rotating double-helix strand |
+| `STARBURST` | Radial starburst rays pulsing on the beat |
+| `DIGITAL RAIN` | Matrix-style falling glyph rain |
+| `TORUS` | Rotating shaded 3D torus |
+| `HEX ZOOM` | Infinitely zooming hex-grid tiling |
+| `LISSAJOUS` | Lissajous-curve oscilloscope figures |
+| `PLASMA TUNNEL` | Plasma-textured tunnel flythrough |
+| `VECTOR BALL GRID` | Grid of bobbing vector balls |
+| `COLOR SPIRAL` | Rotating multi-arm colour spiral |
+| `CHECKER FLOOR` | Perspective checkerboard floor scroll |
+| `DOT EXPLOSION` | Particle burst re-fired on the beat |
+| `INTERFERENCE` | Two-source wave interference field |
+| `WAVE GRID` | Oscillating 3D wireframe wave mesh |
+| `ROTO BARS` | Rotating/zooming bar field (rotozoom bars) |
+| `STAR CYLINDER` | Stars wrapped on a spinning cylinder |
+| `PULSE RINGS` | Expanding rings pulsed by the music |
+| `SPECTRUM` | Audio-spectrum analyser bars |
+| `JULIA` | Animated Julia-set fractal |
+| `BOUNCE LOGO` | The song title bounced DVD-logo style (bitmap font) |
+| `POLAR SWIRL` | Polar-coordinate swirl warp |
+| `TUNNEL RINGS` | Ring-segmented tunnel flythrough |
+| `DOT WAVE` | Sine-driven dot wave surface |
+| `WIRE SPHERE` | Rotating wireframe sphere |
+| `DATAMOSH` | Horizontal glitch/datamosh displacement |
+| `GALAXY` | Spiral-galaxy particle swirl |
+| `FIREWORKS` | Beat-synced fireworks bursts |
+| `META TUNNEL` | Metaball-walled tunnel |
+| `CUBE FIELD` | Field of receding 3D cubes |
+| `SINE DOTS` | Phased sine-scroll dot rows |
+| `VOXEL HILLS` | Rolling voxel hill terrain |
+| `PLASMA FRACTAL` | Fractal-noise plasma field |
+| `LENS` | Magnifying-lens distortion over a pattern |
+| `TRI FRACTAL` | Recursive triangle (Sierpinski-style) fractal |
+| `LIT TUNNEL` | Shaded/lit tunnel with normals |
+| `LIT ICOSA` | Lit rotating icosahedron |
+| `ATTRACTOR` | Strange-attractor particle trace |
+| `REACTION` | Reaction-diffusion (Gray-Scott) pattern |
+| `META LIT` | Lit/shaded metaballs |
+| `DEEP ZOOM` | Infinite Mandelbrot deep-zoom to set coordinates |
+| `BUMP PLASMA` | Bump-mapped embossed plasma |
+| `WARP STARS` | Accelerating warp-speed starfield |
+| `TORUS KNOT` | Rotating 3D torus-knot curve |
+| `INK FLOW` | Flowing ink-particle advection field |
+| `KINETIC TYPE` | Big song-word typography, beat-pulsed reveal |
+| `TURMITES` | Turmite / Langton's-ant cellular automaton |
+| `MAZE` | Generated maze with a traversal sweep |
+| `OSCILLOSCOPE` | Waveform oscilloscope trace |
+| `FALLING SAND` | Falling-sand granular automaton |
+| `RAYMARCH` | Raymarched SDF scene |
+| `BOIDS` | Flocking-boids swarm |
+| `HARMONOGRAPH` | Damped harmonograph pendulum curve |
+| `MANDALA` | Symmetric rotating mandala |
+| `JAVASCRIPT` | Scrolling source-code wall (syntax-tiered) |
+| `HARDWARE REFERENCE MANUAL` | Scrolling reference-manual text wall |
+| `NIGHT RIDGES` | Dotted night ridge-line silhouette |
+| `BALL PIT` | Physics ball-pit pile-up |
+| `CRYSTAL` | DLA crystal-growth accretion |
+| `SMOKE` | Fluid smoke/plume simulation |
+| `PENDULUM WAVE` | Phasing pendulum-wave array |
+| `TESSERACT` | Rotating 4D hypercube projection |
+| `RADAR` | Sweeping radar scope with blips |
+| `TRUCHET` | Truchet-tile maze pattern |
+| `VORONOI` | Animated Voronoi cell diagram |
+| `BURNING SHIP` | Burning-Ship fractal zoom |
+| `COPPER` | Amiga copperbar gradient stripes |
+| `STAR WARP` | Star-warp speed tunnel |
+| `SINE COLUMNS` | Sine-displaced vertical columns |
+| `BOBS` | Classic bouncing sprite bobs |
+| `VECTOR CUBE` | Rotating wireframe vector cube |
+| `ROTOTEX` | Rotozoomer textured plane |
+| `LUT PLASMA` | Look-up-table palette-cycled plasma |
+| `FRACTAL TREE` | Recursive swaying fractal tree |
+| `LIGHTNING` | Branching lightning bolts on hits |
+| `HILBERT` | Hilbert space-filling curve draw |
+| `RULE 30` | Rule-30 elementary cellular automaton |
+| `BRIANS BRAIN` | Brian's Brain three-state automaton |
+| `SPIROGRAPH` | Spirograph epicycloid curves |
+| `VECTOR TUNNEL` | Wireframe polygon tunnel |
+| `HYPERJUMP` | Star Wars-style hyperspace jump |
+| `PHONG CUBE` | Phong-shaded rotating cube |
+| `META DISCS` | Orbiting metaball discs |
+| `ASCII DONUT` | The classic spinning ASCII donut |
+| `WAVE TERRAIN` | Wireframe sine-terrain mesh |
+| `PLASMA FIRE` | Plasma-fed fire effect |
+| `SHUTTER` | Venetian-blind iris reveal of a colour wash |
+| `GRAVITY WELL` | Particles pulled into a moving gravity well |
+| `BOING SHADOW` | Amiga boing-ball with floor shadow |
+| `TEXT RINGS` | Song word orbiting in concentric 3D rings |
+| `ELITE` | Elite-style wireframe vector spacecraft |
+
 ## Status
 
 **Milestone 1 (local preview) — done.** The full creative pipeline runs
