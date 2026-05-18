@@ -127,7 +127,7 @@ SYNTH_PARAMS = {
     "electro": {"kick": {"drive": 2.2, "click": 0.4, "decay": 0.42}, "snare": {"snap": 0.7, "tone": 0.4, "crush": 0.18}, "hat": {"metal": 0.7, "cutoff": 11000, "decay": 0.03}, "ohat": {"metal": 0.7, "cutoff": 10000, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.15}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 900, "res": 0.22, "fenv": 0.55, "sub": 0.7, "glide": 0.0}, "lead": {"detune": 0.06, "wave": 0.6, "cutoff": 6500, "drive": 1.6, "decay": 0.14}, "fx": {"reverb": 0.26, "delay": 0.22, "delayTime": 0.1875, "width": 0.8}},
     "eighties_hiphop": {"kick": {"drive": 1.8, "click": 0.35, "decay": 0.46}, "snare": {"snap": 0.7, "tone": 0.55, "crush": 0.12}, "hat": {"metal": 0.4, "cutoff": 8500, "decay": 0.04}, "ohat": {"metal": 0.4, "cutoff": 8000, "decay": 0.26}, "clap": {"decay": 0.24, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.14, "fenv": 0.3, "sub": 0.9, "glide": 0.0}, "lead": {"detune": 0.1, "wave": 0.3, "cutoff": 4800, "drive": 1.0, "decay": 0.22}, "fx": {"reverb": 0.34, "delay": 0.28, "delayTime": 0.375, "width": 0.65}},
     "jazz": {"kick": {"drive": 1.2, "click": 0.2, "decay": 0.3}, "snare": {"snap": 0.4, "tone": 0.5, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9000, "decay": 0.05}, "ohat": {"metal": 0.5, "cutoff": 8500, "decay": 0.4}, "clap": {"decay": 0.18, "tone": 0.9}, "rim": {"decay": 0.05}, "perc": {"decay": 0.12}, "bass": {"drive": 0.8, "cutoff": 520, "res": 0.1, "fenv": 0.25, "sub": 0.8, "glide": 0.02}, "lead": {"detune": 0.06, "wave": 0.28, "cutoff": 3400, "drive": 0.45, "decay": 0.7}, "fx": {"reverb": 0.42, "delay": 0.18, "delayTime": 0.42, "width": 0.7}},
-    "funk": {"kick": {"drive": 2.6, "click": 0.55, "decay": 0.26}, "snare": {"snap": 0.88, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.62, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.62, "cutoff": 9500, "decay": 0.22}, "clap": {"decay": 0.17, "tone": 1.05}, "rim": {"decay": 0.038}, "perc": {"decay": 0.1}, "bass": {"drive": 0.95, "cutoff": 620, "res": 0.08, "fenv": 0.2, "sub": 0.88, "glide": 0.01}, "lead": {"detune": 0.08, "wave": 0.4, "cutoff": 5600, "drive": 1.5, "decay": 0.16}, "fx": {"reverb": 0.18, "delay": 0.16, "delayTime": 0.33, "width": 0.7}},
+    "funk": {"kick": {"drive": 2.6, "click": 0.55, "decay": 0.26}, "snare": {"snap": 0.88, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.62, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.62, "cutoff": 9500, "decay": 0.22}, "clap": {"decay": 0.17, "tone": 1.05}, "rim": {"decay": 0.038}, "perc": {"decay": 0.1}, "bass": {"drive": 0.95, "cutoff": 620, "res": 0.08, "fenv": 0.2, "sub": 0.88, "glide": 0.01, "level": 1.4}, "lead": {"detune": 0.08, "wave": 0.4, "cutoff": 5600, "drive": 1.5, "decay": 0.16}, "fx": {"reverb": 0.18, "delay": 0.16, "delayTime": 0.33, "width": 0.7}},
     "minneapolis_funk": {"kick": {"drive": 2.0, "click": 0.45, "decay": 0.3}, "snare": {"snap": 0.85, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.5, "cutoff": 9800, "decay": 0.035}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.26}, "clap": {"decay": 0.22, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.11}, "bass": {"drive": 1.4, "cutoff": 1000, "res": 0.3, "fenv": 0.6, "sub": 0.55, "glide": 0.0, "level": 1.4}, "lead": {"detune": 0.14, "wave": 0.45, "cutoff": 6200, "drive": 1.3, "decay": 0.18}, "fx": {"reverb": 0.28, "delay": 0.2, "delayTime": 0.1875, "width": 0.75}},
     "minimal_techno": {"kick": {"drive": 1.8, "click": 0.3, "decay": 0.34}, "snare": {"snap": 0.5, "tone": 0.4, "crush": 0.0}, "hat": {"metal": 0.55, "cutoff": 11000, "decay": 0.022}, "ohat": {"metal": 0.55, "cutoff": 9500, "decay": 0.16}, "clap": {"decay": 0.16, "tone": 1.1}, "rim": {"decay": 0.03}, "perc": {"decay": 0.08}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.12, "fenv": 0.3, "sub": 0.92, "glide": 0.02, "level": 1.4}, "lead": {"detune": 0.05, "wave": 0.5, "cutoff": 5200, "drive": 1.1, "decay": 0.12}, "fx": {"reverb": 0.34, "delay": 0.34, "delayTime": 0.5, "width": 0.7}},
     "detroit_techno": {"kick": {"drive": 2.2, "click": 0.4, "decay": 0.32}, "snare": {"snap": 0.6, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.48, "cutoff": 9600, "decay": 0.035}, "ohat": {"metal": 0.48, "cutoff": 8800, "decay": 0.3}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.045}, "perc": {"decay": 0.12}, "bass": {"drive": 0.7, "cutoff": 480, "res": 0.08, "fenv": 0.18, "sub": 0.85, "glide": 0.0}, "lead": {"detune": 0.16, "wave": 0.3, "cutoff": 5800, "drive": 1.2, "decay": 0.3}, "fx": {"reverb": 0.46, "delay": 0.32, "delayTime": 0.375, "width": 0.85}},
@@ -575,6 +575,13 @@ _LEAD_LEVEL = {
     "indie_rnb": 1.22,
 }
 
+# Per-genre CHORD (CH_KEYS) loudness multiplier. keys is not in the
+# SYNTH_PARAMS plumbing, so this is applied to the chord note velocity
+# in _comp/_pad/_skank (default 1.0 = unchanged).
+_KEYS_LEVEL = {
+    "dub": 1.2,
+}
+
 
 # Song STRUCTURE: instruments enter staggered, then periodic breaks. Entry
 # offsets are in "units" (U bars); U is larger for spacious genres so their
@@ -617,6 +624,7 @@ class CannedSource:
         self._bk_every = 16
         self._bk_len = 0
         self._bk_drop = []
+        self._keys_lvl = 1.0
 
     def prime(self, section: dict) -> None:
         self.bpm = float(section.get("tempo") or section.get("bpm") or 100)
@@ -676,6 +684,7 @@ class CannedSource:
         # never break until the whole arrangement is in + a bar of groove
         self._bk_start = max(self._in.values()) + max(4, u)
         self.base_on = dict(self.on)
+        self._keys_lvl = _KEYS_LEVEL.get(self.genre, 1.0)   # per-genre chord level
 
     def synth_params(self) -> dict:
         # copy (do not mutate the module table) + inject the genre's perc2
@@ -923,7 +932,7 @@ class CannedSource:
         for s in steps:
             if rnd.random() < 0.45 + 0.3 * self.energy:
                 for p in vc:
-                    D(s, beat * 0.26, p, 0.575 + rnd.uniform(-0.04, 0.07), CH_KEYS)
+                    D(s, beat * 0.26, p, (0.575 + rnd.uniform(-0.04, 0.07)) * self._keys_lvl, CH_KEYS)
 
     def _pad(self, D, rnd, beat, ctones):
         if not self.on.get("keys", True):
@@ -932,7 +941,7 @@ class CannedSource:
         # terminates). Harmonic body without notes-per-beat — keeps the space.
         if rnd.random() < 0.45 + 0.35 * self.energy:
             for p in self._voicelead(ctones[:4], 52):       # octave lower
-                D(0, beat * 3.4, p, 0.425 + rnd.uniform(-0.03, 0.05), CH_KEYS)
+                D(0, beat * 3.4, p, (0.425 + rnd.uniform(-0.03, 0.05)) * self._keys_lvl, CH_KEYS)
 
     def _perc(self, D, rnd, beat, e):
         # Dedicated percussion layer, dropped into the groove's GAPS (its
@@ -1209,7 +1218,7 @@ class CannedSource:
         for s in steps:
             if rnd.random() < prob:
                 for p in self._voicelead(ct[:3], 48):       # octave lower
-                    D(s, beat * 0.18, p, 0.55 + rnd.uniform(-0.04, 0.05), CH_KEYS)
+                    D(s, beat * 0.18, p, (0.55 + rnd.uniform(-0.04, 0.05)) * self._keys_lvl, CH_KEYS)
 
     def _g_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # one-drop: the weight is on beat 3 (step 8); huge space + dub delay
