@@ -137,7 +137,7 @@ SYNTH_PARAMS = {
     "roots_reggae": {"kick": {"drive": 1.5, "click": 0.22, "decay": 0.42}, "snare": {"snap": 0.5, "tone": 0.5, "crush": 0.05}, "hat": {"metal": 0.34, "cutoff": 7000, "decay": 0.05}, "ohat": {"metal": 0.34, "cutoff": 6600, "decay": 0.34}, "clap": {"decay": 0.24, "tone": 0.85}, "rim": {"decay": 0.07}, "perc": {"decay": 0.16}, "bass": {"drive": 1.0, "cutoff": 380, "res": 0.1, "fenv": 0.3, "sub": 0.95, "glide": 0.05}, "lead": {"detune": 0.08, "wave": 0.2, "cutoff": 3800, "drive": 0.85, "decay": 0.4}, "fx": {"reverb": 0.4, "delay": 0.28, "delayTime": 0.42, "width": 0.7}},
     "uk_garage": {"kick": {"drive": 2.2, "click": 0.42, "decay": 0.28}, "snare": {"snap": 0.7, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.5, "cutoff": 10000, "decay": 0.035}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.26}, "clap": {"decay": 0.2, "tone": 1.05}, "rim": {"decay": 0.04}, "perc": {"decay": 0.11}, "bass": {"drive": 1.4, "cutoff": 760, "res": 0.24, "fenv": 0.6, "sub": 0.78, "glide": 0.02}, "lead": {"detune": 0.14, "wave": 0.35, "cutoff": 5800, "drive": 1.3, "decay": 0.2}, "fx": {"reverb": 0.32, "delay": 0.24, "delayTime": 0.353, "width": 0.75}},
     "dub_garage": {"kick": {"drive": 2.0, "click": 0.38, "decay": 0.3}, "snare": {"snap": 0.65, "tone": 0.5, "crush": 0.06}, "hat": {"metal": 0.46, "cutoff": 9400, "decay": 0.035}, "ohat": {"metal": 0.46, "cutoff": 8600, "decay": 0.3}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.12}, "bass": {"drive": 1.3, "cutoff": 560, "res": 0.18, "fenv": 0.5, "sub": 0.88, "glide": 0.03}, "lead": {"detune": 0.12, "wave": 0.3, "cutoff": 5000, "drive": 1.1, "decay": 0.28}, "fx": {"reverb": 0.5, "delay": 0.42, "delayTime": 0.5, "width": 0.85}},
-    "rnb": {"kick": {"drive": 1.4, "click": 0.25, "decay": 0.36}, "snare": {"snap": 0.5, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.4, "cutoff": 8200, "decay": 0.045}, "ohat": {"metal": 0.4, "cutoff": 7600, "decay": 0.26}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.12, "fenv": 0.35, "sub": 0.9, "glide": 0.03}, "lead": {"detune": 0.08, "wave": 0.28, "cutoff": 3000, "drive": 0.4, "decay": 0.62}, "fx": {"reverb": 0.4, "delay": 0.2, "delayTime": 0.375, "width": 0.7}},
+    "rnb": {"kick": {"drive": 1.4, "click": 0.25, "decay": 0.36}, "snare": {"snap": 0.5, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.4, "cutoff": 8200, "decay": 0.045}, "ohat": {"metal": 0.4, "cutoff": 7600, "decay": 0.26}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.12, "fenv": 0.35, "sub": 0.9, "glide": 0.03, "level": 1.1}, "lead": {"detune": 0.08, "wave": 0.28, "cutoff": 3000, "drive": 0.4, "decay": 0.62}, "fx": {"reverb": 0.4, "delay": 0.2, "delayTime": 0.375, "width": 0.7}},
     "afro_rnb": {"kick": {"drive": 1.8, "click": 0.35, "decay": 0.32}, "snare": {"snap": 0.6, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.42, "cutoff": 9200, "decay": 0.035}, "ohat": {"metal": 0.42, "cutoff": 8400, "decay": 0.24}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.045}, "perc": {"decay": 0.1}, "bass": {"drive": 1.3, "cutoff": 760, "res": 0.2, "fenv": 0.5, "sub": 0.75, "glide": 0.02}, "lead": {"detune": 0.12, "wave": 0.35, "cutoff": 5600, "drive": 1.1, "decay": 0.22}, "fx": {"reverb": 0.34, "delay": 0.22, "delayTime": 0.353, "width": 0.78}},
     "indie_rnb": {"kick": {"drive": 1.3, "click": 0.22, "decay": 0.4}, "snare": {"snap": 0.45, "tone": 0.5, "crush": 0.12}, "hat": {"metal": 0.35, "cutoff": 7400, "decay": 0.05}, "ohat": {"metal": 0.35, "cutoff": 6800, "decay": 0.34}, "clap": {"decay": 0.26, "tone": 0.85}, "rim": {"decay": 0.06}, "perc": {"decay": 0.16}, "bass": {"drive": 0.9, "cutoff": 420, "res": 0.1, "fenv": 0.3, "sub": 0.92, "glide": 0.05}, "lead": {"detune": 0.08, "wave": 0.2, "cutoff": 3600, "drive": 0.75, "decay": 0.5}, "fx": {"reverb": 0.55, "delay": 0.34, "delayTime": 0.5, "width": 0.85}},
 }
@@ -567,11 +567,11 @@ _LEAD_LEVEL = {
     "electro": 0.80, "uk_garage": 0.85, "minneapolis_funk": 0.86,
     "broken_house": 0.88, "minimal_techno": 0.90, "eighties_hiphop": 0.96,
     # \lead genres
-    "funk": 0.95, "electro_funk": 1.15, "synthwave": 0.99, "jazz": 0.60,
+    "funk": 0.95, "electro_funk": 1.15, "synthwave": 0.99, "jazz": 0.84,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 1.00, "afro_rnb": 1.02, "dub_garage": 1.06,
     "dub_techno": 1.10, "neon_dub": 1.12, "steppers_dub": 1.12,
-    "lofi": 1.15, "rnb": 0.80, "roots_reggae": 1.20, "dub": 1.22,
+    "lofi": 1.15, "rnb": 1.12, "roots_reggae": 1.20, "dub": 1.22,
     "indie_rnb": 1.22,
 }
 
@@ -580,6 +580,7 @@ _LEAD_LEVEL = {
 # in _comp/_pad/_skank (default 1.0 = unchanged).
 _KEYS_LEVEL = {
     "dub": 1.2,
+    "rnb": 0.8,
 }
 
 
