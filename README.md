@@ -3,15 +3,15 @@
 A **hermetic, fully-local** machine that improvises endless funk/jazz/electro/dub
 music *and* a matching ASCII demoscene visual, forever, with no network and no
 APIs. Everything runs on one Mac: a groove engine drives SuperCollider synths,
-a local LLM (Qwen via MLX) directs the sections, and a browser renders 89
+a local LLM (Qwen via MLX) directs the sections, and a browser renders 103
 music-reactive ASCII effects.
 
 ```
  midi/  groove engine ──OSC 57120─▶ synth/  SuperCollider ──audio──▶ speakers
-   │  (19 genres, funk theory)        │  (per-track FX buses)
+   │  (21 genres, funk theory)        │  (per-track FX buses)
    │                                  └─ /vis/* OSC 57130 ─┐
  director/ Qwen ─ section state ─▶ bridge/ Node WS :8080 ◀─┘
-                                   └── WS ──▶ visualizer/  browser  (89 ASCII FX)
+                                   └── WS ──▶ visualizer/  browser  (103 ASCII FX)
 ```
 
 ## Screenshots
@@ -31,37 +31,44 @@ Each shot should show the top **HUD** (`EFFECT · …` / `MUSIC · genre · mood
 ## What's going on
 
 ### Music — a funk-first groove engine (`midi/canned.py`)
-- **19 genres**: electro_funk, idm, synthwave, neon_dub, broken_house, lofi,
+- **21 genres**: electro_funk, synthwave, neon_dub, broken_house, lofi,
   electro, eighties_hiphop, jazz, funk, minneapolis_funk, minimal_techno,
   detroit_techno, dub, steppers_dub, dub_techno, roots_reggae, uk_garage,
-  dub_garage.
+  dub_garage, rnb, afro_rnb, indie_rnb.
 - **Research-backed funk**: space is articulation/syncopation/dynamics/
   micro-timing — *not* note count. "The one" lock, ghost-note tiers, per-genre
   swing, behind-the-beat pocket, 8-bar phrasing, and a per-section **energy
   roll** (mostly sparse, occasionally dense).
 - **Real harmony**: per-genre chord progressions with proper qualities
   (maj7/min9/dom7#9/…), secondary-dominant turnarounds, **voice-led** keys
-  comping + a soft pad, and a melodic motif on chord guide-tones.
+  comping + a soft pad, and a melodic motif on chord guide-tones. The LLM
+  picks 1 of **4 researched progression banks** per genre.
+- **Song structure**: each section is a ~3-min *song* — the LLM picks an
+  arrangement (staggered instrument entries + mid-song breaks) and **names
+  it**; the title drives the HUD + text/sinus-scroller visuals.
 - **Expressive, gliding, digital synths** (SuperCollider, `synth/synthdefs/`):
-  19 SynthDefs incl. variants — bass is a **mono portamento** voice (real
+  25 SynthDefs incl. variants — bass is a **mono portamento** voice (real
   funk slides), velocity→filter/grit, fade-in vibrato, a warm FM e-piano.
+  An **analogue console/tape pass** adds VCO drift, Moog-ladder filtering,
+  multi-stage saturation and tape wow/flutter on the master.
 - **Per-genre instruments**: every genre deliberately picks its kick / snare /
   bass / lead variant (e.g. funk = bassFM + kickHard; electro = bassSquare +
   kick808 + snare909 + leadPulse; dub = deep sub + kick808 + leadFM).
 - **Per-track, genre-dependent FX**: drums / bass / lead+keys run through 3
   independent FX chains; dub gets huge delayed leads, jazz a room on the keys,
   techno tight dry drums, etc.
-- **Director** (`director/director.py`, local Qwen3-8B via MLX): every 5–8 min
-  picks the next section (genre/bpm/key/density/palette/instrument params).
-  The fast genre **audition** (`scripts/smoke/genre_audition.py`) cycles all
-  19 every ~20s for evaluation.
+- **Director** (`director/director.py`, local Qwen3-4B via MLX): every few
+  minutes picks the next section — genre/bpm/key/density, the progression
+  bank + song structure + song name, and a curated **colour palette**
+  (including whether to invert). The fast genre **audition**
+  (`scripts/smoke/genre_audition.py`) cycles all 21 every ~20s for evaluation.
 
-### Visuals — 89 ASCII effects (`visualizer/`)
+### Visuals — 103 ASCII effects (`visualizer/`)
 - A shared ASCII 3D engine (`a3d.js`): depth-buffered framebuffer, projection,
   line raster, sprites, fog, fast colour-run flush.
 - **4 worlds** (`worlds.js`): auto-walking DOOM raycaster (corridor-seeking),
   voxel landscape flythrough, 2D side-scroller, wireframe Battlezone.
-- **85 demoscene effects** (`demoscene.js`): plasma, kefrens, shadebobs, moiré,
+- **99 demoscene effects** (`demoscene.js`): plasma, kefrens, shadebobs, moiré,
   Outrun road, mandelbrot/julia/burning-ship, fire, glenz, boing, tunnels,
   metaballs, raymarch, boids, harmonograph, mandala, DLA crystal, smoke,
   tesseract, radar, truchet, voronoi, life, turmites, … (Amiga/C64/Atari/PC).
@@ -80,7 +87,7 @@ brew install --cask supercollider blackhole-16ch     # BlackHole = future M2
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 pip install "mido==1.3.3" "git+https://github.com/jthickstun/anticipation.git"  # MIDI-LLM only
-python -c "from huggingface_hub import snapshot_download as d; d('mlx-community/Qwen3-8B-4bit')"
+python -c "from huggingface_hub import snapshot_download as d; d('mlx-community/Qwen3-4B-Instruct-2507-4bit')"
 npm install
 ```
 
@@ -96,10 +103,10 @@ open http://localhost:8080    # watch + listen
 ./scripts/stop-all.sh         # stops everything, sweeps orphans
 ```
 
-Fast genre evaluation instead of the 5–8 min director:
+Fast genre evaluation instead of the full director:
 
 ```bash
-.venv/bin/python scripts/smoke/genre_audition.py 20   # cycle all 19, ~20s each
+.venv/bin/python scripts/smoke/genre_audition.py 20   # cycle all 21, ~20s each
 ```
 
 Logs + pidfiles land in `.run/`.
@@ -110,7 +117,7 @@ Logs + pidfiles land in `.run/`.
 |-----|---------|---------|
 | `STR_MIDI_SOURCE` | `canned` | `canned` (groove engine) or `midillm` |
 | `STR_SECTION_SEC` | LLM-chosen | override section length, e.g. `45` |
-| `STR_DIRECTOR_MODEL` | `mlx-community/Qwen3-8B-4bit` | director model |
+| `STR_DIRECTOR_MODEL` | `mlx-community/Qwen3-4B-Instruct-2507-4bit` | director model |
 | `BRIDGE_HTTP_PORT` | `8080` | bridge HTTP/WS |
 | `SC_OSC_PORT` | `57120` | SuperCollider router in |
 | `VIS_OSC_PORT` | `57130` | SC → bridge |
@@ -119,7 +126,7 @@ Logs + pidfiles land in `.run/`.
 ## Smoke tests
 
 ```bash
-$SCLANG scripts/smoke/sc-compile.scd                 # all 19 SynthDefs build
+$SCLANG scripts/smoke/sc-compile.scd                 # all 25 SynthDefs build
 $SCLANG scripts/smoke/sc-drone-test.scd              # anti-stuck-note safety
 node scripts/smoke/send-test-note.js                 # bridge WS fanout
 .venv/bin/python scripts/smoke/fire_osc.py seq 16 .2 # OSC → SC
@@ -130,10 +137,10 @@ node scripts/smoke/send-test-note.js                 # bridge WS fanout
 
 ```
 midi/        groove engine + MIDI-LLM source + OSC out + worker
-synth/       SuperCollider boot/router + 19 SynthDefs
+synth/       SuperCollider boot/router + 25 SynthDefs
 director/    section director + schema/prompts
 bridge/      Node HTTP+WS + OSC-in + state
-visualizer/  a3d engine + worlds + 89 demoscene effects + HUD
+visualizer/  a3d engine + 4 worlds + 99 demoscene effects + HUD
 scripts/     start-all / stop-all / smoke tests
 ```
 
