@@ -567,7 +567,7 @@ _LEAD_LEVEL = {
     "electro": 0.80, "uk_garage": 0.85, "minneapolis_funk": 0.86,
     "broken_house": 0.88, "minimal_techno": 0.90, "eighties_hiphop": 0.96,
     # \lead genres
-    "funk": 0.95, "electro_funk": 0.95, "synthwave": 0.99, "jazz": 0.30,
+    "funk": 0.95, "electro_funk": 1.15, "synthwave": 0.99, "jazz": 0.60,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 1.00, "afro_rnb": 1.02, "dub_garage": 1.06,
     "dub_techno": 1.10, "neon_dub": 1.12, "steppers_dub": 1.12,
@@ -1102,14 +1102,16 @@ class CannedSource:
 
     def _g_jazz(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["hat"]:
-            for s in (0, 4, 6, 8, 12, 14):                 # swung jazz ride
+            # swung "spang-a-lang" ride — soft bed under the kit; the
+            # accents on the beat, the skip notes quiet (no extra bell hit
+            # — that hammered the old cowbell tone).
+            for s in (0, 4, 6, 8, 12, 14):
+                on_beat = s in (0, 4, 8, 12)
                 D(s, 0.5, RIDE,
-                  self._main(rnd) if s in (4, 12) else self._ghost(rnd) + 0.2,
+                  (self._main(rnd) * 0.55) if on_beat else (self._ghost(rnd) + 0.04),
                   CH_DRUMS, "hat")
-            if rnd.random() < 0.3:                          # occasional bell
-                D(rnd.choice([6, 14]), 0.4, RIDE, self._main(rnd), CH_DRUMS, "hat")
-            if rnd.random() < 0.35:
-                D(10, 0.18, OHAT, 0.4, CH_DRUMS, "hat")
+            if rnd.random() < 0.28:
+                D(10, 0.16, OHAT, 0.34, CH_DRUMS, "hat")
         if self.on["snare"]:
             for s in (4, 12):
                 D(s, 0.1, RIM, self._main(rnd), CH_DRUMS, "snare", True)
