@@ -2411,6 +2411,97 @@
     }
   });
 
+  // ─────────── NEW BATCH 3 — generative-art ───────────
+  const Lorenz = E('LORENZ ATTRACTOR', function () { this._p = []; this._lx = 0.1; this._ly = 0; this._lz = 0; },
+    function (eng, env) {
+      const C = eng.cols, R = eng.rows, t = this.t * this.P.spd, dt2 = 0.008;
+      if (!this._p) { this._p = []; this._lx = 0.1; this._ly = 0; this._lz = 0; }
+      for (let s = 0; s < 6; s++) {
+        const dx = 10 * (this._ly - this._lx), dy = this._lx * (28 - this._lz) - this._ly, dz = this._lx * this._ly - 8 / 3 * this._lz;
+        this._lx += dx * dt2; this._ly += dy * dt2; this._lz += dz * dt2;
+        this._p.push([this._lx, this._ly, this._lz - 25]);
+      }
+      if (this._p.length > 1400) this._p.splice(0, this._p.length - 1400);
+      const ca = Math.cos(t * 0.4), sa = Math.sin(t * 0.4), s = Math.min(C, R * 2) * 0.06;
+      for (let i = 0; i < this._p.length; i++) {
+        const x = this._p[i][0], y = this._p[i][1], z = this._p[i][2];
+        const X = x * ca - z * sa, Z = x * sa + z * ca, p = 6 / (6 + Z * 0.12);
+        px(eng, C / 2 + X * s * p, R / 2 - y * s * p, '.',
+          mul(acc(env, ((i * 3 / this._p.length) | 0) % 3), 0.2 + i / this._p.length * 0.7 + env.beat * 0.2), 200);
+      }
+    });
+  const Clifford = E('CLIFFORD ATTRACTOR', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * 0.1;
+    const a = -1.4 + Math.sin(t) * 0.3, b = 1.6 + Math.cos(t * 0.7) * 0.2;
+    const c1 = 1.0 + Math.sin(t * 0.5) * 0.3, d = 0.7 + Math.cos(t * 0.9) * 0.2;
+    let x = 0.1, y = 0.1; const sx = C * 0.5 / 2.6, sy = R * 0.46 / 2.6;
+    for (let i = 0; i < 5000; i++) {
+      const nx = Math.sin(a * y) + c1 * Math.cos(a * x), ny = Math.sin(b * x) + d * Math.cos(b * y);
+      x = nx; y = ny;
+      if (i > 20) px(eng, C / 2 + x * sx, R / 2 + y * sy, '.',
+        mul(acc(env, ((i * 3 / 5000) | 0) % 3), 0.18 + env.beat * 0.3), 300);
+    }
+  });
+  const FlowField = E('FLOW FIELD', function () {
+    this.a = []; for (let i = 0; i < 420; i++) this.a.push({ x: Math.random(), y: Math.random(), life: Math.random() });
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * 0.2;
+    if (!this.a) this.a = [];
+    for (const q of this.a) {
+      const ang = (Math.sin(q.x * 6 + t) + Math.sin(q.y * 5 - t * 0.8) + Math.sin((q.x + q.y) * 4 + t * 0.5)) * 1.6;
+      q.x += Math.cos(ang) * 0.004 * (1 + env.mv); q.y += Math.sin(ang) * 0.004 * (1 + env.mv);
+      q.life -= 0.006;
+      if (q.life <= 0 || q.x < 0 || q.x > 1 || q.y < 0 || q.y > 1) {
+        q.x = Math.random(); q.y = Math.random(); q.life = 0.6 + Math.random() * 0.5;
+      }
+      px(eng, q.x * C, q.y * R, '.', mul(acc(env, ((q.life * 3) | 0) % 3), 0.2 + q.life * 0.6 + env.beat * 0.2), 300);
+    }
+  });
+  const Chladni = E('CHLADNI FIGURES', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows;
+    const m = 2 + Math.floor((env.bass || 0) * 5 + Math.sin(this.t * 0.3) * 2 + 2);
+    const n = 2 + Math.floor((env.lead || env.energy || 0) * 5 + Math.cos(this.t * 0.27) * 2 + 2);
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
+      const u = x / C, v = y / R;
+      const f = Math.sin(m * 3.1415 * u) * Math.sin(n * 3.1415 * v) + Math.sin(n * 3.1415 * u) * Math.sin(m * 3.1415 * v);
+      const a = Math.abs(f);
+      if (a < 0.1) {
+        const g = gly(1 - a / 0.1), c = mul(acc(env, (m + n) % 3), 0.4 + (1 - a / 0.1) * 0.6 + env.beat * 0.2);
+        for (let yy = 0; yy < DS; yy++) for (let xx = 0; xx < DS; xx++) px(eng, x + xx, y + yy, g, c, 400);
+      }
+    }
+  });
+  const Phyllo = E('PHYLLOTAXIS', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    const N = 480, ga = 2.39996, sc = (0.7 + (env.energy || 0) * 0.4) * Math.min(C / 2, R) * 0.06;
+    for (let i = 0; i < N; i++) {
+      const a = i * ga + t * 0.2, r = sc * Math.sqrt(i);
+      const X = cx + Math.cos(a) * r, Y = cy + Math.sin(a) * r * 0.55;
+      if (X < 0 || X >= C || Y < 0 || Y >= R) continue;
+      px(eng, X, Y, i % 9 < 3 ? 'o' : '.',
+        mul(acc(env, ((i * 3 / N) | 0) % 3), 0.25 + (1 - i / N) * 0.3 + (i / N) * 0.5 + env.beat * 0.25), 300);
+    }
+  });
+  const Fourier = E('FOURIER EPICYCLES', function () { this.tr = []; }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    if (!this.tr) this.tr = [];
+    const N = 7, amp = Math.min(C, R * 2) * 0.16;
+    let x = cx, y = cy;
+    for (let k = 0; k < N; k++) {
+      const freq = k * 2 + 1, rr = amp / (k * 1.6 + 1);
+      const nx = x + Math.cos(t * freq * 0.6 * this.P.dir) * rr * (1 + env.beat * 0.15);
+      const ny = y + Math.sin(t * freq * 0.6 * this.P.dir) * rr;
+      LN(eng, x, y, nx, ny, '-', mul(acc(env, k % 3), 0.35), 120);
+      for (let ang = 0; ang < 6.28; ang += 0.5) px(eng, x + Math.cos(ang) * rr, y + Math.sin(ang) * rr, '.', mul(acc(env, k % 3), 0.12), 110);
+      x = nx; y = ny;
+    }
+    this.tr.push([x, y]);
+    if (this.tr.length > 500) this.tr.shift();
+    for (let i = 1; i < this.tr.length; i++)
+      LN(eng, this.tr[i - 1][0], this.tr[i - 1][1], this.tr[i][0], this.tr[i][1], '#',
+        mul(acc(env, 2), 0.2 + i / this.tr.length * 0.7 + env.beat * 0.2), 100);
+  });
+
   window.Worlds.FNT5 = FNT5;            // shared 5x7 font (render.js scroller)
   window.Worlds.demos = [
     Plasma, Roto, Stars, Copper, Bobs, Tunnel, Twister, Glenz, Boing,
@@ -2431,5 +2522,6 @@
     PFire, Shutter, GravWell, BoingShadow, TextRing, Elite, AsmHall,
     RubberVec, DotMorph, VBallSphere, PGlobe, Feedback, Kaleido,
     InfZoom, TextCrawl, Planet, Menger, Bulb,
+    Lorenz, Clifford, FlowField, Chladni, Phyllo, Fourier,
   ];
 })();
