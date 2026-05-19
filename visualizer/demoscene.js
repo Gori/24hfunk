@@ -2702,6 +2702,70 @@
     }
   });
 
+  // ─────────── NEW BATCH 6 — art-inspired ───────────
+  const GreatWave = E('GREAT WAVE', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd, baseY = R * 0.62;
+    for (let x = 0; x < C; x++) {
+      const ph = x / C * 6.283;
+      const sw = Math.sin(ph * 1.5 - t * 1.2);
+      const crest = sw * R * 0.16 + Math.sin(ph * 0.5 - t * 0.6) * R * 0.1;
+      const wy = baseY - crest - env.beat * R * 0.05;
+      for (let y = wy | 0; y < R; y++)
+        px(eng, x, y, y < wy + 1 ? '~' : gly(0.4 + (y - wy) / R * 0.5),
+          mul(acc(env, y < wy + 2 ? 2 : 1), 0.3 + (1 - (y - wy) / R) * 0.5 + env.beat * 0.15), 400);
+      if (sw > 0.85) for (let f = 0; f < 4; f++)
+        px(eng, x + (Math.random() - 0.5) * 4, wy - f * 1.5 - Math.random() * 2, '*',
+          mul(acc(env, 2), 0.6 + env.beat * 0.3), 300);
+    }
+  });
+  const Kusama = E('KUSAMA DOTS', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    for (let layer = 8; layer >= 0; layer--) {
+      const z = layer + (t * 0.5) % 1, sc = Math.pow(0.8, z);
+      for (let gy = -4; gy <= 4; gy++) for (let gx = -7; gx <= 7; gx++) {
+        const X = cx + gx * 24 * sc, Y = cy + gy * 13 * sc;
+        const rr = Math.max(0.6, 2.2 * sc);
+        for (let a = 0; a < 6.28; a += 1 / (rr * 1.5) + 0.05)
+          px(eng, X + Math.cos(a) * rr, Y + Math.sin(a) * rr * 0.55, '#',
+            mul(acc(env, layer % 3), 0.2 + (1 - layer / 9) * 0.6 + env.beat * 0.25), 100 + layer);
+      }
+    }
+  });
+  const UnknownP = E('UNKNOWN PLEASURES', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, lines = Math.min(40, R - 4);
+    const amp = 3 + (env.energy || 0) * 6;
+    for (let li = 0; li < lines; li++) {
+      const baseY = 3 + li * ((R - 6) / lines);
+      let pv = null;
+      for (let x = 0; x < C; x++) {
+        const nx = (x / C - 0.5) * 2;
+        const bump = Math.exp(-nx * nx * 3) * (amp + Math.sin(this.t * 2 + li) * 2);
+        const noise = (Math.sin(x * 0.4 + li * 1.3 + this.t * 3) + Math.sin(x * 0.13 - li)) * 0.9;
+        const yy = baseY - (bump + noise) * (0.6 + env.beat * 0.4);
+        if (pv) LN(eng, pv[0], pv[1], x, yy, '#',
+          mul(acc(env, 0), 0.4 + (1 - li / lines) * 0.4 + env.beat * 0.2), 200 + li);
+        pv = [x, yy];
+      }
+    }
+  });
+  const Teletext = E('TELETEXT', function () { this.page = 0; this.pt = 0; }, function (eng, env) {
+    const C = eng.cols, R = eng.rows;
+    this.pt = (this.pt || 0) + 1 / 60;
+    if (this.bt > 0.5 && this.pt > 2.5) { this.page = (this.page + 1) % 4; this.pt = 0; }
+    const pg = this.page, RMP2 = '#+:. ';
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      const u = x / C, v = y / R;
+      let val;
+      if (pg === 0) val = (Math.sin(u * 8 + this.t) + Math.cos(v * 6)) * 0.5 + 0.5;
+      else if (pg === 1) val = ((Math.floor(u * 8) + Math.floor(v * 6)) & 1) ? 0.85 : 0.15;
+      else if (pg === 2) val = Math.abs(Math.sin((u - 0.5) * (v - 0.5) * 40 + this.t));
+      else val = (Math.hypot(u - 0.5, v - 0.5) * 3 + this.t * 0.3) % 1;
+      const g = RMP2[Math.max(0, Math.min(4, ((1 - val) * 5) | 0))];
+      px(eng, x, y, g, mul(acc(env, (((x / 8 + y / 6) | 0) % 3 + 3) % 3), 0.3 + val * 0.6 + env.beat * 0.2), 500);
+    }
+    for (let x = 0; x < C; x++) px(eng, x, 0, '#', mul(acc(env, 2), 0.7 + env.beat * 0.3), 100);
+  });
+
   window.Worlds.FNT5 = FNT5;            // shared 5x7 font (render.js scroller)
   window.Worlds.demos = [
     Plasma, Roto, Stars, Copper, Bobs, Tunnel, Twister, Glenz, Boing,
@@ -2725,5 +2789,6 @@
     Lorenz, Clifford, FlowField, Chladni, Phyllo, Fourier,
     DomainWarp, Apollon, Sandpile, LSystem, PenroseTile, Buddha,
     Riley, Vasarely, PenroseStairs, Mondrian, Pollock, Rothko,
+    GreatWave, Kusama, UnknownP, Teletext,
   ];
 })();
