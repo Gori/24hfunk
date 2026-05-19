@@ -16,8 +16,8 @@
     'GLENZ': 0.55, 'FIREWORKS': 0.55, 'WARP STARS': 0.55,
     'VECTOR TUNNEL': 0.45, 'PLASMA FIRE': 0.7,
     'LIT TUNNEL': 0.6, 'LUT PLASMA': 0.6, 'FRACTAL TREE': 0.6,
-    'SHUTTER': 1.5,
-    'E1M1': 1.0,
+    'SHUTTER': 1.5, 'NIGHT RIDGES': 1.5,
+    'E1M1': 1.7,
   };
   let eng, active, vT = 0;
   let prevPal = window.Palette.normalize(null);

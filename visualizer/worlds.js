@@ -88,7 +88,7 @@
           a += 1.3;
         }
         this.foes.push({ x: fx, z: fz, ang: a, ph: Math.random() * 6,
-          sp: 0.26 + Math.random() * 0.12, art: ART.imp, hit: 0 });
+          sp: 0.10 + Math.random() * 0.06, art: ART.imp, hit: 0 });
       }
       this.title = 'E1M' + this.level;
     },
@@ -183,7 +183,7 @@
       }
       for (let i = this.balls.length - 1; i >= 0; i--) {
         const b = this.balls[i]; b.t += dt;
-        b.x += b.dx * dt * 2.4; b.z += b.dz * dt * 2.4;
+        b.x += b.dx * dt * 1.3; b.z += b.dz * dt * 1.3;
         if (b.t > 3 || Math.hypot(b.x - this.px, b.z - this.pz) < 0.5 || this.wall(b.x, b.z))
           this.balls.splice(i, 1);
       }
@@ -447,9 +447,10 @@
             const gap = this.gaps.some((g) => Math.abs(wx + 2 - g) < 2);
             if (!gap) {
               const gy = this.groundY(wx);                       // plateau height
-              eng.line3([wx, gy, pz], [wx + 4, gy, pz], colr, '=');
-              for (let yy = gy - 0.5; yy > -1.4; yy -= 0.6)
-                eng.line3([wx, yy, pz], [wx + 4, yy, pz], scale(colr, 0.45), '#');
+              // SOLID columns (the original proven-visible ground draw),
+              // from the plateau top down -> visible platforms at heights.
+              for (let xx = 0; xx < 4; xx += 0.5)
+                eng.line3([wx + xx, gy, pz], [wx + xx, -1.4, pz], colr, '=');
             }
           } else {
             if (hash2(wx, 21) < 0.4) {
