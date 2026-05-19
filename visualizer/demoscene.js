@@ -10,6 +10,12 @@
   const mul = (c, k) => [Math.min(255, c[0] * k) | 0, Math.min(255, c[1] * k) | 0, Math.min(255, c[2] * k) | 0];
   const lerpC = (a, b, k) => [a[0] + (b[0] - a[0]) * k | 0, a[1] + (b[1] - a[1]) * k | 0, a[2] + (b[2] - a[2]) * k | 0];
   const RMP = ' .:-=+*o%#@█';
+  // ── GLOBAL RESOLUTION KNOB ───────────────────────────────────────────
+  // Heavy effects sample the cell grid every DS cells and fill a DS×DS
+  // block. DS = 1 → true 1×1 (full detail, no chunky blocks). Raise to
+  // 2/3/4 if the machine can't keep up — this ONE value controls them all.
+  // (At DS=1 the block-fill loops collapse to a single plot.)
+  const DS = 1;
   const gly = (b) => RMP[Math.max(0, Math.min(RMP.length - 1, (b * (RMP.length - 1)) | 0))];
   // current song name (set by render.js from the LLM section.name), sanitised
   // to the A-Z/space the bitmap font supports. Text effects render THIS.
@@ -27,7 +33,7 @@
     step(dt) { this.t += dt; },
     draw(eng, env) {
       const C = eng.cols, R = eng.rows, t = this.t;
-      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+      for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
         const v = Math.sin(x * 0.16 + t) + Math.sin(y * 0.22 - t * 1.3)
           + Math.sin((x + y) * 0.12 + t * 0.7) + Math.sin(Math.hypot(x - C / 2, y - R / 2) * 0.18 - t * 2);
         const k = (v + 4) / 8;
@@ -119,7 +125,7 @@
     draw(eng, env) {
       const C = eng.cols, R = eng.rows;
       const cx = C / 2, cy = R / 2, ix = 1 / cx, iy = 1 / cy, t2 = this.t * 2;
-      for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
+      for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
         const dx = (x - cx) * ix, dy = (y - cy) * iy;
         const d = Math.sqrt(dx * dx + dy * dy) + 0.0001;
         const u = (1 / d * 1.4 + t2);
@@ -127,7 +133,7 @@
         const chk = ((u | 0) + (v | 0)) & 1;
         const sh = Math.min(1, d * 1.3);
         const g = chk ? gly(sh) : gly(sh * 0.5), c = mul(acc(env, chk ? 0 : 1), 0.15 + sh);
-        for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++)
+        for (let yy = 0; yy < DS; yy++) for (let xx = 0; xx < DS; xx++)
           eng.plot(x + xx, y + yy, g, c, 500);
       }
     },
@@ -209,7 +215,7 @@
     step(dt) { this.t += dt; },
     draw(eng, env) {
       const C = eng.cols, R = eng.rows;
-      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 3)
+      for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS)
         eng.plot(x, y, '+', mul(acc(env, 1), 0.18), 700);              // floor grid
       const cx = C / 2 + Math.sin(this.t * 1.3) * C * 0.32;
       const cy = R * 0.30 + Math.abs(Math.sin(this.t * 2.2)) * R * 0.34;
@@ -236,7 +242,7 @@
       const b = [[C / 2 + Math.sin(t) * C * 0.3, R / 2 + Math.cos(t * 1.3) * R * 0.3],
       [C / 2 + Math.sin(t * 1.7 + 2) * C * 0.32, R / 2 + Math.sin(t * 0.9) * R * 0.32],
       [C / 2 + Math.cos(t * 0.8) * C * 0.28, R / 2 + Math.cos(t * 1.5 + 1) * R * 0.3]];
-      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+      for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
         let s = 0;
         for (const [bx, by] of b) s += 30 / (Math.hypot(x - bx, (y - by) * 2) + 1);
         if (s > 1.0) {
@@ -384,7 +390,7 @@
     const C = eng.cols, R = eng.rows;
     const ax = C / 2 + Math.sin(this.t) * C * 0.3, ay = R / 2 + Math.cos(this.t * 1.2) * R * 0.3;
     const bx = C / 2 - Math.sin(this.t * 0.8) * C * 0.3, by = R / 2 - Math.cos(this.t) * R * 0.3;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const d1 = Math.hypot(x - ax, (y - ay) * 2), d2 = Math.hypot(x - bx, (y - by) * 2);
       const v = (Math.sin(d1 * 0.5) * Math.sin(d2 * 0.5));
       if (v > 0.2) {
@@ -419,7 +425,7 @@
     // 2x downsample (compute 1/4 cells, fill 2x2) + lower cap -> ~5x faster
     const C = eng.cols, R = eng.rows, M = 20;
     const zoom = 0.6 + Math.sin(this.t * 0.2) * 0.5, ox = -0.745, oy = 0.113;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const cr = ox + (x / C - 0.5) * 3 / zoom, ci = oy + (y / R - 0.5) * 2.4 / zoom;
       let zr = 0, zi = 0, n = 0;
       while (n < M && zr * zr + zi * zi < 4) { const t = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t; n++; }
@@ -435,14 +441,14 @@
     const C = eng.cols, R = eng.rows;
     const cx = C / 2, cy = R / 2, ix = 1 / cx, iy = 1 / cy;
     const t3 = this.t * 3, t2 = this.t * 2, bk = 0.7 + env.beat * 0.4;
-    for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const dx = (x - cx) * ix, dy = (y - cy) * iy;
       const a = Math.atan2(dy, dx), d = Math.sqrt(dx * dx + dy * dy) + 1e-3;
       const v = Math.sin(8 / d + t3) + Math.sin(a * 6 + t2);
       const k = (v + 2) / 4;
       const g = gly(k * (1 - d * 0.4));
       const c = mul(acc(env, (a * 3 | 0) % 3), 0.2 + k * bk);
-      for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++)
+      for (let yy = 0; yy < DS; yy++) for (let xx = 0; xx < DS; xx++)
         px(eng, x + xx, y + yy, g, c);
     }
   });
@@ -507,7 +513,7 @@
     if (this.src.length === 0) this.src.push({ x: C / 2, y: R / 2, a: 0 });
     for (const s of this.src) s.a += 0.04;
     this.src = this.src.filter((s) => s.a < 8);
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       let v = 0;
       for (const s of this.src) v += Math.sin(Math.hypot(x - s.x, (y - s.y) * 2) * 0.5 - s.a * 6) / (1 + s.a);
       const av = Math.abs(v);
@@ -565,7 +571,7 @@
   });
   const Hex = E('HEX ZOOM', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, zo = 6 + Math.sin(this.t * 0.6) * 4 + env.beat * 3;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const q = (x - C / 2) / zo, r = (y - R / 2) / zo * 1.6;
       const hx = Math.abs(((q + r * 0.5) % 1 + 1) % 1 - 0.5) + Math.abs(((r) % 1 + 1) % 1 - 0.5);
       const v = 1 - hx;
@@ -586,7 +592,7 @@
   });
   const PlasTun = E('PLASMA TUNNEL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2), d = Math.hypot(dx, dy) + 1e-3;
       const u = 1 / d + this.t * 2, a = Math.atan2(dy, dx) * 3;
       const v = (Math.sin(u) + Math.sin(a + this.t) + Math.sin(u * 0.5 + a)) / 3;
@@ -614,7 +620,7 @@
       this._pw = C; this._phh = R;
       const ph = this._ph = new Float32Array(C * R);
       const ca = this._ca = new Float32Array(C * R);
-      for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+      for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
         const dx = x - C / 2, dy = (y - R / 2) * 2;
         const a = Math.atan2(dy, dx), d = Math.sqrt(dx * dx + dy * dy);
         const i = y * C + x;
@@ -622,7 +628,7 @@
       }
     }
     const ph = this._ph, ca = this._ca, t = this.t, bb = 0.7 + env.beat * 0.4;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const i = y * C + x, v = Math.sin(ph[i] - t * 4);
       if (v > 0) {
         const g = gly(v), c = mul(acc(env, ((ca[i] + t) | 0) % 3), 0.3 + v * bb);
@@ -641,7 +647,7 @@
       const z = 1 / ((y - hor) / (R - hor) + 0.04);
       const wz = z + this.t * 6;
       const col = mul(acc(env, 0), 0.3 + (1 - y / R) + env.beat * 0.3);
-      for (let x = 0; x < C; x += 2) {
+      for (let x = 0; x < C; x += DS) {
         const wx = (x - C / 2) * z * 0.06;
         if (((wx | 0) + (wz | 0)) & 1) {
           px(eng, x, y, '#', col, 600); px(eng, x + 1, y, '#', col, 600);
@@ -677,7 +683,7 @@
   });
   const Interf = E('INTERFERENCE', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const v = Math.sin(x * 0.3 + this.t * 2) + Math.sin(y * 0.4 - this.t) + Math.sin((x + y) * 0.2 + this.t * 1.5) + Math.sin(Math.hypot(x - C / 2, y - R / 2) * 0.25 - this.t * 3);
       const k = (v + 4) / 8;
       if (k > 0.35) {
@@ -753,7 +759,7 @@
   const Julia = E('JULIA', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, M = 20;          // 2x downsample + cap
     const cr = 0.355 + Math.sin(this.t * 0.3) * 0.2, ci = 0.355 + Math.cos(this.t * 0.21) * 0.2;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       let zr = (x / C - 0.5) * 3.2 / this.P.zoom, zi = (y / R - 0.5) * 2.6 / this.P.zoom, n = 0;
       while (n < M && zr * zr + zi * zi < 4) { const t = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t; n++; }
       if (n < M) {
@@ -797,7 +803,7 @@
   });
   const PolarSwirl = E('POLAR SWIRL', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const dx = x - C / 2, dy = (y - R / 2) * 2, a = Math.atan2(dy, dx), d = Math.hypot(dx, dy);
       const v = Math.sin(a * 5 * this.P.dir + d * 0.2 - this.t * 4);
       if (v > 1 - this.P.dens) {
@@ -838,9 +844,9 @@
   });
   const Glitch = E('DATAMOSH', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let y = 0; y < R; y += 2) {
+    for (let y = 0; y < R; y += DS) {
       const sh = (Math.sin(y * 0.3 + this.t * 6) * 14 * (0.3 + env.beat) * this.P.amp) | 0;
-      for (let x = 0; x < C; x += 2) {
+      for (let x = 0; x < C; x += DS) {
         const v = (((x + sh) ^ y) + (this.t * 10 | 0)) & 15;
         const g = gly(v / 15), c = mul(acc(env, (sh & 3) % 3), 0.25 + v / 15 * (0.6 + env.beat * 0.5));
         px(eng, x, y, g, c); px(eng, x + 1, y, g, c);
@@ -866,7 +872,7 @@
     const C = eng.cols, R = eng.rows;
     const b = [[C / 2 + Math.sin(this.t) * C * 0.3, R / 2 + Math.cos(this.t * 1.3) * R * 0.3],
     [C / 2 + Math.cos(this.t * 0.8) * C * 0.3, R / 2 + Math.sin(this.t * 1.1) * R * 0.3]];
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const dx = (x - C / 2) / (C / 2), dy = (y - R / 2) / (R / 2), d = Math.hypot(dx, dy) + 1e-3;
       let s = Math.sin(1 / d * 1.4 + this.t * 2);
       for (const [bx, by] of b) s += 16 / (Math.hypot(x - bx, (y - by) * 2) + 1);
@@ -919,7 +925,7 @@
   });
   const SinScrollDots = E('SINE DOTS', null, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    for (let x = 0; x < C; x += 2) {
+    for (let x = 0; x < C; x += DS) {
       const y = R / 2 + Math.sin(x * 0.12 + this.t * 3 * this.P.dir) * R * 0.3 * this.P.amp
         + Math.sin(x * 0.05 - this.t * 2) * R * 0.12;
       px(eng, x, y, '@', mul(acc(env, (x / 6 | 0) % 3), 0.5 + env.beat * 0.5), 300);
@@ -945,16 +951,16 @@
     const F = [0.08, 0.152, 0.2888, 0.54872];
     const sx = (this._sx && this._sx.length >= C) ? this._sx
       : (this._sx = new Float64Array(C));
-    for (let x = 0; x < C; x += 2) {
+    for (let x = 0; x < C; x += DS) {
       let s = 0;
       for (let o = 0; o < 4; o++) s += Math.sin(x * F[o] + t);
       sx[x] = s;
     }
     const c0 = acc(env, 0), c1 = acc(env, 1), bb = 0.3 + env.beat * 0.3;
-    for (let y = 0; y < R; y += 2) {
+    for (let y = 0; y < R; y += DS) {
       let sy = 0;
       for (let o = 0; o < 4; o++) sy += Math.sin(y * F[o] * 1.3 - t * 1.1);
-      for (let x = 0; x < C; x += 2) {
+      for (let x = 0; x < C; x += DS) {
         const v = sx[x] + sy;
         const k = (v + 8) / 16;
         const g = gly(k), c = mul(lerpC(c0, c1, (Math.sin(v) + 1) / 2), bb + k);
@@ -1083,7 +1089,7 @@
     const b = [];
     for (let i = 0; i < 4; i++) b.push([C / 2 + Math.sin(t * (0.8 + i * 0.3) + i) * C * 0.32,
     R / 2 + Math.cos(t * (1.1 + i * 0.2) + i * 2) * R * 0.32, 18 + i * 6]);
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       let s = 0, gx = 0, gy = 0;
       for (const [bx, by, m] of b) { const dd = Math.hypot(x - bx, (y - by) * 2) + 1; s += m / dd; gx += (x - bx) / (dd * dd); gy += (y - by) / (dd * dd); }
       if (s > 1.0) {
@@ -1100,7 +1106,7 @@
   }, function (eng, env) {
     const C = eng.cols, R = eng.rows, M = 24;          // 2x downsample
     const zoom = Math.pow(1.6, (this.t * 0.5) % 14) * (1 + env.mv);
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 2) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       const cr = this.c[0] + (x / C - 0.5) * 3 / zoom, ci = this.c[1] + (y / R - 0.5) * 2.4 / zoom;
       let zr = 0, zi = 0, k = 0;
       while (k < M && zr * zr + zi * zi < 4) { const tt = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = tt; k++; }
@@ -1550,7 +1556,7 @@
       PY[i] = R / 2 + Math.sin(q.a + t * q.sp) * R * q.r;
     }
     const ce = mul(acc(env, 2), 0.6 + env.beat * 0.4);   // edge colour: hoisted
-    for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       let b = 1e9, b2 = 1e9, bi = 0;
       for (let i = 0; i < N; i++) {
         const ddx = x - PX[i], ddy = y - PY[i];
@@ -1560,7 +1566,7 @@
       const edge = (Math.sqrt(b2) - Math.sqrt(b)) < 2.6;
       const g = edge ? '#' : gly(0.3 + (bi / 7));
       const c = edge ? ce : mul(acc(env, bi % 3), 0.18 + env.beat * 0.18);
-      for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++) px(eng, x + xx, y + yy, g, c);
+      for (let yy = 0; yy < DS; yy++) for (let xx = 0; xx < DS; xx++) px(eng, x + xx, y + yy, g, c);
     }
   });
   const BurnShip = E('BURNING SHIP', function () { this.cx = -1.755; this.cy = -0.03; }, function (eng, env) {
@@ -1568,7 +1574,7 @@
     const zoom = 0.5 + (Math.sin(this.t * 0.15) * 0.5 + 0.5) * (40 + env.mv * 30);
     const sxc = 3 / zoom, syc = 2.4 / zoom, iC = 1 / C, iR = 1 / R;
     const cx = this.cx, cy = this.cy, bb = 0.3 + env.beat * 0.3;
-    for (let y = 0; y < R; y += 4) for (let x = 0; x < C; x += 4) {
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
       let zr = 0, zi = 0, k = 0;
       const cr = cx + (x * iC - 0.5) * sxc, ci = cy + (y * iR - 0.5) * syc;
       while (k < M && zr * zr + zi * zi < 4) {
@@ -1578,7 +1584,7 @@
       }
       if (k < M) {
         const g = gly(k / M), c = mul(acc(env, k % 3), bb + k / M);
-        for (let yy = 0; yy < 4; yy++) for (let xx = 0; xx < 4; xx++)
+        for (let yy = 0; yy < DS; yy++) for (let xx = 0; xx < DS; xx++)
           px(eng, x + xx, y + yy, g, c);
       }
     }
@@ -1680,9 +1686,9 @@
     const C = eng.cols, R = eng.rows, a = this.t * 0.5 * this.P.dir;
     const z = 0.6 + Math.sin(this.t * 0.3) * 0.35 * this.P.zoom;
     const ca = Math.cos(a) * z, sa = Math.sin(a) * z, cx = C / 2, cy = R / 2;
-    for (let y = 0; y < R; y += 2) {
+    for (let y = 0; y < R; y += DS) {
       let u = (-cx) * ca - (y - cy) * sa, v = (-cx) * sa + (y - cy) * ca;
-      for (let x = 0; x < C; x += 2) {
+      for (let x = 0; x < C; x += DS) {
         const tex = (((u | 0) ^ (v | 0)) & 12);
         const g = tex ? '#' : '+';
         const col = mul(acc(env, tex ? 0 : 1), 0.32 + (tex ? 0.45 : 0.12) + env.beat * 0.4);
@@ -1698,9 +1704,9 @@
     const t1 = (this.t * 70 * sp) | 0, t2 = (this.t * 48 * sp) | 0;
     const f1 = (5 + P.k1 * 5) | 0, f2 = (4 + P.k2 * 5) | 0, fy = (8 + P.k1 * 6) | 0;
     const c0 = acc(env, 0), c1 = acc(env, 1), bb = 0.3 + env.beat * 0.3;
-    for (let y = 0; y < R; y += 2) {
+    for (let y = 0; y < R; y += DS) {
       const sy = SLUT[(y * fy + t2) & 1023];
-      for (let x = 0; x < C; x += 2) {
+      for (let x = 0; x < C; x += DS) {
         const v = SLUT[(x * f1 + t1) & 1023] + sy + SLUT[((x + y) * f2 - t1) & 1023];
         const k = (v + 3) / 6;
         const g = gly(k), c = mul(lerpC(c0, c1, (SLUT[((v * 150) | 0) & 1023] + 1) / 2), bb + k);
@@ -2026,7 +2032,7 @@
   const BoingShadow = E('BOING SHADOW', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, T = env.t;       // smooth time -> no jerk
     const fl = R * 0.82;                                // floor line
-    for (let y = 0; y < R; y += 2) for (let x = 0; x < C; x += 4) px(eng, x, y, '+', mul(acc(env, 1), 0.12), 800);
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) px(eng, x, y, '+', mul(acc(env, 1), 0.12), 800);
     const rr = Math.min(C * 0.12, R * 0.28);
     const hgt = Math.abs(Math.sin(T * 2.2 * this.P.spd));   // 0 floor .. 1 top
     const cx = C / 2 + Math.sin(T * 1.0 * this.P.dir) * C * 0.30;
