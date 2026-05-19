@@ -84,7 +84,7 @@
         let fx = this.px + 1.5 + i * 1.2, fz = this.pz, a = 0.6 + i * 2;
         for (let ti = 0; ti < 16; ti++) {
           const tx = this.px + Math.cos(a) * (1.5 + i), tz = this.pz + Math.sin(a) * (1.5 + i);
-          if (this._clear(tx, tz, 0.42)) { fx = tx; fz = tz; break; }
+          if (this._clear(tx, tz, 0.6)) { fx = tx; fz = tz; break; }
           a += 1.3;
         }
         this.foes.push({ x: fx, z: fz, ang: a, ph: Math.random() * 6,
@@ -123,8 +123,8 @@
         if (fwd > 0.4 && fwd < Math.min(wd, 7) && Math.abs(lat) < 0.7) {
           f.hit = 1;
           const kx = f.x + ca * 0.6, kz = f.z + sa * 0.6;
-          if (this._clear(kx, f.z, 0.42)) f.x = kx;
-          if (this._clear(f.x, kz, 0.42)) f.z = kz;
+          if (this._clear(kx, f.z, 0.6)) f.x = kx;
+          if (this._clear(f.x, kz, 0.6)) f.z = kz;
         }
       }
       this.spark = { x: this.px + ca * Math.min(wd, 7), z: this.pz + sa * Math.min(wd, 7), t: 1 };
@@ -155,17 +155,17 @@
         let da = Math.atan2(this.pz - f.z, this.px - f.x) - f.ang;
         while (da > Math.PI) da -= 6.283;
         while (da < -Math.PI) da += 6.283;
-        f.ang += da * 0.6 * dt + (Math.random() - 0.5) * 0.7 * dt;
+        f.ang += da * 0.4 * dt + (Math.random() - 0.5) * 0.7 * dt;
         let ffx = Math.cos(f.ang), ffz = Math.sin(f.ang);
-        if (!this._clear(f.x + ffx * 0.6, f.z + ffz * 0.6, 0.42)) {
+        if (!this._clear(f.x + ffx * 0.6, f.z + ffz * 0.6, 0.6)) {
           const lp = this._foeProbe(f, f.ang - 1.2), rp = this._foeProbe(f, f.ang + 1.2);
           f.ang += (lp > rp ? -1 : 1) * 2.4 * dt + 0.7;
           ffx = Math.cos(f.ang); ffz = Math.sin(f.ang);
         }
         const fsp = f.sp * dt;
         let fm = 0;
-        if (this._clear(f.x + ffx * fsp, f.z, 0.42)) { f.x += ffx * fsp; fm += Math.abs(ffx * fsp); }
-        if (this._clear(f.x, f.z + ffz * fsp, 0.42)) { f.z += ffz * fsp; fm += Math.abs(ffz * fsp); }
+        if (this._clear(f.x + ffx * fsp, f.z, 0.6)) { f.x += ffx * fsp; fm += Math.abs(ffx * fsp); }
+        if (this._clear(f.x, f.z + ffz * fsp, 0.6)) { f.z += ffz * fsp; fm += Math.abs(ffz * fsp); }
         f._st = fm < 1e-4 ? (f._st || 0) + dt : 0;
         if (f._st > 0.6) { f.ang += 1.9; f._st = 0; }
         if (this.balls.length < 5 && Math.random() < 0.4 * dt) {
@@ -177,7 +177,7 @@
           for (let ti = 0; ti < 12; ti++) {
             const a = this.ang + (Math.random() - 0.5) * 1.4, r = 2 + Math.random() * 1.6;
             const rx = this.px + Math.cos(a) * r, rz = this.pz + Math.sin(a) * r;
-            if (this._clear(rx, rz, 0.42)) { f.x = rx; f.z = rz; f.ang = a; f._st = 0; break; }
+            if (this._clear(rx, rz, 0.6)) { f.x = rx; f.z = rz; f.ang = a; f._st = 0; break; }
           }
         }
       }
