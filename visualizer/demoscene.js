@@ -2103,14 +2103,31 @@
     }
   });
   const TextRing = E('TEXT RINGS', function () { this.w = SONG_WORD(); }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, w = this.w, n = w.length;
-    for (let i = 0; i < 6; i++) {
-      const z = (((i * 1.4 - this.t * 2 * this.P.spd) % 9) + 9) % 9 + 0.7;
-      const rr = (C * 0.42) / z, yr = R * 0.42 / z;
+    const C = eng.cols, R = eng.rows, w = this.w, n = w.length || 1;
+    const cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    const rings = 8, pulse = 1 + env.beat * 0.3;
+    // a tumbling 3D gyroscope of word-rings: each ring tilts/yaws on its
+    // own axis, alternates spin direction, depth-shaded + beat-pulsed.
+    for (let i = 0; i < rings; i++) {
+      const dir = (i & 1) ? -1 : 1;
+      const r = (3.4 + i * 1.7) * pulse;
+      const ax = Math.sin(t * 0.4 + i * 0.8) * 1.2;
+      const ay = t * 0.25 * dir + i * 0.5;
+      const cax = Math.cos(ax), sax = Math.sin(ax);
+      const cay = Math.cos(ay), say = Math.sin(ay);
+      const spin = t * dir * (0.7 + i * 0.04);
       for (let k = 0; k < n; k++) {
-        const a = k / n * 6.283 + this.t * this.P.dir + i * 0.5;
-        px(eng, C / 2 + Math.cos(a) * rr, R / 2 + Math.sin(a) * yr, w[k],
-          mul(acc(env, i % 3), 0.25 + (1 - z / 9) * 0.7 + env.beat * 0.3), z);
+        const a = k / n * 6.283 + spin;
+        const x = Math.cos(a) * r, y = Math.sin(a) * r;
+        const y1 = y * cax, z1 = y * sax;            // tilt about X
+        const x2 = x * cay + z1 * say;               // yaw about Y
+        const z2 = -x * say + z1 * cay;
+        const d = z2 + 16;
+        if (d < 1) continue;
+        const p = 17 / d;
+        const br = 0.2 + Math.max(0, 1 - d / 30) * 0.75 + env.beat * 0.25;
+        px(eng, cx + x2 * p, cy + y1 * p * 0.6, w[k % n],
+          mul(acc(env, (i + (k & 1)) % 3), br), d);
       }
     }
   });
