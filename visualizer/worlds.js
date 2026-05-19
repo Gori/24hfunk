@@ -363,6 +363,7 @@
     note() { for (const co of this.coins) if (Math.abs(co.x - (this.sx + 4)) < 1.5) co.got = 0.4; },
     beat() { if (this.y <= 0.01) { this.vy = 7.2; } },
     overGap() { for (const g of this.gaps) if (Math.abs((this.sx + 4) - g) < 1.1) return true; return false; },
+    groundY(wx) { return ((hash2(Math.floor(wx / 7), 5) * 4) | 0) * 0.8; },  // stepped plateaus
     step(dt) {
       this.t += dt; this.sx += dt * 5.5; this.run = (this.run + dt * 14) % 4;
       // distinct stages: every 90 units is a new level (flash on entry)
@@ -402,11 +403,15 @@
         a[1] + (b[1] - a[1]) * k | 0, a[2] + (b[2] - a[2]) * k | 0];
       const camX = this.sx + 4;
       const LO = (this.level - 1) % 3;        // per-stage palette rotation
-      const skyHz = lrp(acc(env, LO), [255, 230, 195], 0.4);
-      const skyTop = scale(acc(env, 2 + LO), 0.18);
-      for (let s = 0; s < 11; s++) {
-        const k = s / 10, yy = 0.5 + k * 13;
-        eng.line3([camX - 42, yy, 30], [camX + 42, yy, 30], lrp(skyHz, skyTop, k), ':');
+      const skyHz = lrp(acc(env, LO), [255, 225, 185], 0.42);
+      const skyTop = lrp(scale(acc(env, 2 + LO), 0.16), [26, 16, 46], 0.55);
+      // FILLED dusk gradient backdrop — every cell, behind all geometry
+      // (deep moody top -> warm horizon). Shadow-of-the-Beast sky.
+      for (let r = 0; r < rows; r++) {
+        const k = r / (rows - 1);
+        const col = lrp(skyTop, skyHz, k * k);
+        const g = ' .,:'[Math.min(3, (k * 4) | 0)];
+        for (let sx = 0; sx < cols; sx++) eng.plot(sx, r, g, col, 950);
       }
       // parallax layers (far -> near). 'ground' unchanged from original.
       const layers = [
@@ -440,7 +445,12 @@
             }
           } else if (kind === 'ground') {
             const gap = this.gaps.some((g) => Math.abs(wx + 2 - g) < 2);
-            if (!gap) for (let xx = 0; xx < 4; xx += 0.5) eng.line3([wx + xx, 0, pz], [wx + xx, -1, pz], colr, '=');
+            if (!gap) {
+              const gy = this.groundY(wx);                       // plateau height
+              eng.line3([wx, gy, pz], [wx + 4, gy, pz], colr, '=');
+              for (let yy = gy - 0.5; yy > -1.4; yy -= 0.6)
+                eng.line3([wx, yy, pz], [wx + 4, yy, pz], scale(colr, 0.45), '#');
+            }
           } else {
             if (hash2(wx, 21) < 0.4) {
               eng.line3([wx, -1, pz], [wx + 2, 1.4, pz], colr, '|');
@@ -453,7 +463,7 @@
         scale(env.pal.fg, 0.55 + this.flash * 0.45));
       for (const co of this.coins) {
         if (co.x < this.sx - 2 || co.x > this.sx + 30) continue;
-        eng.sprite(co.x, co.y + 0.5, 3.4, co.got ? ['*'] : ['o'],
+        eng.sprite(co.x, this.groundY(co.x) + co.y + 0.5, 3.4, co.got ? ['*'] : ['o'],
           co.got ? acc(env, 2) : acc(env, 0), 0.7);
       }
       const fr = this.run | 0;
