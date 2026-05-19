@@ -1813,138 +1813,6 @@
     }
   };
 
-  // ── STORM — dense flickering sky, several overlapping bolts always
-  //    crackling, a fresh burst on each drum hit.
-  const Storm = E('STORM', function () { this.b = []; this.flk = 0; this.hh = 0; },
-    function (eng, env) {
-      const C = eng.cols, R = eng.rows;
-      this.hh = Math.max(0, (this.hh || 0) - 0.05);
-      this.flk = Math.max(0, (this.flk || 0) - 0.07);
-      const sky = 0.04 + this.flk * 0.5 + (env.beat || 0) * 0.1;
-      for (let y = 0; y < R; y++)
-        eng.hspan(y, 0, C - 1, '.', mul(acc(env, 2), sky * (0.55 - y / R * 0.3)), 870);
-      if (!this.b) this.b = [];
-      const drum = Math.max(this.hh, (this.bt || 0) * 0.5);
-      if (this.b.length < 7 && (drum > 0.2 || Math.random() < 0.04 + (env.beat || 0) * 0.18)) {
-        const s = 0.3 + drum;
-        this.b.push({ seg: boltField(eng, 1 + (s * 3 | 0), { maxd: 3, spread: 0.85 }), l: 1 });
-        this.flk = Math.min(1, this.flk + 0.35 + drum * 0.5);
-        this.hh = 0;
-      }
-      for (let i = this.b.length - 1; i >= 0; i--) {
-        const o = this.b[i]; o.l -= 0.06;
-        if (o.l <= 0) { this.b.splice(i, 1); continue; }
-        drawBolt(eng, o.seg, o.l, env);
-      }
-    });
-  Storm.note = function (n) {
-    this.nt = 1;
-    if (n && n.ch === 9) this.hh = Math.max(this.hh || 0, (n.vel || 0.7) * (n.pitch === 36 ? 1.2 : 0.7));
-  };
-
-  // ── STRIKE — dark/idle, then ONE colossal bolt slams down on the
-  //    kick/downbeat with a blinding white flash + a few forks.
-  const Strike = E('STRIKE', function () {
-    this.seg = []; this.life = 0; this.fl = 0; this.cd = 0; this.kk = 0;
-  }, function (eng, env) {
-    this.cd = Math.max(0, this.cd - 0.03);
-    this.kk = Math.max(0, (this.kk || 0) - 0.07);
-    const big = Math.max(this.kk, this._bi === 0 ? (this.bt || 0) : 0);
-    if (this.cd <= 0 && (big > 0.45 || (this.life <= 0 && env.beat > 1.05))) {
-      this.seg = boltField(eng, 1, { maxd: 4, spread: 0.32, len: 4.5 + Math.random() * 2, ms: 80, cap: 640 })
-        .concat(boltField(eng, 2, { maxd: 2, spread: 1.2 }));
-      this.life = 1; this.fl = 1; this.cd = 0.42 + Math.random() * 0.5;
-    }
-    this.life = Math.max(0, this.life - 0.04);
-    this.fl = Math.max(0, this.fl - 0.16);
-    boltFlash(eng, env, this.fl);
-    drawBolt(eng, this.seg, this.life, env, [255, 250, 235]);
-  });
-  Strike.note = function (n) {
-    this.nt = 1;
-    if (n && n.ch === 9 && (n.pitch === 36 || n.pitch === 35)) this.kk = Math.max(this.kk || 0, n.vel || 0.8);
-  };
-
-  // ── TESLA — central coil shooting branching arcs radially outward,
-  //    a fresh fan of arcs on every drum hit.
-  const Tesla = E('TESLA', function () { this.arc = []; this.hh = 0; },
-    function (eng, env) {
-      const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2;
-      this.hh = Math.max(0, (this.hh || 0) - 0.05);
-      if (!this.arc) this.arc = [];
-      const cr = 1 + (env.beat || 0) * 2.2;
-      for (let a = 0; a < 6.28; a += 0.4)
-        px(eng, cx + Math.cos(a) * cr, cy + Math.sin(a) * cr, '#',
-          mul([235, 242, 255], 0.45 + (env.beat || 0) * 0.55), 200);
-      const drum = Math.max(this.hh, (this.bt || 0) * 0.5);
-      if (drum > 0.18 && this.arc.length < 9) {
-        const base = Math.random() * 6.28, nn = 2 + (drum * 4 | 0);
-        for (let i = 0; i < nn; i++)
-          this.arc.push({
-            seg: boltField(eng, 1, {
-              ox: cx, oy: cy, ang: base + i / nn * 6.28 + (Math.random() - 0.5),
-              spread: 0.5, len: 2.6 + Math.random() * 2, maxd: 2, ms: 12
-            }), l: 1
-          });
-        this.hh = 0;
-      }
-      for (let i = this.arc.length - 1; i >= 0; i--) {
-        const o = this.arc[i]; o.l -= 0.07;
-        if (o.l <= 0) { this.arc.splice(i, 1); continue; }
-        drawBolt(eng, o.seg, o.l, env);
-      }
-    });
-  Tesla.note = function (n) {
-    this.nt = 1;
-    if (n && n.ch === 9) this.hh = Math.max(this.hh || 0, (n.vel || 0.7) * (n.pitch === 36 ? 1.2 : 0.7));
-  };
-
-  // ── CHAIN — glowing nodes; on the snare/accent a bolt arcs node→node
-  //    in a zig-zag across the screen.
-  const Chain = E('CHAIN', function () { this.nd = []; this.ch = []; this.hh = 0; },
-    function (eng, env) {
-      const C = eng.cols, R = eng.rows;
-      if (!this.nd || !this.nd.length) {
-        this.nd = [];
-        for (let i = 0; i < 11; i++) this.nd.push([C * (0.08 + Math.random() * 0.84), R * (0.12 + Math.random() * 0.76)]);
-      }
-      if (!this.ch) this.ch = [];
-      this.hh = Math.max(0, (this.hh || 0) - 0.05);
-      for (const p of this.nd) px(eng, p[0], p[1], 'o', mul(acc(env, 1), 0.28 + (env.beat || 0) * 0.45), 300);
-      const trig = Math.max(this.hh, (this.bt || 0) * 0.5);
-      if (trig > 0.25 && this.ch.length < 5) {
-        const order = [], used = {}; let cur = (Math.random() * this.nd.length) | 0;
-        const hops = 4 + (trig * 3 | 0);
-        for (let k = 0; k < hops; k++) {
-          order.push(cur); used[cur] = 1;
-          let nx = cur, g = 0;
-          do { nx = (Math.random() * this.nd.length) | 0; } while (used[nx] && g++ < 8);
-          cur = nx;
-        }
-        const seg = [];
-        for (let k = 0; k < order.length - 1; k++) {
-          const a = this.nd[order[k]], b = this.nd[order[k + 1]];
-          seg.push([a[0], a[1], b[0], b[1], 0]);
-        }
-        this.ch.push({ seg, l: 1 });
-        this.hh = 0;
-      }
-      for (let i = this.ch.length - 1; i >= 0; i--) {
-        const o = this.ch[i]; o.l -= 0.06;
-        if (o.l <= 0) { this.ch.splice(i, 1); continue; }
-        drawBolt(eng, o.seg, o.l, env);
-      }
-    });
-  Chain.note = function (n) {
-    this.nt = 1;
-    if (n && n.ch === 9) this.hh = Math.max(this.hh || 0, (n.vel || 0.7) * ((n.pitch === 38 || n.pitch === 40) ? 1.25 : 0.55));
-  };
-
-  // expose the toolkit for the global music-reactive overlay (render.js)
-  window.Worlds = window.Worlds || {};
-  window.Worlds.boltField = boltField;
-  window.Worlds.drawBolt = drawBolt;
-  window.Worlds.boltFlash = boltFlash;
   const Hilb = E('HILBERT', function () {
     const order = 5, n = 1 << order, N = n * n, pts = [];
     for (let s = 0; s < N; s++) {
@@ -2327,7 +2195,7 @@
     KineticType, Turmites, MazeGrow, Scope, Sand, Raymarch, Boids, Harmono,
     Mandala, CodeHall, WireRidge, BallPit, DLA, Plume, PendWave, Tesseract,
     Radar, Truchet, Voronoi, BurnShip,
-    RotoTex, LutPlasma, FracTree, Bolt, Storm, Strike, Tesla, Chain, Hilb, Rule30, Brain, Spiro,
+    RotoTex, LutPlasma, FracTree, Bolt, Hilb, Rule30, Brain, Spiro,
     VecTun, HyperJump, PhongCube, MetaDiscs, Donut, WaveTerr,
     PFire, Shutter, GravWell, BoingShadow, TextRing, Elite, AsmHall,
   ];
