@@ -385,21 +385,57 @@
         _dpitch = fx.dpitch, _droll = fx.droll, _dx = fx.dx, _dy = fx.dy;
       fx.dfov = 0; fx.dz = 0; fx.dyaw = 0; fx.dpitch = 0;
       fx.droll = 0; fx.dx = 0; fx.dy = 0;
-      // parallax layers (far -> near) via depth planes
-      const layers = [[18, acc(env, 2), 0.25, 'mountains'], [10, acc(env, 1), 0.5, 'city'], [3.5, env.pal.fg, 1, 'ground']];
+      // INCREMENT 1 — dusk sky gradient + deeper multi-layer parallax.
+      // ground/coins/hero are byte-identical to the working original;
+      // every new layer uses ONLY line3 (no sprite art) so the prior
+      // undefined-art crash class cannot recur.
+      const lrp = (a, b, k) => [a[0] + (b[0] - a[0]) * k | 0,
+        a[1] + (b[1] - a[1]) * k | 0, a[2] + (b[2] - a[2]) * k | 0];
+      const camX = this.sx + 4;
+      const skyHz = lrp(acc(env, 0), [255, 230, 195], 0.4);
+      const skyTop = scale(acc(env, 2), 0.18);
+      for (let s = 0; s < 11; s++) {
+        const k = s / 10, yy = 0.5 + k * 13;
+        eng.line3([camX - 42, yy, 30], [camX + 42, yy, 30], lrp(skyHz, skyTop, k), ':');
+      }
+      // parallax layers (far -> near). 'ground' unchanged from original.
+      const layers = [
+        [24, scale(env.pal.fg, 0.18), 0.12, 'ridge'],
+        [18, acc(env, 2), 0.25, 'mountains'],
+        [11, scale(env.pal.fg, 0.30), 0.45, 'hills'],
+        [3.5, env.pal.fg, 1, 'ground'],
+        [2.0, scale(env.pal.fg, 0.12), 1.4, 'fore'],
+      ];
       for (const [pz, colr, par, kind] of layers) {
         for (let i = -2; i < 40; i++) {
           const wx = Math.floor((this.sx * par) / 4) * 4 + i * 4;
-          if (kind === 'mountains') {
+          if (kind === 'ridge') {
+            const hh = 5 + 3 * vnoise(wx * 0.12, 9);
+            eng.line3([wx, 0, pz], [wx + 3, hh, pz], colr, '/');
+            eng.line3([wx + 3, hh, pz], [wx + 6, 0, pz], colr, '\\');
+          } else if (kind === 'mountains') {
             const hh = 3 + 2 * vnoise(wx * 0.2, 0);
             eng.line3([wx, 0, pz], [wx + 2, hh, pz], scale(colr, 0.4), '/');
             eng.line3([wx + 2, hh, pz], [wx + 4, 0, pz], scale(colr, 0.4), '\\');
-          } else if (kind === 'city') {
-            const bh = 2 + 3 * hash2(wx, 7);
-            for (let yy = 0; yy < bh; yy += 0.5) eng.line3([wx, yy, pz], [wx + 2.4, yy, pz], scale(colr, 0.55), '#');
-          } else {
+          } else if (kind === 'hills') {
+            const r = hash2(wx, 7);
+            if (r < 0.5) {
+              const hh = 1.6 + r * 2;
+              eng.line3([wx, 0, pz], [wx + 1.5, hh, pz], scale(colr, 0.8), '/');
+              eng.line3([wx + 1.5, hh, pz], [wx + 3, 0, pz], scale(colr, 0.8), '\\');
+              eng.line3([wx, 0, pz], [wx + 3, 0, pz], scale(colr, 0.8), '_');
+            } else if (r < 0.78) {
+              eng.line3([wx + 1, 0, pz], [wx + 2.4, 0.9, pz], scale(colr, 0.7), '(');
+              eng.line3([wx + 2.4, 0.9, pz], [wx + 3.8, 0, pz], scale(colr, 0.7), ')');
+            }
+          } else if (kind === 'ground') {
             const gap = this.gaps.some((g) => Math.abs(wx + 2 - g) < 2);
             if (!gap) for (let xx = 0; xx < 4; xx += 0.5) eng.line3([wx + xx, 0, pz], [wx + xx, -1, pz], colr, '=');
+          } else {
+            if (hash2(wx, 21) < 0.4) {
+              eng.line3([wx, -1, pz], [wx + 2, 1.4, pz], colr, '|');
+              eng.line3([wx + 2, 1.4, pz], [wx + 4, -1, pz], colr, '|');
+            }
           }
         }
       }
