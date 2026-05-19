@@ -748,9 +748,12 @@
   const Spectrum = E('SPECTRUM', function () { this.bars = new Float32Array(64); }, function (eng, env) {
     const C = eng.cols, R = eng.rows, n = 48;
     for (let i = 0; i < n; i++) {
-      const tgt = (0.2 + 0.8 * Math.abs(Math.sin(i * 0.5 + this.t * 4 * this.P.spd))) * (0.4 + env.energy + env.beat);
+      // bound the music term so bars never pin at full height (env.energy+
+      // env.beat can stack to ~3 -> every bar saturated to the ceiling).
+      const amp = 0.35 + Math.min(1.05, env.energy * 0.5 + env.beat * 0.45);
+      const tgt = (0.2 + 0.8 * Math.abs(Math.sin(i * 0.5 + this.t * 4 * this.P.spd))) * amp;
       this.bars[i] += (tgt - this.bars[i]) * 0.3;
-      const h = Math.min(R - 1, this.bars[i] * R * 0.8) | 0;
+      const h = Math.min(R - 1, this.bars[i] * R * 0.6) | 0;
       const bx = (i / n * C) | 0, bw = (C / n) | 0;
       for (let y = 0; y < h; y++) for (let w = 0; w < bw - 1; w++)
         px(eng, bx + w, R - 1 - y, gly(0.4 + y / h * 0.6), mul(acc(env, y > h * 0.7 ? 2 : 0), 0.4 + y / h));
@@ -938,7 +941,10 @@
       for (let x = 0; x < C; x++) {
         const wx = (x - C / 2) * d * 0.04, wz = d + this.t * 5 * this.P.spd;
         const h = (Math.sin(wx * 0.3) + Math.sin(wz * 0.2) + Math.sin((wx + wz) * 0.15)) * this.P.amp;
-        const sy = (R * 0.55 - h * R * 0.16 / d * 6) | 0;
+        // clamp: a near spike that shot off the top used to be skipped by
+        // the sy>=0 guard, leaving a gap that read as "camera under the hill"
+        let sy = (R * 0.55 - h * R * 0.16 / d * 6) | 0;
+        if (sy < 1) sy = 1;
         if (sy < yb[x] && sy >= 0) { for (let y = sy; y < yb[x]; y++) px(eng, x, y, gly(Math.max(0.1, 1 - d / 38)), mul(acc(env, h > 0.5 ? 2 : 0), 0.3 + (1 - d / 40)), d); yb[x] = sy; }
       }
     }
