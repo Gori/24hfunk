@@ -2657,7 +2657,7 @@
     if (this.bt > 0.5 && this._tm > 3 && this._gen) { this._rects = this._gen(); this._tm = 0; }
     for (const rr of this._rects) {
       const x0 = rr[0] * C | 0, y0 = rr[1] * R | 0, x1 = (rr[0] + rr[2]) * C | 0, y1 = (rr[1] + rr[3]) * R | 0, cv = rr[4];
-      const c = cv < 0.18 ? acc(env, 0) : cv < 0.34 ? acc(env, 1) : cv < 0.5 ? acc(env, 2) : scale(env.pal.fg, 0.12);
+      const c = cv < 0.18 ? acc(env, 0) : cv < 0.34 ? acc(env, 1) : cv < 0.5 ? acc(env, 2) : mul(env.pal.fg, 0.12);
       for (let y = y0; y < y1 && y < R; y++) for (let x = x0; x < x1 && x < C; x++) {
         const edge = (x <= x0 || x >= x1 - 1 || y <= y0 || y >= y1 - 1);
         px(eng, x, y, edge ? '#' : gly(0.5), edge ? env.pal.fg : mul(c, 0.6 + env.beat * 0.2), 400);
