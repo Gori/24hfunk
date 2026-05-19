@@ -2336,22 +2336,6 @@
       }
     }
   });
-  const TextCrawl = E('3D TEXT CRAWL', function () { this.s = (SONG_WORD() + '   ').repeat(6); },
-    function (eng, env) {
-      const C = eng.cols, R = eng.rows, cx = C / 2, s = this.s || 'STR   ', n = s.length, t = this.t * this.P.spd;
-      const vy = R * 0.22;
-      for (let li = 0; li < 14; li++) {
-        const prog = ((t * 0.5 + li / 14) % 1);
-        const yy = R - prog * (R - vy), sc = 1.6 * (1 - prog) + 0.06;
-        for (let k = 0; k < n; k++) {
-          const ch = s[(k + li * 7) % n];
-          if (ch === ' ') continue;
-          const X = cx + (k - n / 2) * sc * 1.2;
-          if (X < 0 || X >= C) continue;
-          px(eng, X, yy, ch, mul(acc(env, li % 3), 0.2 + (1 - prog) * 0.8 + env.beat * 0.2), 200 + li);
-        }
-      }
-    });
   const Planet = E('ASCII PLANET', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
     const rad = Math.min(C * 0.22, R * 0.42), spin = t * 0.5;
@@ -2502,6 +2486,124 @@
         mul(acc(env, 2), 0.2 + i / this.tr.length * 0.7 + env.beat * 0.2), 100);
   });
 
+  // ─────────── NEW BATCH 4 — generative-art ───────────
+  const DomainWarp = E('DOMAIN WARP', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd * 0.4;
+    const fbm = (x, y) => {
+      let s = 0, a = 0.5, fx = x, fy = y;
+      for (let o = 0; o < 3; o++) { s += a * Math.sin(fx * 1.3 + t) * Math.cos(fy * 1.1 - t * 0.7); fx *= 2; fy *= 2; a *= 0.5; }
+      return s;
+    };
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
+      const u = x * 0.05, v = y * 0.09;
+      const q1 = fbm(u, v), q2 = fbm(u + 5.2 + q1, v + 1.3 + q1), r = fbm(u + 2.8 + q2, v + 9.2 + q2);
+      const k = (r + 1) / 2, g = gly(k), c = mul(acc(env, (((r * 2) | 0) % 3 + 3) % 3), 0.3 + k * 0.7 + env.beat * 0.2);
+      for (let yy = 0; yy < DS; yy++) for (let xx = 0; xx < DS; xx++) px(eng, x + xx, y + yy, g, c, 500);
+    }
+  });
+  const Apollon = E('APOLLONIAN GASKET', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    const circ = (x, y, r, depth, ci) => {
+      if (r < 1.5 || depth > 5) return;
+      for (let a = 0; a < 6.283; a += 1 / r + 0.04)
+        px(eng, x + Math.cos(a) * r, y + Math.sin(a) * r * 0.55, '.',
+          mul(acc(env, (depth + ci) % 3), 0.25 + (1 - depth / 6) * 0.6 + env.beat * 0.2), 200 + depth);
+      const rr = r * 0.5;
+      for (let k = 0; k < 3; k++) {
+        const ang = t * 0.2 + k * 2.094;
+        circ(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr * 0.55, rr, depth + 1, ci + k);
+      }
+    };
+    circ(cx, cy, Math.min(C / 2, R) * 0.46, 0, 0);
+  });
+  const Sandpile = E('ABELIAN SANDPILE', function (eng) { this.g = new Int16Array(eng.cols * eng.rows); this.cnt = 0; },
+    function (eng, env) {
+      const C = eng.cols, R = eng.rows;
+      if (!this.g || this.g.length !== C * R) { this.g = new Int16Array(C * R); this.cnt = 0; }
+      const G = this.g, ci = ((R / 2) | 0) * C + ((C / 2) | 0);
+      const add = 3 + (env.beat > 0.5 ? 6 : 0);
+      G[ci] += add; this.cnt = (this.cnt || 0) + add;
+      for (let pass = 0; pass < 6; pass++) {
+        let any = false;
+        for (let y = 1; y < R - 1; y++) for (let x = 1; x < C - 1; x++) {
+          const i = y * C + x;
+          if (G[i] >= 4) { const q = (G[i] / 4) | 0; G[i] -= q * 4; G[i - 1] += q; G[i + 1] += q; G[i - C] += q; G[i + C] += q; any = true; }
+        }
+        if (!any) break;
+      }
+      if (this.cnt > C * R * 2) { G.fill(0); this.cnt = 0; }
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        const v = G[y * C + x];
+        if (v > 0) px(eng, x, y, v >= 3 ? '#' : v === 2 ? '+' : '.',
+          mul(acc(env, v % 3), 0.3 + Math.min(0.7, v * 0.22) + env.beat * 0.2), 300);
+      }
+    });
+  const LSystem = E('L-SYSTEM GARDEN', function () {
+    let s = 'X';
+    for (let i = 0; i < 4; i++) {
+      let o = '';
+      for (const ch of s) o += ch === 'X' ? 'F+[[X]-X]-F[-FX]+X' : ch === 'F' ? 'FF' : ch;
+      s = o;
+    }
+    this._ls = s;
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, s = this._ls || 'F';
+    const grow = (((this.t * this.P.spd * 0.12) % 1) * s.length * 1.4 | 0) + 60;
+    let x = C / 2, y = R - 2, a = -Math.PI / 2; const st = [];
+    const len = 0.85 + env.beat * 0.3;
+    for (let i = 0; i < grow && i < s.length; i++) {
+      const ch = s[i];
+      if (ch === 'F') {
+        const nx = x + Math.cos(a) * len, ny = y + Math.sin(a) * len;
+        LN(eng, x, y, nx, ny, '#', mul(acc(env, st.length % 3), 0.35 + 0.45 + env.beat * 0.2), 200);
+        x = nx; y = ny;
+      } else if (ch === '+') a += 0.42;
+      else if (ch === '-') a -= 0.42;
+      else if (ch === '[') st.push([x, y, a]);
+      else if (ch === ']') { const p = st.pop(); if (p) { x = p[0]; y = p[1]; a = p[2]; } }
+    }
+  });
+  const PenroseTile = E('PENROSE TILING', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd * 0.1;
+    for (let ring = 1; ring < 7; ring++) {
+      const cnt = ring * 5, rad = ring * Math.min(C / 2, R) * 0.085;
+      for (let k = 0; k < cnt; k++) {
+        const a = k / cnt * 6.283 + t + (ring % 2) * 0.31;
+        const x = cx + Math.cos(a) * rad, y = cy + Math.sin(a) * rad * 0.55, w = rad * 0.5;
+        const c = mul(acc(env, (ring + k) % 3), 0.3 + (1 - ring / 7) * 0.5 + env.beat * 0.2);
+        const d0 = [Math.cos(a + 1), Math.sin(a + 1)], d1 = [Math.cos(a + 2), Math.sin(a + 2)];
+        const v0 = [x - d0[0] * w, y - d0[1] * w * 0.55], v1 = [x + d1[0] * w * 0.6, y + d1[1] * w * 0.6 * 0.55];
+        const v2 = [x + d0[0] * w, y + d0[1] * w * 0.55], v3 = [x - d1[0] * w * 0.6, y - d1[1] * w * 0.6 * 0.55];
+        LN(eng, v0[0], v0[1], v1[0], v1[1], '/', c, 150); LN(eng, v1[0], v1[1], v2[0], v2[1], '\\', c, 150);
+        LN(eng, v2[0], v2[1], v3[0], v3[1], '/', c, 150); LN(eng, v3[0], v3[1], v0[0], v0[1], '\\', c, 150);
+      }
+    }
+  });
+  const Buddha = E('BUDDHABROT', function (eng) { this.acc = new Float32Array(eng.cols * eng.rows); },
+    function (eng, env) {
+      const C = eng.cols, R = eng.rows;
+      if (!this.acc || this.acc.length !== C * R) this.acc = new Float32Array(C * R);
+      const A = this.acc, SX = C * 0.32, SY = R * 0.62, OX = C * 0.62, OY = R * 0.5;
+      for (let s = 0; s < 400; s++) {
+        const cr = Math.random() * 3 - 2.1, ci = Math.random() * 2.4 - 1.2;
+        let zr = 0, zi = 0; const orbit = []; let esc = false;
+        for (let it = 0; it < 40; it++) {
+          const t2 = zr * zr - zi * zi + cr; zi = 2 * zr * zi + ci; zr = t2;
+          if (zr * zr + zi * zi > 4) { esc = true; break; }
+          orbit.push(zr, zi);
+        }
+        if (esc) for (let o = 0; o < orbit.length; o += 2) {
+          const x = (OX + orbit[o] * SX) | 0, y = (OY + orbit[o + 1] * SY) | 0;
+          if (x >= 0 && y >= 0 && x < C && y < R) A[y * C + x] += 1;
+        }
+      }
+      for (let i = 0; i < A.length; i++) A[i] *= 0.992;
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        const v = A[y * C + x];
+        if (v > 0.5) { const k = Math.min(1, v * 0.06); px(eng, x, y, gly(k), mul(acc(env, v > 6 ? 2 : 0), 0.25 + k * 0.7 + env.beat * 0.2), 400); }
+      }
+    });
+
   window.Worlds.FNT5 = FNT5;            // shared 5x7 font (render.js scroller)
   window.Worlds.demos = [
     Plasma, Roto, Stars, Copper, Bobs, Tunnel, Twister, Glenz, Boing,
@@ -2521,7 +2623,8 @@
     VecTun, HyperJump, PhongCube, MetaDiscs, Donut, WaveTerr,
     PFire, Shutter, GravWell, BoingShadow, TextRing, Elite, AsmHall,
     RubberVec, DotMorph, VBallSphere, PGlobe, Feedback, Kaleido,
-    InfZoom, TextCrawl, Planet, Menger, Bulb,
+    InfZoom, Planet, Menger, Bulb,
     Lorenz, Clifford, FlowField, Chladni, Phyllo, Fourier,
+    DomainWarp, Apollon, Sandpile, LSystem, PenroseTile, Buddha,
   ];
 })();
