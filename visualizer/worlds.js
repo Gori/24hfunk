@@ -353,180 +353,70 @@
   const Side = {
     title: 'STAGE 1-1',
     reset(eng) {
-      this.sx = 0; this.run = 0; this.vy = 0; this.y = 0; this.t = 0;
-      this.land = 0; this.stomp = 0;
-      this.coins = [];
-      for (let i = 0; i < 90; i++) this.coins.push({ x: 8 + i * 3.5 + Math.random() * 2, y: 1 + Math.random() * 2.5 });
+      this.sx = 0; this.run = 0; this.jump = 0; this.vy = 0; this.y = 0;
+      this.coins = []; this.t = 0;
+      for (let i = 0; i < 60; i++) this.coins.push({ x: 8 + i * 3.5 + Math.random() * 2, y: 1 + Math.random() * 2.5 });
       this.gaps = [];
-      for (let i = 0; i < 60; i++) this.gaps.push(20 + i * 11 + ((Math.random() * 4) | 0));
+      for (let i = 0; i < 30; i++) this.gaps.push(14 + i * 9 + ((Math.random() * 4) | 0));
     },
-    note() { for (const co of this.coins) if (Math.abs(co.x - (this.sx + 4)) < 1.6) co.got = 0.45; },
-    beat() {
-      if (this.y <= 0.01) this.vy = 7.4;
-      this._bp = 1;                                   // beat pulse (piranha/blocks)
-    },
+    note() { for (const co of this.coins) if (Math.abs(co.x - (this.sx + 4)) < 1.5) co.got = 0.4; },
+    beat() { if (this.y <= 0.01) { this.vy = 7.2; } },
     overGap() { for (const g of this.gaps) if (Math.abs((this.sx + 4) - g) < 1.1) return true; return false; },
     step(dt) {
       this.t += dt; this.sx += dt * 5.5; this.run = (this.run + dt * 14) % 4;
       if (this.y <= 0.01 && this.overGap()) this.vy = 7.0;
-      const wasAir = this.y > 0.05;
       this.vy -= 22 * dt; this.y += this.vy * dt;
-      if (this.y < 0) { this.y = 0; this.vy = 0; if (wasAir) this.land = 1; }
-      this.land = Math.max(0, this.land - dt * 5);
-      this.stomp = Math.max(0, this.stomp - dt * 4);
-      this._bp = Math.max(0, (this._bp || 0) - dt * 3);
+      if (this.y < 0) { this.y = 0; this.vy = 0; }
       for (const co of this.coins) if (co.got !== undefined) co.got = Math.max(0, co.got - dt);
     },
     draw(eng, env) {
-      const c = eng.cam;
-      // flat 2D side-scroller — sane cam depth, no distance fog, and the
-      // global music camera-swim is suppressed (it wrecks a flat world).
+      const c = eng.cam, rows = eng.rows, cols = eng.cols;
+      // flat 2D side-scroller. A far ortho cam pushed all geometry past
+      // farFog(26) so fog() crushed it to the 6% floor (invisible) and
+      // collapsed sprites to 1px. Sane cam depth + no distance fog here.
       const _ff = eng.farFog; eng.farFog = 1e6;
-      const camX = this.sx + 4;
-      c.x = camX; c.y = 3.4; c.z = -13;
+      c.x = this.sx + 4; c.y = 2; c.z = -12;
       c.yaw = 0; c.pitch = 0; c.roll = 0; c.fov = 0.62;
+      // the global music camera-swim zooms a flat 2D world far too hard —
+      // keep just a hint of it here.
+      // a flat 2D side-scroller: NO camera scene movement at all.
       const fx = eng.fx;
-      const _s = [fx.dfov, fx.dz, fx.dyaw, fx.dpitch, fx.droll, fx.dx, fx.dy];
-      fx.dfov = fx.dz = fx.dyaw = fx.dpitch = fx.droll = fx.dx = fx.dy = 0;
-
-      const fg = env.pal.fg, bs = 1 + env.beat * 0.22, bp = this._bp || 0;
-      const lrp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
-      const A0 = acc(env, 0), A1 = acc(env, 1), A2 = acc(env, 2);
-      const sil = scale(fg, 0.14), silF = scale(fg, 0.24), silM = scale(fg, 0.34);
-      // content keyed by a layer's own parallax scroll so it tiles forever:
-      // drawn near the camera (always visible), identity shifts at `par`.
-      const key = (par, off, step) => Math.floor((camX * par + off) / step);
-
-      // ── L1 sky: dusk gradient bands (warm horizon -> dark indigo top)
-      const skyHz = lrp(A0, [255, 235, 200], 0.35), skyTop = scale(A2, 0.22);
-      for (let b = 0; b < 13; b++) {
-        const k = b / 12, yy = 1 + k * 15;
-        eng.line3([camX - 90, yy, 62], [camX + 90, yy, 62],
-          scale(lrp(skyHz, skyTop, k), 0.5 + bp * 0.15), ':');
-      }
-      // ── L2 sun/moon disc — big, slow, low on the horizon
-      const sunX = camX - (camX * 0.96 % 200) + 60;
-      eng.sprite(sunX, 7.5, 55, [
-        '  #####  ', ' ####### ', '#########', '#########',
-        '#########', ' ####### ', '  #####  '],
-        scale(lrp(A0, [255, 220, 170], 0.5), bs), 1.0);
-      // ── L3 far mountain range
-      for (let i = -14; i <= 14; i++) {
-        const dx = camX + i * 4, kk = key(0.12, i * 4, 4);
-        const h = 2 + 4 * vnoise(kk * 0.5, 1);
-        eng.line3([dx, 0, 42], [dx + 2, h, 42], silF, '/');
-        eng.line3([dx + 2, h, 42], [dx + 4, 0, 42], silF, '\\');
-        eng.line3([dx, 0, 42], [dx + 4, 0, 42], silF, '_');
-      }
-      // ── L4 mid silhouette — temples & forest
-      for (let i = -10; i <= 10; i++) {
-        const dx = camX + i * 6, kk = key(0.3, i * 6, 6), r = hash2(kk, 3);
-        if (r < 0.42) {                                  // stepped temple
-          const w = 2 + (hash2(kk, 4) * 3 | 0), h = 3 + (hash2(kk, 5) * 4 | 0);
-          for (let yy = 0; yy < h; yy++)
-            eng.line3([dx - (w - yy * w / h), yy, 26], [dx + (w - yy * w / h), yy, 26], silM, '#');
-        } else if (r < 0.8) {                            // pine
-          eng.sprite(dx, 2.6, 26, ['  ^  ', ' /#\\ ', '/###\\', '  |  '], silM, 1.0);
-        }
-      }
-      // ── L5 Mario hills / bushes / clouds
-      for (let i = -9; i <= 9; i++) {
-        const dx = camX + i * 7, kk = key(0.55, i * 7, 7), r = hash2(kk, 6);
-        if (r < 0.34) eng.sprite(dx, 0.9, 12, [' .__. ', '/ .. \\', '/_____\\'], lrp(A1, [70, 170, 90], 0.5), 1.0);
-        else if (r < 0.6) eng.sprite(dx, 0.4, 12, ['(())', 'OOOO'], lrp(A1, [70, 170, 90], 0.55), 0.9);
-        const ck = key(0.42, i * 7, 7);
-        if (hash2(ck, 8) < 0.3) eng.sprite(dx + 2, 7 + hash2(ck, 9) * 3, 12,
-          [' .--. ', '(    )', " '--' "], scale([235, 240, 255], 0.7 * bs), 0.85);
-      }
-
-      // ── L6 GAMEPLAY plane (z = 3.5, par = 1) ───────────────────────────
-      const GZ = 3.5;
-      for (let i = -8; i <= 18; i++) {
-        const wx = Math.floor(camX) + i;
-        const gap = this.gaps.some((g) => Math.abs(wx + 0.5 - g) < 1.2);
-        if (!gap) {
-          eng.line3([wx, 0, GZ], [wx + 1, 0, GZ], A1, '=');           // ground top
-          eng.line3([wx, -0.6, GZ], [wx + 1, -0.6, GZ], scale(A1, 0.6), (wx & 1) ? '[' : ']');
-        }
-        const n = wx;                                                 // stable per-tile id
-        // green pipes (some with a beat-popping piranha)
-        if (!gap && hash2(n, 11) < 0.10) {
-          const ph = 2 + (hash2(n, 12) * 3 | 0), grn = lrp(A1, [60, 180, 80], 0.6);
-          for (let yy = 0; yy <= ph; yy += 0.5) {
-            eng.line3([wx, yy, GZ], [wx, yy, GZ], grn, '|');
-            eng.line3([wx + 1.6, yy, GZ], [wx + 1.6, yy, GZ], grn, '|');
-          }
-          eng.line3([wx - 0.3, ph + 0.5, GZ], [wx + 1.9, ph + 0.5, GZ], grn, '#');
-          if (hash2(n, 13) < 0.5) {
-            const py = ph + (bp > 0.4 ? 1.6 : -0.4);                  // snaps up on the beat
-            eng.sprite(wx + 0.8, py, GZ, [' \\^/ ', ' )=( '], scale(A2, bs), 0.8);
+      const _dfov = fx.dfov, _dz = fx.dz, _dyaw = fx.dyaw,
+        _dpitch = fx.dpitch, _droll = fx.droll, _dx = fx.dx, _dy = fx.dy;
+      fx.dfov = 0; fx.dz = 0; fx.dyaw = 0; fx.dpitch = 0;
+      fx.droll = 0; fx.dx = 0; fx.dy = 0;
+      // parallax layers (far -> near) via depth planes
+      const layers = [[18, acc(env, 2), 0.25, 'mountains'], [10, acc(env, 1), 0.5, 'city'], [3.5, env.pal.fg, 1, 'ground']];
+      for (const [pz, colr, par, kind] of layers) {
+        for (let i = -2; i < 40; i++) {
+          const wx = Math.floor((this.sx * par) / 4) * 4 + i * 4;
+          if (kind === 'mountains') {
+            const hh = 3 + 2 * vnoise(wx * 0.2, 0);
+            eng.line3([wx, 0, pz], [wx + 2, hh, pz], scale(colr, 0.4), '/');
+            eng.line3([wx + 2, hh, pz], [wx + 4, 0, pz], scale(colr, 0.4), '\\');
+          } else if (kind === 'city') {
+            const bh = 2 + 3 * hash2(wx, 7);
+            for (let yy = 0; yy < bh; yy += 0.5) eng.line3([wx, yy, pz], [wx + 2.4, yy, pz], scale(colr, 0.55), '#');
+          } else {
+            const gap = this.gaps.some((g) => Math.abs(wx + 2 - g) < 2);
+            if (!gap) for (let xx = 0; xx < 4; xx += 0.5) eng.line3([wx + xx, 0, pz], [wx + xx, -1, pz], colr, '=');
           }
         }
-        // floating ? / brick row
-        if (!gap && hash2(n, 21) < 0.16) {
-          const bw = 1 + (hash2(n, 22) * 3 | 0);
-          for (let k = 0; k < bw; k++) {
-            const q = (k === (bw >> 1));
-            eng.sprite(wx + k, 4.2 + (bp > 0.4 ? 0.18 : 0), GZ, [q ? '[?]' : '[#]'],
-              q ? scale(A2, bs) : scale(A1, 0.8), 0.85);
-          }
-        }
-        // stair pyramid
-        if (!gap && hash2(n, 31) < 0.05) {
-          for (let s = 0; s < 4; s++)
-            for (let yy = 0; yy <= s; yy++)
-              eng.sprite(wx + s, 0.5 + yy, GZ, ['[#]'], scale(A1, 0.75), 0.8);
-        }
-        // goomba / koopa walking left toward the hero
-        if (!gap && hash2(n, 41) < 0.10) {
-          const walk = (wx - this.t * 1.4);
-          if (walk > camX - 8 && walk < camX + 22) {
-            const stomped = (Math.abs(walk - camX) < 1.1 && this.y > 0.5);
-            if (stomped) this.stomp = 1;
-            eng.sprite(walk, stomped ? 0.35 : 0.7, GZ,
-              stomped ? ['_dead_'] : (hash2(n, 42) < 0.5
-                ? [' .--. ', ' |oo| ', ' /__\\ ']
-                : [' (oo) ', ' /||\\ ']),
-              scale(lrp(A0, [180, 110, 70], 0.5), 0.9), 0.85);
-          }
-        }
-        // flagpole landmark every ~150 units
-        if (((wx % 150) + 150) % 150 === 0 && wx > 30) {
-          for (let yy = 0; yy < 9; yy += 0.5) eng.line3([wx, yy, GZ], [wx, yy, GZ], scale(fg, 0.7), '|');
-          eng.sprite(wx + 1, 8 - (this.t * 2 % 6), GZ, ['|>>', '|> '], scale(A2, bs), 0.9);
-          eng.sprite(wx + 5, 2.2, GZ, ['/##\\', '|[]|', '|__|'], silM, 1.0);   // castle
-        }
       }
-      // coins — spinning, bright pop on note
       for (const co of this.coins) {
-        if (co.x < camX - 10 || co.x > camX + 24) continue;
-        const sp = ['O', '0', '|', '0'][(this.t * 8 + co.x) | 0 & 3];
-        eng.sprite(co.x, co.y + 0.6 + (co.got ? 0.5 : 0), GZ,
-          [co.got ? '+' : sp], co.got ? scale(A2, 1.3) : A2, co.got ? 0.95 : 0.75);
+        if (co.x < this.sx - 2 || co.x > this.sx + 30) continue;
+        eng.sprite(co.x, co.y + 0.5, 3.4, co.got ? ['*'] : ['o'],
+          co.got ? acc(env, 2) : acc(env, 0), 0.7);
       }
-      // hero — chunky, run cycle, squash on land, beat-jump, stomp flash
       const fr = this.run | 0;
-      const air = this.y > 0.25;
-      const body = air ? [' (o) ', '<[#]>', ' / \\ ']
-        : this.land > 0.4 ? ['     ', '(o)  ', '[###]']
-          : [[' (o) ', ' [#] ', ' /\\  '], [' (o) ', ' [#] ', ' || '],
-          [' (o) ', ' [#] ', '  /\\ '], [' (o) ', ' [#] ', ' ||  ']][fr];
-      eng.sprite(camX, this.y + 1.3, GZ, body,
-        this.stomp > 0.3 ? scale(A2, 1.4) : A0, 1.05);
-
-      // ── L7 FOREGROUND — slow giant trunks + a fast grass fringe
-      for (let i = -3; i <= 3; i++) {
-        const dx = camX + i * 11, kk = key(1.45, i * 11, 11);
-        if (hash2(kk, 51) < 0.28)
-          eng.sprite(dx, 3, 2.4, ['|||', '|||', '|||', '|||', '|||', '/|\\'], scale(sil, 1.0), 1.0);
-      }
-      for (let i = -10; i <= 10; i++) {
-        const dx = camX + i * 2;
-        eng.line3([dx, -0.2, 2.0], [dx + 0.6, 0.5, 2.0], scale(A1, 0.5), (i & 1) ? 'v' : 'w');
-      }
-
-      fx.dfov = _s[0]; fx.dz = _s[1]; fx.dyaw = _s[2];
-      fx.dpitch = _s[3]; fx.droll = _s[4]; fx.dx = _s[5]; fx.dy = _s[6];
+      const hero = [
+        [' o ', '/|\\', '/ \\'], [' o ', '/|\\', '|  '],
+        [' o ', '/|\\', ' \\ '], [' o ', '/|\\', '  |'],
+      ][fr];
+      eng.sprite(this.sx + 4, this.y + 1.2, 3.4, hero, acc(env, 0), 1.0);
+      fx.dfov = _dfov; fx.dz = _dz;
+      fx.dyaw = _dyaw; fx.dpitch = _dpitch; fx.droll = _droll;
+      fx.dx = _dx; fx.dy = _dy;
       eng.farFog = _ff;
     },
   };
