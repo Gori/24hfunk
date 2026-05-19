@@ -1488,11 +1488,11 @@
   const Plume = E('SMOKE', function (eng) { this.d = new Float32Array(eng.cols * eng.rows); }, function (eng, env) {
     const C = eng.cols, R = eng.rows, d = this.d, n = (this._n && this._n.length === C * R) ? this._n : (this._n = new Float32Array(C * R)); n.fill(0);
     const src = (C / 2 + Math.sin(this.t) * C * 0.15) | 0;
-    for (let k = -2; k <= 2; k++) d[(R - 2) * C + ((src + k + C) % C)] = 1 + env.energy;
+    for (let k = -4; k <= 4; k++) d[(R - 2) * C + ((src + k + C) % C)] = 1 + env.energy;
     for (let y = 1; y < R - 1; y++) for (let x = 1; x < C - 1; x++) {
       const curl = Math.sin(x * 0.2 + this.t * 2) * 1.4;
       const sx = x + (curl | 0);
-      let v = (d[(y + 1) * C + x] * 0.5 + d[(y + 1) * C + ((x + 1) % C)] * 0.2 + d[(y + 1) * C + ((x - 1 + C) % C)] * 0.2 + d[y * C + x] * 0.1) * 0.985;
+      let v = (d[(y + 1) * C + x] * 0.5 + d[(y + 1) * C + ((x + 1) % C)] * 0.2 + d[(y + 1) * C + ((x - 1 + C) % C)] * 0.2 + d[y * C + x] * 0.1) * 0.993;
       n[y * C + ((sx % C + C) % C)] = Math.max(n[y * C + ((sx % C + C) % C)], v);
     }
     this.d = n; this._n = d;            // ping-pong: old field -> next scratch
