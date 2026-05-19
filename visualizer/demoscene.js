@@ -2316,6 +2316,101 @@
     }
   });
 
+  // ─────────── NEW BATCH 2 — demoscene effects ───────────
+  const InfZoom = E('INFINITE ZOOM', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    const layers = 26, base = Math.min(C, R * 2);
+    for (let i = layers - 1; i >= 0; i--) {
+      const ph = i + (t * 1.5) % 1;
+      const sc = Math.pow(0.82, ph) * base;
+      const ang = ph * 0.6 * this.P.dir + t * 0.3;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      const col = mul(acc(env, i % 3), 0.22 + (1 - i / layers) * 0.7 + env.beat * 0.25);
+      const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
+      let pv = null;
+      for (let k = 0; k < 5; k++) {
+        const px0 = pts[k][0], py0 = pts[k][1];
+        const X = cx + (px0 * ca - py0 * sa) * sc, Y = cy + (px0 * sa + py0 * ca) * sc * 0.55;
+        if (pv) LN(eng, pv[0], pv[1], X, Y, '#', col, 100 + i);
+        pv = [X, Y];
+      }
+    }
+  });
+  const TextCrawl = E('3D TEXT CRAWL', function () { this.s = (SONG_WORD() + '   ').repeat(6); },
+    function (eng, env) {
+      const C = eng.cols, R = eng.rows, cx = C / 2, s = this.s || 'STR   ', n = s.length, t = this.t * this.P.spd;
+      const vy = R * 0.22;
+      for (let li = 0; li < 14; li++) {
+        const prog = ((t * 0.5 + li / 14) % 1);
+        const yy = R - prog * (R - vy), sc = 1.6 * (1 - prog) + 0.06;
+        for (let k = 0; k < n; k++) {
+          const ch = s[(k + li * 7) % n];
+          if (ch === ' ') continue;
+          const X = cx + (k - n / 2) * sc * 1.2;
+          if (X < 0 || X >= C) continue;
+          px(eng, X, yy, ch, mul(acc(env, li % 3), 0.2 + (1 - prog) * 0.8 + env.beat * 0.2), 200 + li);
+        }
+      }
+    });
+  const Planet = E('ASCII PLANET', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    const rad = Math.min(C * 0.22, R * 0.42), spin = t * 0.5;
+    for (let sy = -rad; sy <= rad; sy++) for (let sx = -rad * 2; sx <= rad * 2; sx++) {
+      const nx = sx / (rad * 2), ny = sy / rad, d = nx * nx + ny * ny;
+      if (d > 1) continue;
+      const nz = Math.sqrt(1 - d);
+      const lon = Math.atan2(nx, nz) + spin, lat = Math.asin(Math.max(-1, Math.min(1, ny)));
+      const land = (Math.sin(lon * 3) + Math.sin(lat * 4 + lon) + Math.sin(lon * 7 - lat * 2)) > 0.4;
+      const light = Math.max(0.1, nz * 0.7 + Math.cos(lon - t) * 0.3);
+      px(eng, cx + sx, cy + sy, gly(light), mul(land ? acc(env, 1) : acc(env, 2), 0.2 + light * 0.8 + env.beat * 0.15), 300);
+    }
+  });
+  const Menger = E('MENGER SPONGE', function () {
+    const keep = (x, y, z) => {
+      let cx = x, cy = y, cz = z;
+      for (let l = 0; l < 3; l++) {
+        let c = 0;
+        if (cx % 3 === 1) c++; if (cy % 3 === 1) c++; if (cz % 3 === 1) c++;
+        if (c >= 2) return false;
+        cx = (cx / 3) | 0; cy = (cy / 3) | 0; cz = (cz / 3) | 0;
+      }
+      return true;
+    };
+    const P = [];
+    for (let x = 0; x < 27; x++) for (let y = 0; y < 27; y++) for (let z = 0; z < 27; z++)
+      if (keep(x, y, z) && (x === 0 || x === 26 || y === 0 || y === 26 || z === 0 || z === 26
+        || !keep(x + 1, y, z) || !keep(x, y + 1, z) || !keep(x, y, z + 1)))
+        P.push([x / 26 - 0.5, y / 26 - 0.5, z / 26 - 0.5]);
+    this._mp = P;
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd * 0.6, s = Math.min(C, R * 2) * 0.7;
+    const ca = Math.cos(t), sa = Math.sin(t), cb = Math.cos(t * 0.6), sb = Math.sin(t * 0.6);
+    const P = this._mp || [];
+    for (let i = 0; i < P.length; i++) {
+      const x = P[i][0], y = P[i][1], z = P[i][2];
+      let y1 = y * ca - z * sa, z1 = y * sa + z * ca;
+      const x1 = x * cb - z1 * sb; z1 = x * sb + z1 * cb;
+      const p = 2 / (3.5 + z1);
+      px(eng, C / 2 + x1 * s * p, R / 2 - y1 * s * p, z1 > 0 ? '#' : '+',
+        mul(acc(env, 0), 0.22 + p * 1.6 + env.beat * 0.25), 4 + z1);
+    }
+  });
+  const Bulb = E('MANDELBULB', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd, s = Math.min(C, R * 2) * 0.34;
+    const ca = Math.cos(t), sa = Math.sin(t), cb = Math.cos(t * 0.5), sb = Math.sin(t * 0.5);
+    const pw = 6 + Math.sin(t * 0.3) * 2;
+    for (let i = 0; i < 80; i++) for (let j = 0; j < 26; j++) {
+      const u = i / 80 * 6.283, v = j / 26 * 3.1415;
+      const rr = 1 + 0.5 * Math.pow(Math.abs(Math.sin(u * pw * 0.5)) * Math.abs(Math.cos(v * pw * 0.5)) + 0.02, 0.6);
+      const x = Math.cos(u) * Math.sin(v) * rr, y = Math.sin(u) * Math.sin(v) * rr, z = Math.cos(v) * rr;
+      let y1 = y * ca - z * sa, z1 = y * sa + z * ca;
+      const x1 = x * cb - z1 * sb; z1 = x * sb + z1 * cb;
+      const p = 3 / (3 + z1), d = 0.5 + z1 * 0.5;
+      px(eng, C / 2 + x1 * s * p, R / 2 - y1 * s * p, gly(0.4 + d * 0.5),
+        mul(acc(env, i % 3), 0.25 + d * 0.55 + env.beat * 0.3), 3 + z1);
+    }
+  });
+
   window.Worlds.FNT5 = FNT5;            // shared 5x7 font (render.js scroller)
   window.Worlds.demos = [
     Plasma, Roto, Stars, Copper, Bobs, Tunnel, Twister, Glenz, Boing,
@@ -2335,5 +2430,6 @@
     VecTun, HyperJump, PhongCube, MetaDiscs, Donut, WaveTerr,
     PFire, Shutter, GravWell, BoingShadow, TextRing, Elite, AsmHall,
     RubberVec, DotMorph, VBallSphere, PGlobe, Feedback, Kaleido,
+    InfZoom, TextCrawl, Planet, Menger, Bulb,
   ];
 })();
