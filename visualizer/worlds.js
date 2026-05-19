@@ -18,10 +18,25 @@
   const scale = (c, k) => [(c[0] * k) | 0, (c[1] * k) | 0, (c[2] * k) | 0];
 
   // ===================================================== DOOM
+  const ART = {
+    lamp: [' | ', '(O)', ' | '],
+    barrel: [' __ ', '|##|', '|##|', '|__|'],
+    imp: [' ^^ ', '/oo\\', ' \\/ ', ' /\\ '],
+    medkit: [' +++ ', '+MED+', ' +++ '],
+    ammo: ['[===]', '[|||]'],
+    key: [' o ', '=|=', ' | '],
+    fire: [' (*) ', '(***)', ' (*) '],
+    portal: [' /~\\ ', '|( )|', ' \\~/ '],
+  };
   const Doom = {
     title: 'E1M1',
     reset(eng) {
-      const N = (this.N = 21);
+      this.N = 21; this.level = 1; this.t = 0; this.lvlT = 0;
+      this.flash = 0; this.balls = []; this.spark = null; this.fireCd = 0;
+      this._gen();
+    },
+    _gen() {
+      const N = this.N;
       this.m = Array.from({ length: N }, () => new Array(N).fill(1));
       const st = [[1, 1]]; this.m[1][1] = 0;
       const D = [[0, -2], [0, 2], [-2, 0], [2, 0]];
@@ -36,53 +51,88 @@
         const [nx, ny, dx, dy] = o[(Math.random() * o.length) | 0];
         this.m[y + dy / 2][x + dx / 2] = 0; this.m[ny][nx] = 0; st.push([nx, ny]);
       }
-      this.px = 1.5; this.pz = 1.5; this.ang = 0; this.turn = 0; this.flash = 0;
+      this.px = 1.5; this.pz = 1.5; this.ang = 0; this.turn = 0;
+      const open = [];
+      for (let y = 1; y < N - 1; y++) for (let x = 1; x < N - 1; x++)
+        if (this.m[y][x] === 0) open.push([x, y]);
+      let best = open[0], bd = -1;
+      for (const [x, y] of open) { const d = x + y; if (d > bd) { bd = d; best = [x, y]; } }
+      this.exit = { x: best[0] + 0.5, z: best[1] + 0.5 };
+      this.lava = new Set();
+      for (const [x, y] of open)
+        if (x + y > 5 && (x !== best[0] || y !== best[1]) && Math.random() < 0.06)
+          this.lava.add(y * N + x);
+      const free = open.filter(([x, y]) =>
+        !this.lava.has(y * N + x) && (x > 2 || y > 2) && (x !== best[0] || y !== best[1]));
+      this.pickups = [];
+      for (let i = 0; i < 5 && free.length; i++) {
+        const j = (Math.random() * free.length) | 0, cell = free.splice(j, 1)[0];
+        const k = ['medkit', 'ammo', 'key', 'ammo', 'medkit'][i];
+        this.pickups.push({ x: cell[0] + 0.5, z: cell[1] + 0.5, kind: k, art: ART[k], got: 0 });
+      }
       this.props = [];
-      const art = {
-        lamp: [' | ', '(O)', ' | '],
-        barrel: [' __ ', '|##|', '|##|', '|__|'],
-        imp: [' ^^ ', '/oo\\', ' \\/ ', ' /\\ '],
-      };
       for (let i = 0; i < 72; i++) {
         const x = 1 + ((Math.random() * (N - 2)) | 0);
         const y = 1 + ((Math.random() * (N - 2)) | 0);
-        if (this.m[y][x] === 0) {
+        if (this.m[y][x] === 0 && !this.lava.has(y * N + x)) {
           const k = ['lamp', 'imp', 'barrel', 'imp', 'imp'][(Math.random() * 5) | 0];
-          this.props.push({ x: x + 0.5, z: y + 0.5, kind: k, art: art[k], ph: Math.random() * 6 });
+          this.props.push({ x: x + 0.5, z: y + 0.5, kind: k, art: ART[k], ph: Math.random() * 6 });
         }
       }
-      // roaming enemy imps that wander the corridors AND drift toward the
-      // player, so they're actually seen up close (not lost in far cells)
       this.foes = [];
       for (let i = 0; i < 2; i++) {
         let fx = this.px + 1.5 + i * 1.2, fz = this.pz, a = 0.6 + i * 2;
-        for (let ti = 0; ti < 16; ti++) {            // place into an OPEN cell
+        for (let ti = 0; ti < 16; ti++) {
           const tx = this.px + Math.cos(a) * (1.5 + i), tz = this.pz + Math.sin(a) * (1.5 + i);
-          if (!this.wall(tx, tz)) { fx = tx; fz = tz; break; }
+          if (this._clear(tx, tz, 0.42)) { fx = tx; fz = tz; break; }
           a += 1.3;
         }
-        this.foes.push({
-          x: fx, z: fz, ang: a,
-          ph: Math.random() * 6, sp: 1.05 + Math.random() * 0.3, art: art.imp,
-        });
+        this.foes.push({ x: fx, z: fz, ang: a, ph: Math.random() * 6,
+          sp: 1.05 + Math.random() * 0.3, art: ART.imp, hit: 0 });
       }
+      this.title = 'E1M' + this.level;
+    },
+    _advance() {
+      this.level++; this.lvlT = this.t; this.flash = 1;
+      this.balls = []; this._gen();
     },
     note() { this.flash = Math.min(1, this.flash + 0.5); },
-    beat() {},
+    beat() { if (this.fireCd <= 0) { this._shoot(); this.fireCd = 0.12; } },
     wall(x, z) { return x < 0 || z < 0 || x >= this.N || z >= this.N || this.m[z | 0][x | 0] === 1; },
-    _probe(a) {                       // free distance along heading a
+    _clear(x, z, r) {
+      return !this.wall(x - r, z - r) && !this.wall(x + r, z - r)
+        && !this.wall(x - r, z + r) && !this.wall(x + r, z + r) && !this.wall(x, z);
+    },
+    _probe(a) {
       let d = 0;
       while (d < 6 && !this.wall(this.px + Math.cos(a) * d, this.pz + Math.sin(a) * d)) d += 0.35;
       return d;
     },
-    _foeProbe(f, a) {                 // free distance ahead of a foe
+    _foeProbe(f, a) {
       let d = 0;
       while (d < 4 && !this.wall(f.x + Math.cos(a) * d, f.z + Math.sin(a) * d)) d += 0.35;
       return d;
     },
+    _shoot() {
+      const ca = Math.cos(this.ang), sa = Math.sin(this.ang);
+      let wd = 0;
+      while (wd < 9 && !this.wall(this.px + ca * wd, this.pz + sa * wd)) wd += 0.2;
+      for (const f of this.foes) {
+        const dx = f.x - this.px, dz = f.z - this.pz;
+        const fwd = dx * ca + dz * sa, lat = -dx * sa + dz * ca;
+        if (fwd > 0.4 && fwd < Math.min(wd, 7) && Math.abs(lat) < 0.7) {
+          f.hit = 1;
+          const kx = f.x + ca * 0.6, kz = f.z + sa * 0.6;
+          if (this._clear(kx, f.z, 0.42)) f.x = kx;
+          if (this._clear(f.x, kz, 0.42)) f.z = kz;
+        }
+      }
+      this.spark = { x: this.px + ca * Math.min(wd, 7), z: this.pz + sa * Math.min(wd, 7), t: 1 };
+      this.flash = Math.max(this.flash, 0.7);
+    },
     step(dt) {
-      // simple, ALWAYS-progressing wander: walk forward; at a wall steer
-      // toward the more open side; gentle drift; un-stick if cornered.
+      this.t += dt;
+      this.fireCd = Math.max(0, this.fireCd - dt);
       const fx = Math.cos(this.ang), fz = Math.sin(this.ang);
       const blocked = this.wall(this.px + fx * 0.55, this.pz + fz * 0.55);
       if (blocked) {
@@ -98,41 +148,64 @@
       let moved = 0;
       if (!this.wall(nx, this.pz)) { moved += Math.abs(nx - this.px); this.px = nx; }
       if (!this.wall(this.px, nz)) { moved += Math.abs(nz - this.pz); this.pz = nz; }
-      // anti-stuck: if it can't make progress, spin to find an opening
       this._stuck = moved < 1e-4 ? (this._stuck || 0) + dt : 0;
       if (this._stuck > 0.8) { this.ang += 1.7; this._stuck = 0; }
-      // roaming enemy imp: walk forward, steer at walls, gently home on the
-      // player so it stays close/visible; respawn ahead if it drifts away.
       for (const f of this.foes) {
-        // home toward the player + a little wander, THEN derive heading
+        f.hit = Math.max(0, (f.hit || 0) - dt * 3);
         let da = Math.atan2(this.pz - f.z, this.px - f.x) - f.ang;
         while (da > Math.PI) da -= 6.283;
         while (da < -Math.PI) da += 6.283;
         f.ang += da * 0.6 * dt + (Math.random() - 0.5) * 0.7 * dt;
         let ffx = Math.cos(f.ang), ffz = Math.sin(f.ang);
-        // wall ahead -> turn toward the more open side (don't clip through)
-        if (this.wall(f.x + ffx * 0.6, f.z + ffz * 0.6)) {
+        if (!this._clear(f.x + ffx * 0.6, f.z + ffz * 0.6, 0.42)) {
           const lp = this._foeProbe(f, f.ang - 1.2), rp = this._foeProbe(f, f.ang + 1.2);
           f.ang += (lp > rp ? -1 : 1) * 2.4 * dt + 0.7;
           ffx = Math.cos(f.ang); ffz = Math.sin(f.ang);
         }
-        // axis-separated move with a body margin so it can't nose into walls
         const fsp = f.sp * dt;
         let fm = 0;
-        if (!this.wall(f.x + ffx * (0.34 + fsp), f.z)) { f.x += ffx * fsp; fm += Math.abs(ffx * fsp); }
-        if (!this.wall(f.x, f.z + ffz * (0.34 + fsp))) { f.z += ffz * fsp; fm += Math.abs(ffz * fsp); }
+        if (this._clear(f.x + ffx * fsp, f.z, 0.42)) { f.x += ffx * fsp; fm += Math.abs(ffx * fsp); }
+        if (this._clear(f.x, f.z + ffz * fsp, 0.42)) { f.z += ffz * fsp; fm += Math.abs(ffz * fsp); }
         f._st = fm < 1e-4 ? (f._st || 0) + dt : 0;
-        if (f._st > 0.6) { f.ang += 1.9; f._st = 0; }   // cornered -> spin out
-        // respawn ahead of the player, but only into an OPEN cell
-        if (Math.hypot(f.x - this.px, f.z - this.pz) > 9) {
-          for (let ti = 0; ti < 10; ti++) {
-            const a = this.ang + (Math.random() - 0.5) * 1.4;
-            const r = 2 + Math.random() * 1.6;
+        if (f._st > 0.6) { f.ang += 1.9; f._st = 0; }
+        if (this.balls.length < 5 && Math.random() < 0.4 * dt) {
+          const d = Math.hypot(this.px - f.x, this.pz - f.z);
+          if (d > 1.6 && d < 9)
+            this.balls.push({ x: f.x, z: f.z, dx: (this.px - f.x) / d, dz: (this.pz - f.z) / d, t: 0 });
+        }
+        if (Math.hypot(f.x - this.px, f.z - this.pz) > 10) {
+          for (let ti = 0; ti < 12; ti++) {
+            const a = this.ang + (Math.random() - 0.5) * 1.4, r = 2 + Math.random() * 1.6;
             const rx = this.px + Math.cos(a) * r, rz = this.pz + Math.sin(a) * r;
-            if (!this.wall(rx, rz)) { f.x = rx; f.z = rz; f.ang = a; f._st = 0; break; }
+            if (this._clear(rx, rz, 0.42)) { f.x = rx; f.z = rz; f.ang = a; f._st = 0; break; }
           }
         }
       }
+      for (let i = this.balls.length - 1; i >= 0; i--) {
+        const b = this.balls[i]; b.t += dt;
+        b.x += b.dx * dt * 6; b.z += b.dz * dt * 6;
+        if (b.t > 3 || Math.hypot(b.x - this.px, b.z - this.pz) < 0.5 || this.wall(b.x, b.z))
+          this.balls.splice(i, 1);
+      }
+      for (const p of this.pickups) {
+        if (p.got > 0) {
+          p.got = Math.max(0, p.got - dt);
+          if (p.got === 0 && p._to) { p.x = p._to.x; p.z = p._to.z; p._to = null; }
+        } else if (Math.hypot(p.x - this.px, p.z - this.pz) < 0.85) {
+          p.got = 0.6;
+          for (let ti = 0; ti < 14; ti++) {
+            const cx = 1 + ((Math.random() * (this.N - 2)) | 0);
+            const cz = 1 + ((Math.random() * (this.N - 2)) | 0);
+            if (this.m[cz][cx] === 0 && !this.lava.has(cz * this.N + cx)) {
+              p._to = { x: cx + 0.5, z: cz + 0.5 }; break;
+            }
+          }
+          this.flash = Math.max(this.flash, 0.5);
+        }
+      }
+      if (this.spark) { this.spark.t -= dt * 3; if (this.spark.t <= 0) this.spark = null; }
+      if (Math.hypot(this.px - this.exit.x, this.pz - this.exit.z) < 1.0
+        || this.t - this.lvlT > 105) this._advance();
       this.flash = Math.max(0, this.flash - dt * 2.2);
     },
     draw(eng, env) {
@@ -140,10 +213,11 @@
       c.x = this.px; c.z = this.pz; c.y = 0.56; c.yaw = -this.ang;
       c.pitch = 0; c.fov = 0.66;
       const cols = eng.cols, rows = eng.rows;
-      // steady horizon: gentle slow bob + a soft beat lift (no fast jitter)
-      const horizon = (rows * 0.5 + Math.sin(env.t * 1.6) * 0.8
-        + env.beat * 2.2) | 0;
-      const wallC = acc(env, 1), sideC = env.pal.fg, floorC = acc(env, 0);
+      const lrp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+      const horizon = (rows * 0.5 + Math.sin(env.t * 1.6) * 0.8 + env.beat * 2.2) | 0;
+      const A1 = acc(env, 1), floorC = acc(env, 0);
+      const WT = [scale(A1, 0.95), lrp(A1, [185, 140, 80], 0.55), lrp(A1, [165, 50, 45], 0.6)];
+      const lavaPulse = 0.7 + 0.3 * Math.sin(env.t * 6);
       for (let sx = 0; sx < cols; sx++) {
         const camX = (2 * sx) / cols - 1;
         const ra = this.ang + Math.atan(camX * c.fov);
@@ -165,14 +239,20 @@
         const wh = Math.min(rows * 3, (rows / dist) | 0);
         const top = horizon - (wh >> 1), bot = horizon + (wh >> 1);
         const lit = Math.max(0.08, 1 - dist / 16) + this.flash * 0.4;
-        const wc = eng.fog(side ? scale(sideC, 0.7) : wallC, dist);
+        const wt = (hash2(mx, mz) * 3) | 0;
+        const base = side ? scale(WT[wt], 0.7) : WT[wt];
+        const wc = eng.fog(base, dist);
         eng.vspan(sx, 0, top - 1, eng.ramp(0.04), scale(env.pal.fg, 0.18), 50);
         const gl = eng.ramp(Math.min(0.99, lit));
         eng.vspan(sx, top, bot, gl, [Math.min(255, wc[0] * (1 + lit * 0.4)) | 0,
           Math.min(255, wc[1] * (1 + lit * 0.4)) | 0, Math.min(255, wc[2] * (1 + lit * 0.4)) | 0], dist);
         for (let yy = bot + 1; yy < rows; yy += 1) {
-          const fd = (rows * 0.5) / (yy - horizon || 1);
-          eng.vspan(sx, yy, yy, ':', eng.fog(floorC, Math.abs(fd) + 1), Math.abs(fd) + 1);
+          const fd = (rows * 0.5) / (yy - horizon || 1), ad = Math.abs(fd);
+          const lx = (this.px + rdx * ad) | 0, lz = (this.pz + rdz * ad) | 0;
+          if (lx >= 0 && lz >= 0 && lx < this.N && lz < this.N && this.lava.has(lz * this.N + lx))
+            eng.vspan(sx, yy, yy, '~', eng.fog(scale([255, 120, 45], lavaPulse), ad + 1), ad + 1);
+          else
+            eng.vspan(sx, yy, yy, ':', eng.fog(floorC, ad + 1), ad + 1);
         }
       }
       for (const p of this.props) {
@@ -182,9 +262,31 @@
           : (p.kind === 'imp' ? acc(env, 0) : env.pal.fg);
         eng.sprite(p.x, 0.5 + bob, p.z, p.art, col, 0.9);
       }
-      for (const f of this.foes)
-        eng.sprite(f.x, 0.5 + Math.sin(env.t * 5 + f.ph) * 0.14, f.z, f.art,
-          scale(acc(env, 0), 0.8 + this.flash + env.beat * 0.35), 1.2);
+      for (const p of this.pickups) {
+        if (p.got > 0) { eng.sprite(p.x, 0.7, p.z, ['+'], scale(acc(env, 2), 1.3), 1.0); continue; }
+        eng.sprite(p.x, 0.45 + Math.sin(env.t * 4) * 0.1, p.z, p.art,
+          scale(acc(env, 2), 0.7 + 0.3 * Math.sin(env.t * 6) + env.beat * 0.3), 0.85);
+      }
+      eng.sprite(this.exit.x, 0.55, this.exit.z, ART.portal,
+        scale(acc(env, 2), 0.8 + 0.4 * Math.sin(env.t * 5) + this.flash * 0.4), 1.1);
+      for (const f of this.foes) {
+        const fc = f.hit > 0 ? [255, 255, 255]
+          : scale(acc(env, 0), 0.8 + this.flash + env.beat * 0.35);
+        eng.sprite(f.x, 0.5 + Math.sin(env.t * 5 + f.ph) * 0.14, f.z, f.art, fc, 1.2);
+      }
+      for (const b of this.balls)
+        eng.sprite(b.x, 0.5, b.z, ART.fire,
+          lrp([255, 180, 60], [255, 90, 30], Math.min(1, b.t * 0.4)), 1.3);
+      if (this.spark)
+        eng.sprite(this.spark.x, 0.5, this.spark.z, ['\\|/', '-+-', '/|\\'],
+          scale([255, 240, 200], this.spark.t), 0.7);
+      if (this.flash > 0.45) {
+        const mxp = (cols / 2) | 0, myp = (rows * 0.62) | 0;
+        eng.glyph2d(mxp, myp, '*', [255, 255, 220]);
+        eng.glyph2d(mxp - 1, myp, '(', [255, 230, 160]);
+        eng.glyph2d(mxp + 1, myp, ')', [255, 230, 160]);
+      }
+      eng.text2d(2, rows - 2, 'E1M' + this.level, scale(acc(env, 2), 0.7 + this.flash * 0.3));
     },
   };
 
