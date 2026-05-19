@@ -11,7 +11,8 @@ SynthDef(\kickHard, { |out=0, amp=0.95, freq=52, fmRatio=1.0, fmIndex=2.0, decay
 	var aEnv = EnvGen.kr(Env.perc(0.0006, dr * 1.3, 1, -6), doneAction: 2);
 	var f    = f0 * pEnv;
 	var fi   = fmIndex * (0.55 + v * 0.45);              // vel -> FM bite
-	var sub  = SinOsc.ar(f0) * EnvGen.kr(Env.perc(0.001, dr * 1.7, 1, -4));
+	var sub  = (SinOsc.ar(f0) + (SinOsc.ar(f0 * 1.5) * 0.6))
+	           * EnvGen.kr(Env.perc(0.001, dr * 1.9, 1, -3.5));
 	var body = SinOsc.ar(f + (SinOsc.ar(f * fmRatio) * fi * f));
 	var cEnv = EnvGen.kr(Env.perc(0.0002, 0.01, 1, -10));
 	var nz   = HPF.ar(WhiteNoise.ar, 3200 + (v * 1400)) * 0.7;
@@ -20,6 +21,6 @@ SynthDef(\kickHard, { |out=0, amp=0.95, freq=52, fmRatio=1.0, fmIndex=2.0, decay
 	var clk  = (nz + bea) * cEnv * click * (0.9 + v * 0.5);
 	var sig  = ((body * (1 + drive)).tanh * 0.7) + clk;
 	// clean deep sub UNDER the punch (added post-clip so it isn't crushed)
-	sig = ((sig * 1.2).clip2(1.0) * 0.85) + (sub * 0.9);
+	sig = ((sig * 1.2).clip2(1.0) * 0.85) + (sub * 1.2);
 	Out.ar(out, Pan2.ar(LeakDC.ar(sig) * aEnv * amp * Rand(0.97, 1.03), pan));
 }).add;

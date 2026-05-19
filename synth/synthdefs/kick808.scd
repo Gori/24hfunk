@@ -16,6 +16,9 @@ SynthDef(\kick808, { |out=0, amp=0.95, freq=46, fmRatio=1.0, fmIndex=1.0, decay=
 	var bea  = Ringz.ar(WhiteNoise.ar * EnvGen.kr(Env.perc(0.0001, 0.0035)),
 	           (1300 + (v * 900)) * pk, 0.045) * 0.4;
 	var clk  = (nz + bea) * cEnv * click * (0.4 + v * 0.6);
-	var sig  = ((body * (1 + drive * 0.5)).tanh) + clk;
+	// extra deep thud (clean, longer tail) felt under the 808 boom
+	var thud = (SinOsc.ar(f0) + (SinOsc.ar(f0 * 1.5) * 0.5))
+	           * EnvGen.kr(Env.perc(0.002, dr * 1.6, 1, -3.5)) * 0.5;
+	var sig  = ((body * (1 + drive * 0.5)).tanh) + clk + thud;
 	Out.ar(out, Pan2.ar(LeakDC.ar(sig) * aEnv * amp * Rand(0.97, 1.03), pan));
 }).add;

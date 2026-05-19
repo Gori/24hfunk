@@ -21,8 +21,13 @@ SynthDef(\kick, { |out=0, amp=0.95, freq=49, fmRatio=1.0, fmIndex=1.2, decay=0.3
 	var bea   = Ringz.ar(WhiteNoise.ar * EnvGen.kr(Env.perc(0.0001, 0.004)),
 	            (1500 + (v * 1100)) * pk, 0.05) * 0.5;     // resonant beater
 	var clk   = (nz + bea) * cEnv * ck;
+	// deep thud: fundamental + an audible ~1.5x "chest" partial, longer
+	// decay than the body, mixed CLEAN (post-clip) so it lands everywhere
+	// without touching the click/character.
+	var thud  = (SinOsc.ar(f0) + (SinOsc.ar(f0 * 1.5) * 0.6))
+	            * EnvGen.kr(Env.perc(0.001, dr * 1.5, 1, -3.5)) * 0.62;
 	var sig;
 	body = (body * (1 + drive)).tanh * 0.4;
-	sig  = LeakDC.ar((sub + body + clk).softclip);
+	sig  = LeakDC.ar((sub + body + clk).softclip + thud);
 	Out.ar(out, Pan2.ar(sig * aEnv * amp * Rand(0.96, 1.04), pan));
 }).add;

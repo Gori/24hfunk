@@ -171,6 +171,8 @@
     const r = Math.random();
     fxSym = r < 0.55 ? 0 : r < 0.80 ? 1 : r < 0.93 ? 2 : 3;
     fxFlip = Math.random() < 0.25;
+    // KINETIC TYPE is readable typography — never render it upside down.
+    if (active && active.title === 'KINETIC TYPE') fxFlip = false;
     fxTime = 0.92 + Math.random() * 0.22;     // ~1x: gentle vary, no crawl/runaway
   }
   function drawActive(env) {
