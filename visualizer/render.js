@@ -23,6 +23,11 @@
   let palT = 1, palDur = 4, beatEnv = 0, beatKick = 0, noteE = 0;
   // per-instrument musical energy so visuals move with the WHOLE music
   let bassE = 0, leadE = 0, drumE = 0, hitE = 0, lastPitch = 0.5, mv = 0;
+  // GLOBAL MUSIC LIGHTNING: a bolt cracks over WHATEVER effect is running
+  // on strong drum hits / accents. LFX = 0 turns it off; raise LFX_TH to
+  // make it rarer (only the biggest hits), lower it for more.
+  const LFX = 1, LFX_TH = 0.55;
+  let lfSeg = null, lfLife = 0, lfFlash = 0, lfCd = 0;
   let pool = [], bag = [], sinceCut = 0, palIdx = 0;
   // HUD is drawn THROUGH the ascii engine (glyph2d) so it is literally the
   // same font/size and snapped to the same cell grid as the effect behind it.
@@ -319,6 +324,22 @@
       eng.clear(curPal.bg);
       const _ta = (window.performance || Date).now();
       drawActive(env);              // applies per-appearance symmetry/flip
+      if (LFX) {                    // music-reactive lightning over ANY effect
+        lfCd = Math.max(0, lfCd - dt);
+        const W = window.Worlds;
+        const pwr = Math.max(drumE * 0.85, beatKick * 0.7, hitE * 0.5);
+        if (lfCd <= 0 && pwr > LFX_TH && W && W.boltField) {
+          const s = Math.min(1.3, pwr);
+          lfSeg = W.boltField(eng, 1 + (s * 4 | 0), { maxd: 3, spread: 0.7 });
+          lfLife = 1; lfFlash = 0.2 + s * 0.5;
+          lfCd = 0.11 + (1 - Math.min(1, s)) * 0.13;
+        }
+        if (lfLife > 0 && W && W.drawBolt) {
+          W.boltFlash(eng, env, lfFlash);
+          W.drawBolt(eng, lfSeg, lfLife, env);
+          lfLife -= dt * 3.4; lfFlash -= dt * 5;
+        }
+      }
       drawHud();                    // grid-aligned HUD, top-most
       drawScroller(dt);             // one-shot Amiga song-title scroller
       const _tb = (window.performance || Date).now();
