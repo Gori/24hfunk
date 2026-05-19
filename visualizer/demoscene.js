@@ -2028,7 +2028,9 @@
     // single-colour wall). Sparse hot source = licking tongues.
     const P = this.P;
     const sP = (0.50 + env.beat * 0.30) * (0.7 + P.amp * 0.6);
-    const cool = (0.050 + env.mv * 0.02) * (0.75 + P.spd * 0.5);
+    // lower cooling -> flames survive much higher up the screen (was
+    // dying out near the bottom). Still cools, so it stays licking, not a wall.
+    const cool = (0.024 + env.mv * 0.012) * (0.75 + P.spd * 0.5);
     for (let x = 0; x < w; x++) b[(h - 1) * w + x] = (Math.random() < sP) ? (0.85 + Math.random() * 0.15) : 0;
     for (let y = h - 2; y >= 0; y--) for (let x = 0; x < w; x++) {
       const r = (Math.random() * 3) | 0;                  // 0..2
@@ -2068,10 +2070,10 @@
   });
   const GravWell = E('GRAVITY WELL', function () { this.p = []; for (let i = 0; i < 150; i++) this.p.push({ x: Math.random(), y: Math.random(), vx: 0, vy: 0 }); }, function (eng, env) {
     const C = eng.cols, R = eng.rows;
-    const wx = 0.5 + Math.sin(this.t * 0.6) * 0.3, wy = 0.5 + Math.cos(this.t * 0.8) * 0.3;
+    const wx = 0.5 + Math.sin(this.t * 0.38) * 0.3, wy = 0.5 + Math.cos(this.t * 0.5) * 0.3;
     for (const q of this.p) {
       const dx = wx - q.x, dy = wy - q.y, d = Math.sqrt(dx * dx + dy * dy) + 0.02;
-      const f = 0.0007 / (d * d);
+      const f = 0.00042 / (d * d);
       q.vx = (q.vx + dx / d * f) * 0.995; q.vy = (q.vy + dy / d * f) * 0.995;
       q.x += q.vx; q.y += q.vy;
       if (d < 0.03 || q.x < -0.1 || q.x > 1.1 || q.y < -0.1 || q.y > 1.1) {
