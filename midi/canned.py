@@ -569,7 +569,7 @@ _LEAD_LEVEL = {
     # \lead genres
     "funk": 0.82, "electro_funk": 1.15, "synthwave": 0.99, "jazz": 0.84,
     # leadFM genres tend dark/quiet -> lift
-    "detroit_techno": 1.00, "afro_rnb": 1.02, "dub_garage": 1.06,
+    "detroit_techno": 1.00, "afro_rnb": 0.71, "dub_garage": 1.06,
     "dub_techno": 1.10, "neon_dub": 1.12, "steppers_dub": 1.12,
     "lofi": 1.15, "rnb": 1.46, "roots_reggae": 1.20, "dub": 1.22,
     "indie_rnb": 1.22,
