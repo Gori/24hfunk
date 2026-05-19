@@ -2205,6 +2205,117 @@
     for (const o of this.ob) px(eng, scx + (o.x / Math.max(1, o.z * 0.5)) * sw, scy - Math.max(0.05, 1 - o.z / ZF) * sh * 0.8, '+', GRN, 190);
   });
   window.Worlds = window.Worlds || {};
+  // ─────────── NEW BATCH 1 — demoscene effects ───────────
+  const RubberVec = E('RUBBER VECTOR', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd;
+    const s = Math.min(C, R * 2) * 0.26 * (1 + env.beat * 0.15);
+    const V = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+    const Edg = [[0, 2], [2, 1], [1, 3], [3, 0], [0, 4], [2, 4], [1, 4], [3, 4], [0, 5], [2, 5], [1, 5], [3, 5]];
+    const a = t, b = t * 0.7, wob = 0.3 + (env.bass || 0) * 0.9;
+    const P = V.map(([x, y, z], i) => {
+      const w = 1 + Math.sin(t * 3 + i * 1.7) * wob;
+      x *= w; y *= w; z *= w;
+      let y1 = y * Math.cos(a) - z * Math.sin(a), z1 = y * Math.sin(a) + z * Math.cos(a);
+      const x1 = x * Math.cos(b) - z1 * Math.sin(b); z1 = x * Math.sin(b) + z1 * Math.cos(b);
+      const p = 3 / (3 + z1);
+      return [C / 2 + x1 * s * p, R / 2 - y1 * s * p];
+    });
+    Edg.forEach(([i, j], k) => LN(eng, P[i][0], P[i][1], P[j][0], P[j][1], '#',
+      mul(acc(env, k % 3), 0.55 + env.beat * 0.45), 300));
+  });
+  const DotMorph = E('DOT MORPH', function () { this.m = 0; this.mt = 0; }, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd, N = 360;
+    this.mt += 1 / 60;
+    if (this.bt > 0.5 && this.mt > 1.5) { this.m = (this.m + 1) % 3; this.mt = 0; }
+    const s = Math.min(C, R * 2) * 0.3;
+    const ca = Math.cos(t), sa = Math.sin(t), cb = Math.cos(t * 0.6), sb = Math.sin(t * 0.6);
+    const k = Math.min(1, this.mt * 0.8);
+    for (let i = 0; i < N; i++) {
+      const u = i / N * 6.283, vv = (i * 2.399) % 6.283;
+      const A = [
+        [Math.cos(u) * Math.sin(vv), Math.sin(u) * Math.sin(vv), Math.cos(vv)],
+        [(Math.cos(u) < 0 ? -0.8 : 0.8), Math.sin(u * 2) * 0.8, Math.cos(vv) * 0.8],
+        [(1 + 0.4 * Math.cos(vv)) * Math.cos(u), (1 + 0.4 * Math.cos(vv)) * Math.sin(u), 0.4 * Math.sin(vv)],
+      ];
+      const cu = A[this.m], nx = A[(this.m + 1) % 3];
+      let x = cu[0] + (nx[0] - cu[0]) * k, y = cu[1] + (nx[1] - cu[1]) * k, z = cu[2] + (nx[2] - cu[2]) * k;
+      let y1 = y * ca - z * sa, z1 = y * sa + z * ca;
+      const x1 = x * cb - z1 * sb; z1 = x * sb + z1 * cb;
+      const p = 3 / (3 + z1 * 1.5);
+      px(eng, C / 2 + x1 * s * p, R / 2 - y1 * s * p, gly(0.4 + p * 0.4),
+        mul(acc(env, i % 3), 0.4 + p * 0.5 + env.beat * 0.3), 3 + z1);
+    }
+  });
+  const VBallSphere = E('VECTOR BALL SPHERE', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd, N = 120;
+    const s = Math.min(C, R * 2) * 0.32 * (1 + env.beat * 0.12);
+    const ca = Math.cos(t), sa = Math.sin(t), cb = Math.cos(t * 0.55), sb = Math.sin(t * 0.55);
+    const ga = (1 + Math.sqrt(5)) / 2;
+    for (let i = 0; i < N; i++) {
+      const Y = 1 - (i / (N - 1)) * 2, rr = Math.sqrt(Math.max(0, 1 - Y * Y)), th = i * 2 * Math.PI / ga;
+      let x = Math.cos(th) * rr, z = Math.sin(th) * rr;
+      let y1 = Y * ca - z * sa, z1 = Y * sa + z * ca;
+      const x1 = x * cb - z1 * sb; z1 = x * sb + z1 * cb;
+      const p = 3 / (3 + z1), d = 0.5 + z1 * 0.5;
+      px(eng, C / 2 + x1 * s * p, R / 2 - y1 * s * p, z1 > 0 ? 'O' : 'o',
+        mul(acc(env, (i * 7 | 0) % 3), 0.25 + d * 0.65 + env.beat * 0.3), 3 + z1);
+    }
+  });
+  const PGlobe = E('PLASMA GLOBE', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t;
+    const tx = cx + Math.cos(t * 0.7) * C * 0.3, ty = cy + Math.sin(t * 0.9) * R * 0.3;
+    const cr = 2 + env.beat * 2;
+    for (let a = 0; a < 6.28; a += 0.5)
+      px(eng, cx + Math.cos(a) * cr, cy + Math.sin(a) * cr, '#', mul([235, 242, 255], 0.5 + env.beat * 0.5), 200);
+    const nt = 5 + ((env.drum || 0) * 5 | 0);
+    for (let b = 0; b < nt; b++) {
+      let x = cx, y = cy, ang = Math.atan2(ty - cy, tx - cx) + (b / nt - 0.5) * 0.9;
+      const len = Math.hypot(tx - cx, ty - cy) / 8;
+      for (let sp = 0; sp < 9; sp++) {
+        ang += Math.sin(t * 5 + b + sp) * 0.5;
+        const nx = x + Math.cos(ang) * len, ny = y + Math.sin(ang) * len;
+        LN(eng, x, y, nx, ny, '|', mul(acc(env, b % 3), 0.3 + (1 - sp / 9) * 0.55 + (env.drum || 0) * 0.4), 250);
+        x = nx; y = ny;
+      }
+    }
+    px(eng, tx, ty, '@', mul(acc(env, 2), 0.8 + env.beat * 0.2), 200);
+  });
+  const Feedback = E('FEEDBACK ZOOM', function (eng) { this.b = new Float32Array(eng.cols * eng.rows); },
+    function (eng, env) {
+      const C = eng.cols, R = eng.rows, b = this.b;
+      const n = (this._n && this._n.length === C * R) ? this._n : (this._n = new Float32Array(C * R));
+      const zoom = 1.014 + env.beat * 0.012, ag = 0.03 * this.P.dir;
+      const ca = Math.cos(ag) / zoom, sa = Math.sin(ag) / zoom, cx = C / 2, cy = R / 2;
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        const dx = x - cx, dy = y - cy;
+        const ix = (cx + dx * ca - dy * sa) | 0, iy = (cy + dx * sa + dy * ca) | 0;
+        n[y * C + x] = (ix >= 0 && iy >= 0 && ix < C && iy < R) ? b[iy * C + ix] * 0.965 : 0;
+      }
+      const ox = cx + Math.cos(this.t * 1.3) * C * 0.28, oy = cy + Math.sin(this.t * 1.7) * R * 0.28;
+      for (let k = 0; k < 8; k++) {
+        const a = k / 8 * 6.28, p2 = (ox + Math.cos(a) * 3) | 0, q2 = (oy + Math.sin(a) * 3) | 0;
+        if (p2 >= 0 && q2 >= 0 && p2 < C && q2 < R) n[q2 * C + p2] = 1;
+      }
+      this.b = n; this._n = b;
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        const v = n[y * C + x];
+        if (v > 0.06) px(eng, x, y, gly(Math.min(1, v)), mul(acc(env, v > 0.6 ? 2 : 0), 0.2 + Math.min(0.85, v)), 500);
+      }
+    });
+  const Kaleido = E('KALEIDOSCOPE', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    const seg = 6 + (this.P.variant % 4) * 2 + (env.beat > 0.7 ? 2 : 0), sa = 6.283 / seg;
+    for (let y = 0; y < R; y += DS) for (let x = 0; x < C; x += DS) {
+      const dx = x - cx, dy = (y - cy) * 2;
+      let a = Math.atan2(dy, dx);
+      a = Math.abs(((a % sa) + sa) % sa - sa / 2);
+      const r = Math.sqrt(dx * dx + dy * dy), u = Math.cos(a) * r, v = Math.sin(a) * r;
+      const val = Math.sin(u * 0.08 + t) + Math.sin(v * 0.07 - t * 1.1) + Math.sin((u + v) * 0.05 + t * 0.6);
+      const kk = (val + 3) / 6, g = gly(kk), c = mul(acc(env, ((val * 1.5 | 0) % 3 + 3) % 3), 0.3 + kk * 0.7 + env.beat * 0.2);
+      for (let yy = 0; yy < DS; yy++) for (let xx = 0; xx < DS; xx++) px(eng, x + xx, y + yy, g, c, 500);
+    }
+  });
+
   window.Worlds.FNT5 = FNT5;            // shared 5x7 font (render.js scroller)
   window.Worlds.demos = [
     Plasma, Roto, Stars, Copper, Bobs, Tunnel, Twister, Glenz, Boing,
@@ -2223,5 +2334,6 @@
     RotoTex, LutPlasma, FracTree, Bolt, Hilb, Rule30, Brain, Spiro,
     VecTun, HyperJump, PhongCube, MetaDiscs, Donut, WaveTerr,
     PFire, Shutter, GravWell, BoingShadow, TextRing, Elite, AsmHall,
+    RubberVec, DotMorph, VBallSphere, PGlobe, Feedback, Kaleido,
   ];
 })();
