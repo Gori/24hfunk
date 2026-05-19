@@ -54,7 +54,11 @@
 
   // Push the current effect name into the always-on HUD.
   function announceEffect() {
-    if (active) hudEffect = (active.title || 'SCENE').toUpperCase();
+    if (active) {
+      const i = pool.indexOf(active);
+      const num = i >= 0 ? (i + 1) + '. ' : '';
+      hudEffect = (num + (active.title || 'SCENE')).toUpperCase();
+    }
   }
   function setNowPlaying(section) {
     if (!section) return;
