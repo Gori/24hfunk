@@ -88,7 +88,7 @@
           a += 1.3;
         }
         this.foes.push({ x: fx, z: fz, ang: a, ph: Math.random() * 6,
-          sp: 1.05 + Math.random() * 0.3, art: ART.imp, hit: 0 });
+          sp: 0.26 + Math.random() * 0.12, art: ART.imp, hit: 0 });
       }
       this.title = 'E1M' + this.level;
     },
@@ -183,7 +183,7 @@
       }
       for (let i = this.balls.length - 1; i >= 0; i--) {
         const b = this.balls[i]; b.t += dt;
-        b.x += b.dx * dt * 6; b.z += b.dz * dt * 6;
+        b.x += b.dx * dt * 2.4; b.z += b.dz * dt * 2.4;
         if (b.t > 3 || Math.hypot(b.x - this.px, b.z - this.pz) < 0.5 || this.wall(b.x, b.z))
           this.balls.splice(i, 1);
       }
@@ -354,6 +354,7 @@
     title: 'STAGE 1-1',
     reset(eng) {
       this.sx = 0; this.run = 0; this.jump = 0; this.vy = 0; this.y = 0;
+      this.level = 1; this._hop = 0; this.flash = 0;
       this.coins = []; this.t = 0;
       for (let i = 0; i < 60; i++) this.coins.push({ x: 8 + i * 3.5 + Math.random() * 2, y: 1 + Math.random() * 2.5 });
       this.gaps = [];
@@ -364,6 +365,14 @@
     overGap() { for (const g of this.gaps) if (Math.abs((this.sx + 4) - g) < 1.1) return true; return false; },
     step(dt) {
       this.t += dt; this.sx += dt * 5.5; this.run = (this.run + dt * 14) % 4;
+      // distinct stages: every 90 units is a new level (flash on entry)
+      const lv = 1 + Math.floor(this.sx / 90);
+      if (lv !== this.level) { this.level = lv; this.flash = 1; }
+      this.flash = Math.max(0, this.flash - dt * 1.5);
+      // a platformer that's always BOUNDING along (steady hop), with
+      // bigger jumps on the beat (beat()) and over gaps.
+      this._hop -= dt;
+      if (this.y <= 0.01 && this._hop <= 0) { this.vy = 5.2; this._hop = 0.42 + Math.random() * 0.22; }
       if (this.y <= 0.01 && this.overGap()) this.vy = 7.0;
       this.vy -= 22 * dt; this.y += this.vy * dt;
       if (this.y < 0) { this.y = 0; this.vy = 0; }
@@ -392,8 +401,9 @@
       const lrp = (a, b, k) => [a[0] + (b[0] - a[0]) * k | 0,
         a[1] + (b[1] - a[1]) * k | 0, a[2] + (b[2] - a[2]) * k | 0];
       const camX = this.sx + 4;
-      const skyHz = lrp(acc(env, 0), [255, 230, 195], 0.4);
-      const skyTop = scale(acc(env, 2), 0.18);
+      const LO = (this.level - 1) % 3;        // per-stage palette rotation
+      const skyHz = lrp(acc(env, LO), [255, 230, 195], 0.4);
+      const skyTop = scale(acc(env, 2 + LO), 0.18);
       for (let s = 0; s < 11; s++) {
         const k = s / 10, yy = 0.5 + k * 13;
         eng.line3([camX - 42, yy, 30], [camX + 42, yy, 30], lrp(skyHz, skyTop, k), ':');
@@ -401,7 +411,7 @@
       // parallax layers (far -> near). 'ground' unchanged from original.
       const layers = [
         [24, scale(env.pal.fg, 0.18), 0.12, 'ridge'],
-        [18, acc(env, 2), 0.25, 'mountains'],
+        [18, acc(env, 2 + LO), 0.25, 'mountains'],
         [11, scale(env.pal.fg, 0.30), 0.45, 'hills'],
         [3.5, env.pal.fg, 1, 'ground'],
         [2.0, scale(env.pal.fg, 0.12), 1.4, 'fore'],
@@ -439,6 +449,8 @@
           }
         }
       }
+      eng.text2d(2, 1, 'STAGE 1-' + this.level,
+        scale(env.pal.fg, 0.55 + this.flash * 0.45));
       for (const co of this.coins) {
         if (co.x < this.sx - 2 || co.x > this.sx + 30) continue;
         eng.sprite(co.x, co.y + 0.5, 3.4, co.got ? ['*'] : ['o'],
