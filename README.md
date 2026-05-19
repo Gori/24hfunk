@@ -3,7 +3,7 @@
 A **hermetic, fully-local** machine that improvises endless funk/jazz/electro/dub
 music *and* a matching ASCII demoscene visual, forever, with no network and no
 APIs. Everything runs on one Mac: a groove engine drives SuperCollider synths,
-a local LLM (Qwen via MLX) directs the sections, and a browser renders 103
+a local LLM (Qwen via MLX) directs the sections, and a browser renders 130
 music-reactive ASCII effects.
 
 ```
@@ -11,7 +11,7 @@ music-reactive ASCII effects.
    │  (21 genres, funk theory)        │  (per-track FX buses)
    │                                  └─ /vis/* OSC 57130 ─┐
  director/ Qwen ─ section state ─▶ bridge/ Node WS :8080 ◀─┘
-                                   └── WS ──▶ visualizer/  browser  (103 ASCII FX)
+                                   └── WS ──▶ visualizer/  browser  (130 ASCII FX)
 ```
 
 ## Screenshots
@@ -63,15 +63,14 @@ Each shot should show the top **HUD** (`EFFECT · …` / `MUSIC · genre · mood
   (including whether to invert). The fast genre **audition**
   (`scripts/smoke/genre_audition.py`) cycles all 21 every ~20s for evaluation.
 
-### Visuals — 103 ASCII effects (`visualizer/`)
+### Visuals — 130 ASCII effects (`visualizer/`)
 - A shared ASCII 3D engine (`a3d.js`): depth-buffered framebuffer, projection,
   line raster, sprites, fog, fast colour-run flush.
-- **4 worlds** (`worlds.js`): auto-walking DOOM raycaster (corridor-seeking),
-  voxel landscape flythrough, 2D side-scroller, wireframe Battlezone.
-- **99 demoscene effects** (`demoscene.js`): plasma, kefrens, shadebobs, moiré,
-  Outrun road, mandelbrot/julia/burning-ship, fire, glenz, boing, tunnels,
-  metaballs, raymarch, boids, harmonograph, mandala, DLA crystal, smoke,
-  tesseract, radar, truchet, voronoi, life, turmites, … (Amiga/C64/Atari/PC).
+- **4 worlds** (`worlds.js`) + **126 demoscene effects** (`demoscene.js`),
+  spanning classic demoscene, fractals/math, cellular sims, typographic,
+  and fine-art-inspired. See the **Effect reference** section below for the
+  category breakdown (no full enumeration — the registry is the source of
+  truth).
 - **Per-appearance variety**: every effect re-randomises speed/phase/colour/
   pattern + an occasional mirror/flip, so a recurring mode never looks the same.
 - **Moves with the whole music** (not just the beat): per-instrument energy,
@@ -140,7 +139,7 @@ midi/        groove engine + MIDI-LLM source + OSC out + worker
 synth/       SuperCollider boot/router + 25 SynthDefs
 director/    section director + schema/prompts
 bridge/      Node HTTP+WS + OSC-in + state
-visualizer/  a3d engine + 4 worlds + 99 demoscene effects + HUD
+visualizer/  a3d engine + 4 worlds + 126 demoscene effects + HUD
 scripts/     start-all / stop-all / smoke tests
 ```
 
@@ -178,114 +177,29 @@ progression bank, structure and palette per song).
 ## Effect reference
 
 The visual pool the engine shuffles through: **4 worlds** (3D scenes) +
-**99 demoscene effects**. Every appearance re-randomises speed/phase/colour
-and may mirror/flip, and all of them react to the music.
+**126 demoscene effects** = **130 total**, rotated continuously. Every
+appearance re-randomises speed/phase/colour and may mirror/flip, and all
+of them react to the music. The HUD shows the current effect's number +
+name live; the authoritative list is the registry in `visualizer/
+demoscene.js` (`window.Worlds.demos`) + `worlds.js` (`classics`).
 
-| Effect | What it is |
-|---|---|
-| `DOOM` *(world)* | Auto-walking corridor-seeking DOOM-style raycaster |
-| `LAND` *(world)* | Voxel-landscape flythrough (Comanche-style heightmap) |
-| `SIDE` *(world)* | Parallax 2D side-scroller |
-| `WIRE` *(world)* | Wireframe Battlezone vector world |
-| `RASTER BARS` | Classic copper/raster colour bars sweeping the screen |
-| `KEFRENS BARS` | Kefrens "bar" recursion fanning down the screen |
-| `SHADEBOBS` | Trailing additive blob sprites (shadebobs) |
-| `MOIRE` | Interfering line grids producing moiré patterns |
-| `VECTOR ROAD` | Outrun-style perspective road into the horizon |
-| `MANDELBROT` | Animated Mandelbrot set zoom |
-| `WORMHOLE` | Flight down a textured wormhole tunnel |
-| `LIFE` | Conway's Game of Life cellular automaton |
-| `AURORA` | Drifting aurora-curtain colour bands |
-| `RIPPLE` | Concentric water-ripple interference |
-| `DNA HELIX` | Rotating double-helix strand |
-| `STARBURST` | Radial starburst rays pulsing on the beat |
-| `DIGITAL RAIN` | Matrix-style falling glyph rain |
-| `TORUS` | Rotating shaded 3D torus |
-| `HEX ZOOM` | Infinitely zooming hex-grid tiling |
-| `LISSAJOUS` | Lissajous-curve oscilloscope figures |
-| `PLASMA TUNNEL` | Plasma-textured tunnel flythrough |
-| `VECTOR BALL GRID` | Grid of bobbing vector balls |
-| `COLOR SPIRAL` | Rotating multi-arm colour spiral |
-| `CHECKER FLOOR` | Perspective checkerboard floor scroll |
-| `DOT EXPLOSION` | Particle burst re-fired on the beat |
-| `INTERFERENCE` | Two-source wave interference field |
-| `WAVE GRID` | Oscillating 3D wireframe wave mesh |
-| `ROTO BARS` | Rotating/zooming bar field (rotozoom bars) |
-| `STAR CYLINDER` | Stars wrapped on a spinning cylinder |
-| `PULSE RINGS` | Expanding rings pulsed by the music |
-| `SPECTRUM` | Audio-spectrum analyser bars |
-| `JULIA` | Animated Julia-set fractal |
-| `BOUNCE LOGO` | The song title bounced DVD-logo style (bitmap font) |
-| `POLAR SWIRL` | Polar-coordinate swirl warp |
-| `TUNNEL RINGS` | Ring-segmented tunnel flythrough |
-| `DOT WAVE` | Sine-driven dot wave surface |
-| `WIRE SPHERE` | Rotating wireframe sphere |
-| `DATAMOSH` | Horizontal glitch/datamosh displacement |
-| `GALAXY` | Spiral-galaxy particle swirl |
-| `FIREWORKS` | Beat-synced fireworks bursts |
-| `META TUNNEL` | Metaball-walled tunnel |
-| `CUBE FIELD` | Field of receding 3D cubes |
-| `SINE DOTS` | Phased sine-scroll dot rows |
-| `VOXEL HILLS` | Rolling voxel hill terrain |
-| `PLASMA FRACTAL` | Fractal-noise plasma field |
-| `LENS` | Magnifying-lens distortion over a pattern |
-| `TRI FRACTAL` | Recursive triangle (Sierpinski-style) fractal |
-| `LIT TUNNEL` | Shaded/lit tunnel with normals |
-| `LIT ICOSA` | Lit rotating icosahedron |
-| `ATTRACTOR` | Strange-attractor particle trace |
-| `REACTION` | Reaction-diffusion (Gray-Scott) pattern |
-| `META LIT` | Lit/shaded metaballs |
-| `DEEP ZOOM` | Infinite Mandelbrot deep-zoom to set coordinates |
-| `BUMP PLASMA` | Bump-mapped embossed plasma |
-| `WARP STARS` | Accelerating warp-speed starfield |
-| `TORUS KNOT` | Rotating 3D torus-knot curve |
-| `INK FLOW` | Flowing ink-particle advection field |
-| `KINETIC TYPE` | Big song-word typography, beat-pulsed reveal |
-| `TURMITES` | Turmite / Langton's-ant cellular automaton |
-| `MAZE` | Generated maze with a traversal sweep |
-| `OSCILLOSCOPE` | Waveform oscilloscope trace |
-| `FALLING SAND` | Falling-sand granular automaton |
-| `RAYMARCH` | Raymarched SDF scene |
-| `BOIDS` | Flocking-boids swarm |
-| `HARMONOGRAPH` | Damped harmonograph pendulum curve |
-| `MANDALA` | Symmetric rotating mandala |
-| `JAVASCRIPT` | Scrolling source-code wall (syntax-tiered) |
-| `HARDWARE REFERENCE MANUAL` | Scrolling reference-manual text wall |
-| `NIGHT RIDGES` | Dotted night ridge-line silhouette |
-| `BALL PIT` | Physics ball-pit pile-up |
-| `CRYSTAL` | DLA crystal-growth accretion |
-| `SMOKE` | Fluid smoke/plume simulation |
-| `PENDULUM WAVE` | Phasing pendulum-wave array |
-| `TESSERACT` | Rotating 4D hypercube projection |
-| `RADAR` | Sweeping radar scope with blips |
-| `TRUCHET` | Truchet-tile maze pattern |
-| `VORONOI` | Animated Voronoi cell diagram |
-| `BURNING SHIP` | Burning-Ship fractal zoom |
-| `COPPER` | Amiga copperbar gradient stripes |
-| `STAR WARP` | Star-warp speed tunnel |
-| `SINE COLUMNS` | Sine-displaced vertical columns |
-| `BOBS` | Classic bouncing sprite bobs |
-| `VECTOR CUBE` | Rotating wireframe vector cube |
-| `ROTOTEX` | Rotozoomer textured plane |
-| `LUT PLASMA` | Look-up-table palette-cycled plasma |
-| `FRACTAL TREE` | Recursive swaying fractal tree |
-| `LIGHTNING` | Branching lightning bolts on hits |
-| `HILBERT` | Hilbert space-filling curve draw |
-| `RULE 30` | Rule-30 elementary cellular automaton |
-| `BRIANS BRAIN` | Brian's Brain three-state automaton |
-| `SPIROGRAPH` | Spirograph epicycloid curves |
-| `VECTOR TUNNEL` | Wireframe polygon tunnel |
-| `HYPERJUMP` | Star Wars-style hyperspace jump |
-| `PHONG CUBE` | Phong-shaded rotating cube |
-| `META DISCS` | Orbiting metaball discs |
-| `ASCII DONUT` | The classic spinning ASCII donut |
-| `WAVE TERRAIN` | Wireframe sine-terrain mesh |
-| `PLASMA FIRE` | Plasma-fed fire effect |
-| `SHUTTER` | Venetian-blind iris reveal of a colour wash |
-| `GRAVITY WELL` | Particles pulled into a moving gravity well |
-| `BOING SHADOW` | Amiga boing-ball with floor shadow |
-| `TEXT RINGS` | Song word orbiting in concentric 3D rings |
-| `ELITE` | Elite-style wireframe vector spacecraft |
+Roughly by category:
+
+- **3D worlds (4):** auto-walking DOOM raycaster (E1M1), voxel-landscape
+  flythrough, the STAGE 1-1 parallax side-scroller, wireframe Battlezone.
+- **Classic demoscene:** plasma, copper/raster bars, tunnels, rotozoom,
+  twister, glenz/vector solids, boing, kefrens, shadebobs, metaballs,
+  fire, starfields, kaleidoscope, feedback zoom, …
+- **Fractals & math:** mandelbrot/julia/burning-ship/buddhabrot,
+  raymarched menger/mandelbulb, attractors (lorenz/clifford), flow
+  fields, chladni, phyllotaxis, domain warp, apollonian, harmonograph, …
+- **Cellular / simulation:** life, brian's brain, rule 30, turmites,
+  reaction-diffusion, smoke, boids, gravity well, falling sand, DLA, …
+- **Text / typographic:** kinetic type, text rings, scrollers,
+  code/manual walls, teletext.
+- **Fine-art inspired:** Riley waves, Vasarely bulge, Penrose stairs,
+  Mondrian, Pollock drip, Rothko fields, Hokusai great wave, Kusama
+  dots, Joy-Division "Unknown Pleasures".
 
 ## Status
 
