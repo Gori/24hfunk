@@ -17,6 +17,8 @@
     'VECTOR TUNNEL': 0.45, 'PLASMA FIRE': 0.7,
     'LIT TUNNEL': 0.4, 'LUT PLASMA': 0.6, 'FRACTAL TREE': 0.6,
     'SHUTTER': 1.5, 'NIGHT RIDGES': 1.5, 'DATAMOSH': 0.8,
+    'RUBBER VECTOR': 0.5, 'DOT MORPH': 0.5, 'MANDELBULB': 0.5,
+    'PENROSE STAIRS': 1.8, 'ROTHKO FIELDS': 3, 'KUSAMA DOTS': 3, 'TELETEXT': 2.5,
     'E1M1': 1.7,
   };
   let eng, active, vT = 0;

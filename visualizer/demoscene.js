@@ -2246,21 +2246,6 @@
         mul(acc(env, i % 3), 0.4 + p * 0.5 + env.beat * 0.3), 3 + z1);
     }
   });
-  const VBallSphere = E('VECTOR BALL SPHERE', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd, N = 120;
-    const s = Math.min(C, R * 2) * 0.32 * (1 + env.beat * 0.12);
-    const ca = Math.cos(t), sa = Math.sin(t), cb = Math.cos(t * 0.55), sb = Math.sin(t * 0.55);
-    const ga = (1 + Math.sqrt(5)) / 2;
-    for (let i = 0; i < N; i++) {
-      const Y = 1 - (i / (N - 1)) * 2, rr = Math.sqrt(Math.max(0, 1 - Y * Y)), th = i * 2 * Math.PI / ga;
-      let x = Math.cos(th) * rr, z = Math.sin(th) * rr;
-      let y1 = Y * ca - z * sa, z1 = Y * sa + z * ca;
-      const x1 = x * cb - z1 * sb; z1 = x * sb + z1 * cb;
-      const p = 3 / (3 + z1), d = 0.5 + z1 * 0.5;
-      px(eng, C / 2 + x1 * s * p, R / 2 - y1 * s * p, z1 > 0 ? 'O' : 'o',
-        mul(acc(env, (i * 7 | 0) % 3), 0.25 + d * 0.65 + env.beat * 0.3), 3 + z1);
-    }
-  });
   const PGlobe = E('PLASMA GLOBE', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t;
     const tx = cx + Math.cos(t * 0.7) * C * 0.3, ty = cy + Math.sin(t * 0.9) * R * 0.3;
@@ -2317,25 +2302,6 @@
   });
 
   // ─────────── NEW BATCH 2 — demoscene effects ───────────
-  const InfZoom = E('INFINITE ZOOM', null, function (eng, env) {
-    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
-    const layers = 26, base = Math.min(C, R * 2);
-    for (let i = layers - 1; i >= 0; i--) {
-      const ph = i + (t * 1.5) % 1;
-      const sc = Math.pow(0.82, ph) * base;
-      const ang = ph * 0.6 * this.P.dir + t * 0.3;
-      const ca = Math.cos(ang), sa = Math.sin(ang);
-      const col = mul(acc(env, i % 3), 0.22 + (1 - i / layers) * 0.7 + env.beat * 0.25);
-      const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
-      let pv = null;
-      for (let k = 0; k < 5; k++) {
-        const px0 = pts[k][0], py0 = pts[k][1];
-        const X = cx + (px0 * ca - py0 * sa) * sc, Y = cy + (px0 * sa + py0 * ca) * sc * 0.55;
-        if (pv) LN(eng, pv[0], pv[1], X, Y, '#', col, 100 + i);
-        pv = [X, Y];
-      }
-    }
-  });
   const Planet = E('ASCII PLANET', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
     const rad = Math.min(C * 0.22, R * 0.42), spin = t * 0.5;
@@ -2466,25 +2432,6 @@
         mul(acc(env, ((i * 3 / N) | 0) % 3), 0.25 + (1 - i / N) * 0.3 + (i / N) * 0.5 + env.beat * 0.25), 300);
     }
   });
-  const Fourier = E('FOURIER EPICYCLES', function () { this.tr = []; }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
-    if (!this.tr) this.tr = [];
-    const N = 7, amp = Math.min(C, R * 2) * 0.16;
-    let x = cx, y = cy;
-    for (let k = 0; k < N; k++) {
-      const freq = k * 2 + 1, rr = amp / (k * 1.6 + 1);
-      const nx = x + Math.cos(t * freq * 0.6 * this.P.dir) * rr * (1 + env.beat * 0.15);
-      const ny = y + Math.sin(t * freq * 0.6 * this.P.dir) * rr;
-      LN(eng, x, y, nx, ny, '-', mul(acc(env, k % 3), 0.35), 120);
-      for (let ang = 0; ang < 6.28; ang += 0.5) px(eng, x + Math.cos(ang) * rr, y + Math.sin(ang) * rr, '.', mul(acc(env, k % 3), 0.12), 110);
-      x = nx; y = ny;
-    }
-    this.tr.push([x, y]);
-    if (this.tr.length > 500) this.tr.shift();
-    for (let i = 1; i < this.tr.length; i++)
-      LN(eng, this.tr[i - 1][0], this.tr[i - 1][1], this.tr[i][0], this.tr[i][1], '#',
-        mul(acc(env, 2), 0.2 + i / this.tr.length * 0.7 + env.beat * 0.2), 100);
-  });
 
   // ─────────── NEW BATCH 4 — generative-art ───────────
   const DomainWarp = E('DOMAIN WARP', null, function (eng, env) {
@@ -2514,54 +2461,7 @@
         circ(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr * 0.55, rr, depth + 1, ci + k);
       }
     };
-    circ(cx, cy, Math.min(C / 2, R) * 0.46, 0, 0);
-  });
-  const Sandpile = E('ABELIAN SANDPILE', function (eng) { this.g = new Int16Array(eng.cols * eng.rows); this.cnt = 0; },
-    function (eng, env) {
-      const C = eng.cols, R = eng.rows;
-      if (!this.g || this.g.length !== C * R) { this.g = new Int16Array(C * R); this.cnt = 0; }
-      const G = this.g, ci = ((R / 2) | 0) * C + ((C / 2) | 0);
-      const add = 3 + (env.beat > 0.5 ? 6 : 0);
-      G[ci] += add; this.cnt = (this.cnt || 0) + add;
-      for (let pass = 0; pass < 6; pass++) {
-        let any = false;
-        for (let y = 1; y < R - 1; y++) for (let x = 1; x < C - 1; x++) {
-          const i = y * C + x;
-          if (G[i] >= 4) { const q = (G[i] / 4) | 0; G[i] -= q * 4; G[i - 1] += q; G[i + 1] += q; G[i - C] += q; G[i + C] += q; any = true; }
-        }
-        if (!any) break;
-      }
-      if (this.cnt > C * R * 2) { G.fill(0); this.cnt = 0; }
-      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
-        const v = G[y * C + x];
-        if (v > 0) px(eng, x, y, v >= 3 ? '#' : v === 2 ? '+' : '.',
-          mul(acc(env, v % 3), 0.3 + Math.min(0.7, v * 0.22) + env.beat * 0.2), 300);
-      }
-    });
-  const LSystem = E('L-SYSTEM GARDEN', function () {
-    let s = 'X';
-    for (let i = 0; i < 4; i++) {
-      let o = '';
-      for (const ch of s) o += ch === 'X' ? 'F+[[X]-X]-F[-FX]+X' : ch === 'F' ? 'FF' : ch;
-      s = o;
-    }
-    this._ls = s;
-  }, function (eng, env) {
-    const C = eng.cols, R = eng.rows, s = this._ls || 'F';
-    const grow = (((this.t * this.P.spd * 0.12) % 1) * s.length * 1.4 | 0) + 60;
-    let x = C / 2, y = R - 2, a = -Math.PI / 2; const st = [];
-    const len = 0.85 + env.beat * 0.3;
-    for (let i = 0; i < grow && i < s.length; i++) {
-      const ch = s[i];
-      if (ch === 'F') {
-        const nx = x + Math.cos(a) * len, ny = y + Math.sin(a) * len;
-        LN(eng, x, y, nx, ny, '#', mul(acc(env, st.length % 3), 0.35 + 0.45 + env.beat * 0.2), 200);
-        x = nx; y = ny;
-      } else if (ch === '+') a += 0.42;
-      else if (ch === '-') a -= 0.42;
-      else if (ch === '[') st.push([x, y, a]);
-      else if (ch === ']') { const p = st.pop(); if (p) { x = p[0]; y = p[1]; a = p[2]; } }
-    }
+    circ(cx, cy, Math.min(C / 2, R) * 0.72, 0, 0);
   });
   const PenroseTile = E('PENROSE TILING', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd * 0.1;
@@ -2628,7 +2528,7 @@
   });
   const PenroseStairs = E('PENROSE STAIRS', null, function (eng, env) {
     const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd * 0.4;
-    const N = 28, s = Math.min(C / 2, R) * 0.07;
+    const N = 28, s = Math.min(C / 2, R) * 0.12;
     for (let i = 0; i < N; i++) {
       const a = i / N * 6.283 + t, side = ((i * 4 / N) | 0) % 4, rise = (i % (N / 4)) / (N / 4);
       const x = cx + Math.cos(a) * s * 3.2, y = cy + Math.sin(a) * s * 3.2 * 0.55 - rise * s * 2;
@@ -2654,7 +2554,7 @@
     const C = eng.cols, R = eng.rows;
     if (!this._rects) this._rects = (this._gen ? this._gen() : [[0, 0, 1, 1, 0.5]]);
     this._tm = (this._tm || 0) + 1 / 60;
-    if (this.bt > 0.5 && this._tm > 3 && this._gen) { this._rects = this._gen(); this._tm = 0; }
+    if (this.bt > 0.5 && this._tm > 0.6 && this._gen) { this._rects = this._gen(); this._tm = 0; }
     for (const rr of this._rects) {
       const x0 = rr[0] * C | 0, y0 = rr[1] * R | 0, x1 = (rr[0] + rr[2]) * C | 0, y1 = (rr[1] + rr[3]) * R | 0, cv = rr[4];
       const c = cv < 0.18 ? acc(env, 0) : cv < 0.34 ? acc(env, 1) : cv < 0.5 ? acc(env, 2) : mul(env.pal.fg, 0.12);
@@ -2751,7 +2651,7 @@
   const Teletext = E('TELETEXT', function () { this.page = 0; this.pt = 0; }, function (eng, env) {
     const C = eng.cols, R = eng.rows;
     this.pt = (this.pt || 0) + 1 / 60;
-    if (this.bt > 0.5 && this.pt > 2.5) { this.page = (this.page + 1) % 4; this.pt = 0; }
+    if (this.bt > 0.5 && this.pt > 0.6) { this.page = (this.page + 1) % 4; this.pt = 0; }
     const pg = this.page, RMP2 = '#+:. ';
     for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
       const u = x / C, v = y / R;
@@ -2784,10 +2684,10 @@
     RotoTex, LutPlasma, FracTree, Bolt, Hilb, Rule30, Brain, Spiro,
     VecTun, HyperJump, PhongCube, MetaDiscs, Donut, WaveTerr,
     PFire, Shutter, GravWell, BoingShadow, TextRing, Elite, AsmHall,
-    RubberVec, DotMorph, VBallSphere, PGlobe, Feedback, Kaleido,
-    InfZoom, Planet, Menger, Bulb,
-    Lorenz, Clifford, FlowField, Chladni, Phyllo, Fourier,
-    DomainWarp, Apollon, Sandpile, LSystem, PenroseTile, Buddha,
+    RubberVec, DotMorph, PGlobe, Feedback, Kaleido,
+    Planet, Menger, Bulb,
+    Lorenz, Clifford, FlowField, Chladni, Phyllo,
+    DomainWarp, Apollon, PenroseTile, Buddha,
     Riley, Vasarely, PenroseStairs, Mondrian, Pollock, Rothko,
     GreatWave, Kusama, UnknownP, Teletext,
   ];

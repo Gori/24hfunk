@@ -280,12 +280,6 @@
       if (this.spark)
         eng.sprite(this.spark.x, 0.5, this.spark.z, ['\\|/', '-+-', '/|\\'],
           scale([255, 240, 200], this.spark.t), 0.7);
-      if (this.flash > 0.45) {
-        const mxp = (cols / 2) | 0, myp = (rows * 0.62) | 0;
-        eng.glyph2d(mxp, myp, '*', [255, 255, 220]);
-        eng.glyph2d(mxp - 1, myp, '(', [255, 230, 160]);
-        eng.glyph2d(mxp + 1, myp, ')', [255, 230, 160]);
-      }
       eng.text2d(2, rows - 2, 'E1M' + this.level, scale(acc(env, 2), 0.7 + this.flash * 0.3));
     },
   };
