@@ -2020,23 +2020,22 @@
       }
     }
   });
-  const PFire = E('PLASMA FIRE', function (eng) { this.w = eng.cols; this.h = eng.rows; this.b = new Float32Array(this.w * this.h); }, function (eng, env) {
-    const w = this.w, h = this.h, b = this.b;
-    // classic Doom fire: every cell = the cell below (with a small random
-    // lateral drift) MINUS a random decay -> strictly cooling, flames die
-    // out with height so most of the screen stays dark (never a flat
-    // single-colour wall). Sparse hot source = licking tongues.
-    const P = this.P;
-    const sP = (0.50 + env.beat * 0.30) * (0.7 + P.amp * 0.6);
-    // lower cooling -> flames survive much higher up the screen (was
-    // dying out near the bottom). Still cools, so it stays licking, not a wall.
-    const cool = (0.024 + env.mv * 0.012) * (0.75 + P.spd * 0.5);
-    for (let x = 0; x < w; x++) b[(h - 1) * w + x] = (Math.random() < sP) ? (0.85 + Math.random() * 0.15) : 0;
-    for (let y = h - 2; y >= 0; y--) for (let x = 0; x < w; x++) {
-      const r = (Math.random() * 3) | 0;                  // 0..2
-      const sx = (x + r - 1 + w) % w;                     // drift -1..+1
-      const nv = b[(y + 1) * w + sx] - r * cool;
-      b[y * w + x] = nv < 0 ? 0 : nv;
+  const PFire = E('PLASMA FIRE', function (eng) { this.w = eng.cols; this.h = eng.rows; this.b = new Float32Array(this.w * this.h); this._fc = 0; }, function (eng, env) {
+    const w = this.w, h = this.h, b = this.b, P = this.P;
+    // A LOT slower: the fire isn't time-driven (it propagates one row per
+    // frame), so evolve the field only every 3rd frame; still render every
+    // frame. BIGGER: more fuel + far less cooling -> tall, full flames.
+    this._fc = (this._fc || 0) + 1;
+    if (this._fc % 3 === 0) {
+      const sP = (0.72 + env.beat * 0.28) * (0.8 + P.amp * 0.6);
+      const cool = (0.012 + env.mv * 0.008) * (0.75 + P.spd * 0.5);
+      for (let x = 0; x < w; x++) b[(h - 1) * w + x] = (Math.random() < sP) ? (0.85 + Math.random() * 0.15) : 0;
+      for (let y = h - 2; y >= 0; y--) for (let x = 0; x < w; x++) {
+        const r = (Math.random() * 3) | 0;
+        const sx = (x + r - 1 + w) % w;
+        const nv = b[(y + 1) * w + sx] - r * cool;
+        b[y * w + x] = nv < 0 ? 0 : nv;
+      }
     }
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const v = b[y * w + x]; if (v < 0.10) continue;
