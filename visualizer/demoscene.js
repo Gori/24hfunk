@@ -2604,6 +2604,104 @@
       }
     });
 
+  // ─────────── NEW BATCH 5 — art-inspired ───────────
+  const Riley = E('RILEY WAVES', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd;
+    const amp = 2 + (env.energy || 0) * 4 + Math.sin(t * 0.3) * 1.5;
+    const col = mul(acc(env, 0), 0.55 + env.beat * 0.3);
+    for (let y = 0; y < R; y++) {
+      const off = Math.sin(y * 0.25 + t * 1.5) * amp;
+      for (let x = 0; x < C; x++)
+        if (Math.sin((x + off) * 0.5 + Math.sin(y * 0.2 + t)) > 0) px(eng, x, y, '#', col, 400);
+    }
+  });
+  const Vasarely = E('VASARELY BULGE', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd;
+    const rad = Math.min(C / 2, R) * (0.7 + Math.sin(t * 0.6) * 0.2 + env.beat * 0.1), gs = 4;
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      const dx = x - cx, dy = (y - cy) * 2, d = Math.sqrt(dx * dx + dy * dy);
+      let bul = 1;
+      if (d < rad) { const k = d / rad; bul = 1 + (1 - k * k) * 0.8; }
+      const gx = Math.floor((cx + dx * bul) / gs), gy = Math.floor((cy + dy * 0.5 * bul) / gs);
+      if (((gx + gy) & 1) === 0) px(eng, x, y, '#', mul(acc(env, ((gx % 3) + 3) % 3), 0.4 + env.beat * 0.3), 400);
+    }
+  });
+  const PenroseStairs = E('PENROSE STAIRS', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, cx = C / 2, cy = R / 2, t = this.t * this.P.spd * 0.4;
+    const N = 28, s = Math.min(C / 2, R) * 0.07;
+    for (let i = 0; i < N; i++) {
+      const a = i / N * 6.283 + t, side = ((i * 4 / N) | 0) % 4, rise = (i % (N / 4)) / (N / 4);
+      const x = cx + Math.cos(a) * s * 3.2, y = cy + Math.sin(a) * s * 3.2 * 0.55 - rise * s * 2;
+      const c = mul(acc(env, side % 3), 0.3 + (i / N) * 0.5 + env.beat * 0.2);
+      for (let xx = -2; xx <= 2; xx++) for (let yy = 0; yy < 3; yy++) px(eng, x + xx, y + yy, '#', c, 200 + i);
+    }
+    const fi = ((t * 4) % N) | 0, fa = fi / N * 6.283 + t;
+    px(eng, cx + Math.cos(fa) * s * 3.2, cy + Math.sin(fa) * s * 3.2 * 0.55 - (fi % (N / 4)) / (N / 4) * s * 2 - 2,
+      '@', mul(acc(env, 2), 0.9), 100);
+  });
+  const Mondrian = E('MONDRIAN', function () {
+    this._gen = () => {
+      const rs = [];
+      const split = (x, y, w, h, d) => {
+        if (d > 4 || w < 0.12 || h < 0.16 || Math.random() < 0.25) { rs.push([x, y, w, h, Math.random()]); return; }
+        if (w > h) { const c = x + w * (0.3 + Math.random() * 0.4); split(x, y, c - x, h, d + 1); split(c, y, x + w - c, h, d + 1); }
+        else { const c = y + h * (0.3 + Math.random() * 0.4); split(x, y, w, c - y, d + 1); split(x, c, w, y + h - c, d + 1); }
+      };
+      split(0, 0, 1, 1, 0); return rs;
+    };
+    this._rects = this._gen(); this._tm = 0;
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows;
+    if (!this._rects) this._rects = (this._gen ? this._gen() : [[0, 0, 1, 1, 0.5]]);
+    this._tm = (this._tm || 0) + 1 / 60;
+    if (this.bt > 0.5 && this._tm > 3 && this._gen) { this._rects = this._gen(); this._tm = 0; }
+    for (const rr of this._rects) {
+      const x0 = rr[0] * C | 0, y0 = rr[1] * R | 0, x1 = (rr[0] + rr[2]) * C | 0, y1 = (rr[1] + rr[3]) * R | 0, cv = rr[4];
+      const c = cv < 0.18 ? acc(env, 0) : cv < 0.34 ? acc(env, 1) : cv < 0.5 ? acc(env, 2) : scale(env.pal.fg, 0.12);
+      for (let y = y0; y < y1 && y < R; y++) for (let x = x0; x < x1 && x < C; x++) {
+        const edge = (x <= x0 || x >= x1 - 1 || y <= y0 || y >= y1 - 1);
+        px(eng, x, y, edge ? '#' : gly(0.5), edge ? env.pal.fg : mul(c, 0.6 + env.beat * 0.2), 400);
+      }
+    }
+  });
+  const Pollock = E('POLLOCK DRIP', function (eng) {
+    this.b = new Float32Array(eng.cols * eng.rows); this.cl = new Uint8Array(eng.cols * eng.rows);
+  }, function (eng, env) {
+    const C = eng.cols, R = eng.rows;
+    if (!this.b || this.b.length !== C * R) { this.b = new Float32Array(C * R); this.cl = new Uint8Array(C * R); }
+    const B = this.b, CL = this.cl;
+    const throws = (env.hit > 0.5 ? 2 : 0) + (env.beat > 0.6 ? 1 : 0) + (Math.random() < 0.3 ? 1 : 0);
+    for (let s = 0; s < throws; s++) {
+      const ci = (Math.random() * 3) | 0;
+      let x = Math.random() * C, y = Math.random() * R, a = Math.random() * 6.28, vel = 2 + Math.random() * 5;
+      for (let k = 0; k < 60; k++) {
+        a += (Math.random() - 0.5) * 0.6; x += Math.cos(a) * vel * 0.4; y += Math.sin(a) * vel * 0.4; vel *= 0.97;
+        const ix = x | 0, iy = y | 0;
+        if (ix >= 0 && iy >= 0 && ix < C && iy < R) { B[iy * C + ix] = 1; CL[iy * C + ix] = ci; }
+      }
+    }
+    for (let i = 0; i < B.length; i++) B[i] *= 0.992;
+    for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+      const v = B[y * C + x];
+      if (v > 0.06) px(eng, x, y, v > 0.6 ? '#' : v > 0.3 ? '*' : '.', mul(acc(env, CL[y * C + x] % 3), 0.2 + v * 0.7 + env.beat * 0.15), 300);
+    }
+  });
+  const Rothko = E('ROTHKO FIELDS', null, function (eng, env) {
+    const C = eng.cols, R = eng.rows, t = this.t * this.P.spd * 0.3, blocks = 3, m = 4;
+    for (let b = 0; b < blocks; b++) {
+      const y0 = Math.floor((b / blocks) * R) + (b ? m : 0) + Math.sin(t + b) * 1.5;
+      const y1 = Math.floor(((b + 1) / blocks) * R) - m, base = acc(env, b % 3);
+      for (let y = Math.max(0, y0 | 0); y < Math.min(R, y1 | 0); y++) {
+        const cyB = (y0 + y1) / 2, fv = 1 - Math.min(1, Math.abs(y - cyB) / ((y1 - y0) / 2 + 0.001)) * 0.6;
+        for (let x = 0; x < C; x++) {
+          const fx = 1 - Math.min(1, Math.abs(x - C / 2) / (C / 2)) * 0.35;
+          const k = fv * fx * (0.5 + 0.5 * Math.sin(t * 0.5 + b));
+          px(eng, x, y, gly(0.3 + k * 0.5), mul(base, 0.25 + k * 0.6 + env.beat * 0.1), 600);
+        }
+      }
+    }
+  });
+
   window.Worlds.FNT5 = FNT5;            // shared 5x7 font (render.js scroller)
   window.Worlds.demos = [
     Plasma, Roto, Stars, Copper, Bobs, Tunnel, Twister, Glenz, Boing,
@@ -2626,5 +2724,6 @@
     InfZoom, Planet, Menger, Bulb,
     Lorenz, Clifford, FlowField, Chladni, Phyllo, Fourier,
     DomainWarp, Apollon, Sandpile, LSystem, PenroseTile, Buddha,
+    Riley, Vasarely, PenroseStairs, Mondrian, Pollock, Rothko,
   ];
 })();
