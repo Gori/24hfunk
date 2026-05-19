@@ -425,23 +425,34 @@
         for (let i = -2; i < 40; i++) {
           const wx = Math.floor((this.sx * par) / 4) * 4 + i * 4;
           if (kind === 'ridge') {
-            const hh = 5 + 3 * vnoise(wx * 0.12, 9);
-            eng.line3([wx, 0, pz], [wx + 3, hh, pz], colr, '/');
-            eng.line3([wx + 3, hh, pz], [wx + 6, 0, pz], colr, '\\');
+            // FILLED solid silhouette (tent profile), not an outline
+            const hh = 5 + 3 * vnoise(wx * 0.12, 9), W = 6;
+            for (let xx = 0; xx <= W; xx += 0.5) {
+              const h = hh * (1 - Math.abs(xx - W / 2) / (W / 2));
+              eng.line3([wx + xx, h, pz], [wx + xx, 0, pz], colr, '#');
+            }
           } else if (kind === 'mountains') {
-            const hh = 3 + 2 * vnoise(wx * 0.2, 0);
-            eng.line3([wx, 0, pz], [wx + 2, hh, pz], scale(colr, 0.4), '/');
-            eng.line3([wx + 2, hh, pz], [wx + 4, 0, pz], scale(colr, 0.4), '\\');
+            const hh = 3 + 2 * vnoise(wx * 0.2, 0), W = 4, mc = scale(colr, 0.5);
+            for (let xx = 0; xx <= W; xx += 0.5) {
+              const h = hh * (1 - Math.abs(xx - W / 2) / (W / 2));
+              eng.line3([wx + xx, h, pz], [wx + xx, 0, pz], mc, '#');
+            }
           } else if (kind === 'hills') {
             const r = hash2(wx, 7);
-            if (r < 0.5) {
-              const hh = 1.6 + r * 2;
-              eng.line3([wx, 0, pz], [wx + 1.5, hh, pz], scale(colr, 0.8), '/');
-              eng.line3([wx + 1.5, hh, pz], [wx + 3, 0, pz], scale(colr, 0.8), '\\');
-              eng.line3([wx, 0, pz], [wx + 3, 0, pz], scale(colr, 0.8), '_');
-            } else if (r < 0.78) {
-              eng.line3([wx + 1, 0, pz], [wx + 2.4, 0.9, pz], scale(colr, 0.7), '(');
-              eng.line3([wx + 2.4, 0.9, pz], [wx + 3.8, 0, pz], scale(colr, 0.7), ')');
+            if (r < 0.5) {                                  // filled rounded hill
+              const hh = 1.6 + r * 2, hc = scale(colr, 0.8);
+              for (let xx = 0; xx <= 3; xx += 0.5) {
+                const n = (xx - 1.5) / 1.5;
+                const h = hh * Math.sqrt(Math.max(0, 1 - n * n));
+                eng.line3([wx + xx, h, pz], [wx + xx, 0, pz], hc, '#');
+              }
+            } else if (r < 0.78) {                          // filled bush
+              const bc = scale(colr, 0.7);
+              for (let xx = 0; xx <= 2.8; xx += 0.5) {
+                const n = (xx - 1.4) / 1.4;
+                const h = 0.95 * Math.sqrt(Math.max(0, 1 - n * n));
+                eng.line3([wx + 1 + xx, h, pz], [wx + 1 + xx, 0, pz], bc, '#');
+              }
             }
           } else if (kind === 'ground') {
             const gap = this.gaps.some((g) => Math.abs(wx + 2 - g) < 2);
@@ -453,9 +464,12 @@
                 eng.line3([wx + xx, gy, pz], [wx + xx, -1.4, pz], colr, '=');
             }
           } else {
-            if (hash2(wx, 21) < 0.4) {
-              eng.line3([wx, -1, pz], [wx + 2, 1.4, pz], colr, '|');
-              eng.line3([wx + 2, 1.4, pz], [wx + 4, -1, pz], colr, '|');
+            if (hash2(wx, 21) < 0.4) {                       // filled fg hump
+              const W = 4;
+              for (let xx = 0; xx <= W; xx += 0.5) {
+                const h = 1.4 * (1 - Math.abs(xx - W / 2) / (W / 2));
+                eng.line3([wx + xx, h, pz], [wx + xx, -1, pz], colr, '#');
+              }
             }
           }
         }
