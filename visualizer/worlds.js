@@ -214,7 +214,7 @@
       c.pitch = 0; c.fov = 0.66;
       const cols = eng.cols, rows = eng.rows;
       const lrp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
-      const horizon = (rows * 0.5 + Math.sin(env.t * 1.6) * 0.8 + env.beat * 2.2) | 0;
+      const horizon = (rows * 0.5 + env.beat * 2.2) | 0;
       const A1 = acc(env, 1), floorC = acc(env, 0);
       const WT = [scale(A1, 0.95), lrp(A1, [185, 140, 80], 0.55), lrp(A1, [165, 50, 45], 0.6)];
       const lavaPulse = 0.7 + 0.3 * Math.sin(env.t * 6);
