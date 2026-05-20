@@ -401,6 +401,12 @@ _LEAD_VEL_BOOST = {
     "stab":  0.95,   # electro / synthwave / broken_house / uk_garage / dub_garage
 }
 
+# per-GENRE octave offset applied AFTER the key-anchored pitch calc.
+# Default 0; -1 = one octave down, +1 = one octave up.
+_LEAD_OCT = {
+    "electro": -1,
+}
+
 # per-feel bar interval between emitted phrases. 4 = "one phrase per 4
 # bars" (the phrase plays in bar 0 of the group, bars 1-3 are silent).
 # Jazz is unchanged (uses _jazz_motif, emits continuously). Space = n/a.
@@ -1316,7 +1322,7 @@ class CannedSource:
             if use_b and i == nN - 1:                         # B-phrase resolves to root
                 d = 1
             # KEY-ANCHORED pitch — same MIDI note for same deg every emit
-            pit = self._scale_deg_pit_in_key(d, sc, 36)
+            pit = self._scale_deg_pit_in_key(d, sc, 36) + 12 * _LEAD_OCT.get(self.genre, 0)
             mid = nN / 2.0
             d2p = 1.0 - abs(i - mid) / max(1.0, nN - 1)
             vel = 0.46 + 0.18 * d2p + (0.05 if local_s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
