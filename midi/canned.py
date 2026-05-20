@@ -544,27 +544,27 @@ _LEAD_FEEL = {
 # replays the A/A/A/B pattern across emit-bars (every bar for funk/jazz,
 # every 2 bars for hook/lyric/stab/hypno).
 _LEAD_RHYTHM = {
-    # funk (horn section): 2-bar phrases. CHORD TONES (1/3/5/7) primarily.
-    # MIX of stabs (du=1-2) AND held notes (du=4-8) — a real horn section
-    # plays both. Some notes dip to deg -6 = one octave below default lead
-    # register (lead doubling the bass on an anchor note).
+    # funk (horn section): 2-bar phrases. EACH A motif has INTERNAL
+    # REPETITION + follows the BASS — deg -6 (one octave below default
+    # lead reg = bass-doubling register) on the 'one' of each bar, echoing
+    # the bass kick rhythm. Small repeating figures (5-3, 1-3) hook the ear.
     "funk": [
-        # "Cold Sweat": 3-stab pickup + HELD note (held = the horn pad)
-        [(1,2,1), (3,3,1), (5,4,1), (1,6,5), (5,20,1), (3,21,1), (1,22,4)],
-        # Long-held 5 + answer riff (call-response: pad then horn stab)
-        [(5,0,7), (5,18,1), (3,19,1), (1,20,4)],
-        # Climb 1-3-5 sustained + answer 7-5-1
-        [(1,0,1), (3,2,1), (5,4,5), (7,18,1), (5,19,1), (1,20,4)],
-        # Punchy stabs with held finish (3 hits + held)
-        [(5,4,1), (1,6,2), (5,12,1), (3,14,1), (5,20,1), (1,22,4)],
-        # Bass-doubling on the 'one', held horn pad, then stab answer
-        [(-6,0,2), (5,4,5), (3,18,1), (5,19,1), (1,20,4)],
-        # COMPLEXITY: full 1-3-5-7-8 climb + descending chord-tone answer
-        [(1,0,1), (3,2,1), (5,4,1), (7,6,1), (8,8,2), (5,16,1), (7,17,1), (5,18,1), (3,19,1), (1,20,4)],
-        # COMPLEXITY: bass-dip + walking chord-tone stabs + held + answer
-        [(-6,0,1), (1,2,1), (3,3,1), (5,4,1), (3,8,2), (5,16,1), (3,17,1), (1,18,2), (5,20,1), (1,22,4)],
-        # COMPLEXITY: rhythmic 16th interplay on bar 1, sparse hold on bar 2
-        [(1,0,1), (3,2,1), (1,4,1), (3,6,1), (5,8,1), (3,10,1), (5,12,1), (5,16,2), (3,18,1), (1,20,4)],
+        # Bass-octave on each 'one' (echoing bass) + chord-tone fills
+        [(-6,0,1), (1,2,1), (3,4,1), (-6,8,1), (5,12,1), (-6,16,1), (1,18,1), (3,20,1), (5,22,2)],
+        # Bass-doubling HELD over bar 1 + repeated 5-stab answer
+        [(-6,0,7), (5,16,1), (5,18,1), (5,20,1), (1,22,4)],
+        # Bass-octave call x2 + held 5 response (lead mirrors bass-then-replies)
+        [(-6,0,2), (1,4,1), (-6,8,2), (1,12,1), (5,16,4), (5,22,2)],
+        # 5-3 figure x3 + bass-anchor hold on bar 2
+        [(5,0,1), (3,2,1), (5,4,1), (3,6,1), (5,8,1), (3,10,1), (-6,20,4)],
+        # 1-3 alternating x4 + bass anchor hold
+        [(1,0,1), (3,2,1), (1,4,1), (3,6,1), (1,8,1), (3,10,1), (1,12,1), (3,14,1), (-6,16,7)],
+        # Bass-dip + held 5 + bass-dip + repeated 5-stab
+        [(-6,0,2), (5,4,5), (-6,16,2), (5,20,1), (5,22,2)],
+        # Bass-octave-then-chord-tone pattern repeated in both bars
+        [(-6,0,2), (5,4,1), (3,6,1), (1,8,2), (-6,16,2), (5,20,1), (3,22,1), (1,24,2)],
+        # Long bass-octave + brief chord-tone climb answer
+        [(-6,0,5), (1,16,1), (3,17,1), (5,18,1), (1,20,4)],
     ],
     # jazz (bebop): _jazz_motif uses a CHROMATIC ladder (chord tones on
     # strong beats, semitone passing tones between) -> the deg field here
@@ -576,14 +576,14 @@ _LEAD_RHYTHM = {
         [(0,0,1), (0,2,1), (0,4,1), (0,6,1), (0,8,2), (0,12,2)],
         [(0,0,1), (0,1,1), (0,2,1), (0,3,1), (0,6,1), (0,8,1), (0,10,1), (0,12,2)],
     ],
-    # stab (synthwave/electro horn-stab): 1-bar phrases. MIX of stabs +
-    # one held note for variety. Still mostly punchy by genre name.
+    # stab (synthwave/electro horn-stab): 1-bar phrases. INTERNAL REPETITION
+    # of 2-3 note figures + bass-echo on beat 1 (deg -6 = bass-doubling reg).
     "stab": [
-        [(1,2,1), (3,4,1), (5,6,1), (5,10,4)],                          # 3 stabs + held 5
-        [(5,0,1), (3,4,1), (1,8,4)],                                    # stab-stab-HOLD
-        [(1,6,1), (3,7,1), (5,8,3)],                                    # late stab + held
-        [(1,0,1), (5,4,1), (1,8,4)],                                    # 1-5-HOLD octave
-        [(3,2,1), (5,3,1), (1,8,4)],                                    # 3-5-HOLD
+        [(-6,0,1), (5,4,1), (3,6,1), (1,8,4)],                          # bass-echo + stabs-HOLD
+        [(5,0,1), (5,4,1), (5,8,1), (1,12,3)],                          # repeated 5 stabs + HOLD
+        [(1,0,1), (5,4,1), (1,8,1), (5,12,1)],                          # 1-5 alternating
+        [(-6,0,1), (3,2,1), (1,4,1), (-6,8,1), (3,10,1), (1,12,4)],     # bass-echo x2 + repeated 3-1 + held
+        [(3,0,1), (5,2,1), (3,4,1), (5,6,1), (1,8,4)],                  # 3-5 alternating + HOLD
     ],
     # hypno (techno): minimal — long held + sparse hit. Single voice
     # sustained over the loop.
@@ -593,20 +593,19 @@ _LEAD_RHYTHM = {
         [(1,4,2), (5,8,5)],                                             # 1 + held 5
         [(5,2,1), (3,4,1), (1,8,5)],                                    # 5-3-1 + held 1
     ],
-    # lyric (rnb/lofi soul-horn): 2-bar phrases. SUSTAINED held notes
-    # alternating with chord-tone stabs — call-response like a Stax horn
-    # section answering a vocal line.
+    # lyric (rnb/lofi soul-horn): 2-bar phrases. INTERNAL REPETITION +
+    # bass-echo on beat 1 of each bar (lead follows the bass anchor).
     "lyric": [
-        # Held 5 (one bar pad) + chord-tone stab answer on bar 2
-        [(5,0,7), (5,16,1), (3,18,1), (1,20,4)],
-        # Climb 1-3-5 + long held 5 + stab finish
-        [(1,0,1), (3,4,1), (5,8,4), (5,20,1), (1,22,4)],
-        # Question 5-3 stab, answer 5-1 stab + held
-        [(5,2,2), (3,6,1), (5,18,1), (1,20,4)],
-        # Long held 3 + soul-stab answer
-        [(3,0,7), (1,18,1), (3,20,1), (5,22,3)],
-        # Bass-doubling pickup + soul stabs + held
-        [(-6,0,1), (1,4,1), (5,6,4), (1,18,1), (3,20,1), (5,22,3)],
+        # Bass-anchor held + repeated soul stabs
+        [(-6,0,7), (5,16,1), (3,18,1), (5,20,1), (3,22,2)],
+        # Bass-echo + 5-3 figure x2 + held
+        [(-6,0,1), (5,4,1), (3,6,1), (5,8,1), (3,10,1), (-6,16,1), (1,20,4)],
+        # 3-5 alternating x3 + bass anchor on bar 2
+        [(3,0,1), (5,2,1), (3,4,1), (5,6,1), (3,8,1), (5,10,1), (-6,16,7)],
+        # Long held 5 + bass-echo + stab answer
+        [(5,0,7), (-6,16,2), (5,20,1), (3,22,2)],
+        # Bass-anchor x2 (one per bar) + soul-stab fills between
+        [(-6,0,2), (5,4,1), (3,6,1), (1,8,1), (-6,16,2), (5,20,1), (3,22,1), (1,24,1)],
     ],
     "space": [
         [(1,0,6)],
