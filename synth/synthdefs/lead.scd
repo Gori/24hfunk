@@ -35,8 +35,8 @@ SynthDef(\lead, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=0.8, detune=0.
 	rc = LPF.ar(RLPF.ar(rc * (1 + drive * 0.18), cf, 0.42), (cf * 1.4).clip(320, 16000));
 	lc = ((lc + (lc * lc * 0.10)).tanh * 0.92);
 	rc = ((rc + (rc * rc * 0.10)).tanh * 0.92);
-	lc = LPF.ar(lc, 4000);                                 // global high-cut (lead taming)
-	rc = LPF.ar(rc, 4000);
+	lc = LPF.ar(lc, 3600);                                 // global high-cut (lead taming)
+	rc = LPF.ar(rc, 3600);
 	Out.ar(out, Balance2.ar(LeakDC.ar(lc), LeakDC.ar(rc), pan.clip(-1, 1) * 0.3)
 		* env * safety * amp * 2.55 * level);
 }).add;

@@ -4,7 +4,7 @@ SynthDef(\leadBell, { |out=0, amp=0.5, freq=440, fmRatio=3.5, fmIndex=2.0, detun
 		wave=0.5, cutoff=4500, decay=0.4, gate=1, maxSustain=3.0, drive=1.0,
 		glide=0.03, level=1.0, pan=0|
 	var v       = amp.clip(0.05, 1.0);
-	var fHz     = Lag.kr(freq.clip(80, 4000), glide.clip(0, 0.15));
+	var fHz     = Lag.kr(freq.clip(80, 3600), glide.clip(0, 0.15));
 	var env     = EnvGen.kr(Env.asr(0.003, 1.0, 0.9, -4), gate);
 	var safety  = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 6), 0.1]),
 		1, doneAction: 2);
@@ -15,7 +15,7 @@ SynthDef(\leadBell, { |out=0, amp=0.5, freq=440, fmRatio=3.5, fmIndex=2.0, detun
 	var sig     = car;
 	sig = RLPF.ar(sig, (cutoff * (0.7 + v * 0.6)).clip(800, 9000), 0.4);
 	sig = (sig * (1 + drive * 0.15)).tanh * 0.9;
-	sig = LPF.ar(sig, 4000);
+	sig = LPF.ar(sig, 3600);
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.008),
 		pan.clip(-1, 1) * 0.4) * env * safety * amp * 2.2 * level);
 }).add;

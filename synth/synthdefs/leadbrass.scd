@@ -5,7 +5,7 @@ SynthDef(\leadBrass, { |out=0, amp=0.5, freq=440, fmRatio=1.0, fmIndex=1.2, detu
 		wave=0.5, cutoff=2800, decay=0.22, gate=1, maxSustain=2.0, drive=1.0,
 		glide=0.04, level=1.0, pan=0|
 	var v       = amp.clip(0.05, 1.0);
-	var fHz     = Lag.kr(freq.clip(80, 4000), glide.clip(0, 0.15));
+	var fHz     = Lag.kr(freq.clip(80, 3600), glide.clip(0, 0.15));
 	var env     = EnvGen.kr(Env.asr(0.012, 1.0, 0.22, -4), gate);
 	var safety  = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 6), 0.05]),
 		1, doneAction: 2);
@@ -18,7 +18,7 @@ SynthDef(\leadBrass, { |out=0, amp=0.5, freq=440, fmRatio=1.0, fmIndex=1.2, detu
 	sig = RLPF.ar(sig,
 		(cutoff * (0.6 + v * 0.8 + bite * 0.7)).clip(400, 7500), 0.4);
 	sig = (sig * (1 + drive * 0.35)).tanh * 0.95;
-	sig = LPF.ar(sig, 4000);
+	sig = LPF.ar(sig, 3600);
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.006),
 		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.3 * level);
 }).add;

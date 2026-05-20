@@ -564,15 +564,15 @@ _DRUM_GLUE = {
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
-    "electro": 0.8, "uk_garage": 0.85, "minneapolis_funk": 0.86,
-    "broken_house": 0.88, "minimal_techno": 0.9, "eighties_hiphop": 0.96,
+    "electro": 0.72, "uk_garage": 0.765, "minneapolis_funk": 0.774,
+    "broken_house": 0.792, "minimal_techno": 0.81, "eighties_hiphop": 0.864,
     # \lead genres
-    "funk": 0.82, "electro_funk": 1.15, "synthwave": 0.99, "jazz": 0.84,
+    "funk": 0.738, "electro_funk": 1.035, "synthwave": 0.891, "jazz": 0.756,
     # leadFM genres tend dark/quiet -> lift
-    "detroit_techno": 1, "afro_rnb": 0.5, "dub_garage": 1.06,
-    "dub_techno": 1.1, "neon_dub": 1.12, "steppers_dub": 1.12,
-    "lofi": 1.15, "rnb": 1.46, "roots_reggae": 1.2, "dub": 1.22,
-    "indie_rnb": 1.22,
+    "detroit_techno": 0.9, "afro_rnb": 0.45, "dub_garage": 0.954,
+    "dub_techno": 0.99, "neon_dub": 1.008, "steppers_dub": 1.008,
+    "lofi": 1.035, "rnb": 1.314, "roots_reggae": 1.08, "dub": 1.098,
+    "indie_rnb": 1.098,
 }
 
 # Per-genre CHORD (CH_KEYS) loudness multiplier. keys is not in the

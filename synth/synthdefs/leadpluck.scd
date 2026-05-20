@@ -6,7 +6,7 @@ SynthDef(\leadPluck, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 		wave=0.5, cutoff=4000, decay=0.25, gate=1, maxSustain=2.2, drive=1.0,
 		glide=0.03, level=1.0, pan=0|
 	var v       = amp.clip(0.05, 1.0);
-	var fHz     = Lag.kr(freq.clip(80, 4000), glide.clip(0, 0.15));
+	var fHz     = Lag.kr(freq.clip(80, 3600), glide.clip(0, 0.15));
 	var env     = EnvGen.kr(Env.asr(0.001, 1.0, 0.30, -4), gate);
 	var safety  = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 6), 0.05]),
 		1, doneAction: 2);
@@ -17,7 +17,7 @@ SynthDef(\leadPluck, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	var body    = pluck + (SinOsc.ar(fHz) * 0.18);                 // a touch of sub
 	var sig     = RLPF.ar(body, (cutoff * (0.7 + v * 0.6)).clip(500, 8000), 0.35);
 	sig = (sig * (1 + drive * 0.2)).tanh * 1.25;
-	sig = LPF.ar(sig, 4000);                                       // global high-cut
+	sig = LPF.ar(sig, 3600);                                       // global high-cut
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0065),
 		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.2 * level);
 }).add;

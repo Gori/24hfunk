@@ -14,7 +14,7 @@ SynthDef(\leadHyper, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	var cf      = (cutoff * (0.5 + v * 0.9) * fenv).clip(300, 9000);
 	var sig     = RLPF.ar(saws, cf, 0.45);
 	sig = (sig * (1 + drive * 0.25)).tanh * 0.9;
-	sig = LPF.ar(sig, 4000);
+	sig = LPF.ar(sig, 3600);
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0075),
 		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.4 * level);
 }).add;
