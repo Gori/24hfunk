@@ -757,6 +757,10 @@ _DRUM_GLUE = {
 # drive/decay give very different perceived levels for the same velocity.
 # This trims output ONLY (not velocity) so tone and the visualizer's
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
+# global lead-volume multiplier applied to BOTH levers (level + velocity)
+# so the combined effect is one global trim. 0.84 x 0.84 = 0.706 ~= -30%.
+_LEAD_GLOBAL = 0.84
+
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
     "electro": 0.4788, "uk_garage": 0.5087, "minneapolis_funk": 0.6231,
@@ -922,7 +926,7 @@ class CannedSource:
         lv = _LEAD_LEVEL.get(self.genre)
         if lv is not None:
             ld = dict(sp.get("lead", {}))
-            ld["level"] = lv
+            ld["level"] = lv * _LEAD_GLOBAL
             sp["lead"] = ld
         return sp
 
@@ -1265,7 +1269,7 @@ class CannedSource:
             return
         pit = (ct[0] + 24) + rnd.choice([0, 5, 7, 12])
         dur = beat * 4.4
-        D(0, dur, pit, 0.857, CH_LEAD)              # +30% from 0.7 (user: "50% higher on dub sirens")
+        D(0, dur, pit, 0.857 * _LEAD_GLOBAL, CH_LEAD)   # global lead trim applied
 
     def _chord_mode(self, ct, cr):
         # Infer a 7-degree mode for the CURRENT CHORD by reading its quality
@@ -1381,8 +1385,8 @@ class CannedSource:
             vel = 0.46 + 0.18 * d2p + (0.05 if local_s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
             if use_b and i >= nN - 2:
                 vel -= 0.05
-            vel *= boost
-            vel = max(0.22, min(0.95, vel))
+            vel *= boost * _LEAD_GLOBAL
+            vel = max(0.22 * _LEAD_GLOBAL, min(0.95, vel))
             D(local_s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
