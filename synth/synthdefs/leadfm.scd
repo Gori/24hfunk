@@ -20,7 +20,7 @@ SynthDef(\leadFM, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=
 	// #6 gentle musical saturation (warm even harmonics, not a hard clip)
 	sig = (((sig * (1 + drive * 0.30)) + (sig * sig * 0.09)).tanh) * 0.92;
 	// #1-lite: a subtle Haas widen for stereo body without changing timbre
-	sig = LPF.ar(sig, 4500);                               // global high-cut (lead taming)
+	sig = LPF.ar(sig, 4000);                               // global high-cut (lead taming)
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0065),
 		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.55 * level);
 }).add;

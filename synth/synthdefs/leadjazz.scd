@@ -25,7 +25,7 @@ SynthDef(\leadJazz, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detun
 	sig = (sig * 1.15).tanh;                                // gentle metal body
 	// the motor tremolo (classic vibraphone), gentle fade-in
 	sig = sig * SinOsc.kr(5.2, 1.5).range(0.74 + (0.26 * EnvGen.kr(Env([1, 0], [0.5]))), 1.0);
-	sig = LPF.ar(sig, 4500);                               // global high-cut (lead taming)
+	sig = LPF.ar(sig, 4000);                               // global high-cut (lead taming)
 	Out.ar(out, Balance2.ar(LeakDC.ar(sig),
 		DelayC.ar(LeakDC.ar(sig), 0.02, 0.006),
 		pan.clip(-1, 1) * 0.25) * env * safety * amp * 1.25 * level);

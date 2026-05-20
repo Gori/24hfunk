@@ -19,7 +19,7 @@ SynthDef(\leadPulse, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	// #6 gentle musical saturation instead of a hard clip
 	sig = ((((sig * (1 + drive * 0.4)) + (sig * sig * 0.07)).tanh) * 0.92) * 0.6;
 	// #1-lite: subtle Haas stereo widen
-	sig = LPF.ar(sig, 4500);                               // global high-cut (lead taming)
+	sig = LPF.ar(sig, 4000);                               // global high-cut (lead taming)
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0065),
 		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.55 * level);
 }).add;
