@@ -405,6 +405,7 @@ _LEAD_VEL_BOOST = {
 # Default 0; -1 = one octave down, +1 = one octave up.
 _LEAD_OCT = {
     "electro": -1,
+    "funk":    -1,
 }
 
 # B-phrase FILL banks per feel — when use_b is True (1 in every 8 emitted
@@ -558,6 +559,12 @@ _LEAD_RHYTHM = {
         [(5,4,1), (1,6,2), (5,12,1), (3,14,1), (5,20,1), (1,22,4)],
         # Bass-doubling on the 'one', held horn pad, then stab answer
         [(-6,0,2), (5,4,5), (3,18,1), (5,19,1), (1,20,4)],
+        # COMPLEXITY: full 1-3-5-7-8 climb + descending chord-tone answer
+        [(1,0,1), (3,2,1), (5,4,1), (7,6,1), (8,8,2), (5,16,1), (7,17,1), (5,18,1), (3,19,1), (1,20,4)],
+        # COMPLEXITY: bass-dip + walking chord-tone stabs + held + answer
+        [(-6,0,1), (1,2,1), (3,3,1), (5,4,1), (3,8,2), (5,16,1), (3,17,1), (1,18,2), (5,20,1), (1,22,4)],
+        # COMPLEXITY: rhythmic 16th interplay on bar 1, sparse hold on bar 2
+        [(1,0,1), (3,2,1), (1,4,1), (3,6,1), (5,8,1), (3,10,1), (5,12,1), (5,16,2), (3,18,1), (1,20,4)],
     ],
     # jazz (bebop): _jazz_motif uses a CHROMATIC ladder (chord tones on
     # strong beats, semitone passing tones between) -> the deg field here
