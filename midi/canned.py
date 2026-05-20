@@ -380,6 +380,22 @@ _KICK_STRONG = {
 
 # Per-feel rest probabilities: bar_p = whole-bar silence chance,
 # note_p = individual-note drop chance. The groove lives in the gaps.
+# per-feel note duration multiplier (the factor that scales beat * du into
+# the actual gate length). Higher = longer-sustained notes.
+_LEAD_NLEN = {
+    "funk":  0.45,   # talkbox sings
+    "jazz":  0.30,   # bebop 8ths (also used by _jazz_motif)
+    "stab":  0.16,   # true stabs
+    "hypno": 0.20,   # short repetitive
+    "lyric": 0.42,   # singable, sustained
+    "hook":  0.14,   # tight 16ths (80s hook)
+    "space": 0.40,   # n/a (dub family uses skanks)
+}
+
+# feels that emit only every OTHER bar (odd bars silent). The remaining
+# feels (funk, jazz) emit every bar.
+_LEAD_EVERY2 = {"hook", "lyric", "stab", "hypno"}
+
 _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
     "funk":  (0.06, 0.14),
@@ -442,60 +458,75 @@ _LEAD_FEEL = {
     "dub": "space", "neon_dub": "space", "steppers_dub": "space",
     "roots_reggae": "space",
 }
+# Per-section melodies. Each tuple is (deg, s, du):
+#   deg : scale degree relative to the CURRENT CHORD ROOT, mapped through
+#         the chord's mode (minor scale for minor chords, major scale for
+#         major, mixolydian for dom7, locrian for half-dim). Deg 1..7 plus
+#         deg 8 (octave) supported; chord-aware transposition is handled
+#         in _motif via _scale_deg_pit().
+#   s   : 16th-step position within the bar (0..15)
+#   du  : duration in 16th-step units
+# A section locks ONE melody (its A motif) + one variation (B motif), then
+# replays the A/A/A/B pattern across emit-bars (every bar for funk/jazz,
+# every 2 bars for hook/lyric/stab/hypno).
 _LEAD_RHYTHM = {
-    # funk (talkbox): sung phrases, not stabs — longer durations, mid-density,
-    # syncopated entries, pentatonic-friendly contours.
+    # funk (talkbox): sung 4-6 syllable phrases, mostly chord-tones (1/3/5)
+    # with some stepwise motion. Talkbox needs sustain -> mid/long du.
     "funk": [
-        [(0, 0, 3), (1, 4, 2), (2, 8, 4), (1, 13, 3)],                 # 4 sung notes
-        [(0, 2, 2), (2, 6, 3), (1, 10, 4)],                            # behind-beat triplet of sustains
-        [(0, 0, 1), (1, 1, 2), (2, 5, 4), (3, 11, 4)],                 # pickup -> two long syllables
-        [(0, 6, 6), (1, 13, 2)],                                       # one long held vowel, brief flick
-        [(0, 0, 2), (1, 3, 1), (2, 5, 3), (1, 9, 1), (3, 11, 4)],      # syncopated 5-syllable phrase
+        [(5,0,2), (3,3,1), (5,5,2), (4,10,1), (3,11,1), (1,14,2)],      # 5-3-5-4-3-1
+        [(5,0,1), (3,1,2), (1,5,3), (5,10,2), (3,14,2)],                # 5-3-1-5-3 (push)
+        [(1,0,3), (5,4,2), (3,8,4), (5,13,2)],                          # 1-5-3-5 (anthem leap)
+        [(5,0,2), (3,3,2), (4,6,3), (5,11,4)],                          # 5-3-4-5 (held end)
+        [(3,0,1), (4,1,1), (5,3,3), (7,7,4), (1,13,2)],                 # 3-4-5-7-1 (climb + resolve)
     ],
-    # jazz (bebop): continuous 8ths with chromatic motion — _jazz_motif
-    # uses a CHROMATIC ladder so weak-beat notes are semitone passing tones
-    # connecting chord-tone landings on the strong beats.
+    # jazz (bebop): _jazz_motif uses a CHROMATIC ladder (chord tones on
+    # strong beats, semitone passing tones between) -> the deg field here
+    # is unused by _jazz_motif. Kept as 0 to preserve tuple shape.
     "jazz": [
-        [(0, 0, 1), (1, 2, 1), (2, 4, 1), (3, 6, 1), (2, 8, 1), (1, 10, 1), (2, 12, 1), (0, 14, 1)],  # solid 8ths
-        [(0, 0, 1), (1, 2, 1), (2, 4, 1), (3, 8, 1), (2, 10, 1), (1, 12, 1), (0, 14, 1)],            # breath on 6
-        [(0, 2, 1), (1, 4, 1), (2, 6, 1), (3, 8, 1), (2, 10, 1), (1, 12, 1), (0, 14, 1)],            # pickup on 2
-        [(0, 0, 1), (1, 2, 1), (2, 4, 1), (3, 6, 1), (2, 8, 2), (1, 12, 2)],                          # run -> held resolution
-        [(0, 0, 1), (1, 1, 1), (2, 2, 1), (3, 3, 1), (2, 6, 1), (1, 8, 1), (2, 10, 1), (0, 12, 2)],   # 16th flurry into 8ths
+        [(0,0,1), (0,2,1), (0,4,1), (0,6,1), (0,8,1), (0,10,1), (0,12,1), (0,14,1)],
+        [(0,0,1), (0,2,1), (0,4,1), (0,8,1), (0,10,1), (0,12,1), (0,14,1)],
+        [(0,2,1), (0,4,1), (0,6,1), (0,8,1), (0,10,1), (0,12,1), (0,14,1)],
+        [(0,0,1), (0,2,1), (0,4,1), (0,6,1), (0,8,2), (0,12,2)],
+        [(0,0,1), (0,1,1), (0,2,1), (0,3,1), (0,6,1), (0,8,1), (0,10,1), (0,12,2)],
     ],
+    # stab (synthwave/electro): short syncopated chord-tone accents.
     "stab": [
-        [(0, 2, 2), (2, 6, 2), (1, 10, 2), (3, 14, 2)],
-        [(0, 0, 1), (2, 6, 2), (0, 10, 1), (2, 14, 2)],
-        [(0, 2, 1), (0, 3, 1), (2, 10, 1), (2, 11, 1)],               # double stabs
-        [(0, 6, 3), (2, 14, 2)],                                       # only 2 hits
+        [(5,2,2), (3,6,2), (5,10,2), (1,14,2)],                         # 5-3-5-1
+        [(1,0,1), (5,4,1), (3,8,1), (5,12,1)],                          # 1-5-3-5 (octaves)
+        [(3,2,1), (4,3,1), (5,6,1), (1,14,1)],                          # 3-4-5-1 (pickup+leap)
+        [(5,6,3), (3,10,1), (1,14,2)],                                  # 5-3-1 (late)
+        [(5,0,1), (5,4,1), (3,8,1), (5,12,1)],                          # 5-5-3-5 (driving)
     ],
+    # hypno (techno): 2-3 note repeating figure; one held tone + accent.
     "hypno": [
-        [(0, 0, 3), (2, 8, 3)],
-        [(0, 0, 2), (1, 6, 2), (0, 12, 2)],
-        [(0, 6, 4)],                                                   # one floating hit
-        [(0, 2, 2), (1, 10, 3)],
+        [(5,0,3), (1,8,3)],                                             # 5-1 pulse
+        [(5,0,2), (3,6,2), (1,12,2)],                                   # 5-3-1
+        [(5,6,4)],                                                      # single held 5
+        [(5,2,2), (2,10,3)],                                            # 5-2 skip
     ],
+    # lyric (rnb/lofi): SUNG melodic phrases, mostly stepwise w/ one leap,
+    # strong du VARIATION between notes (some short, some long).
     "lyric": [
-        [(0, 0, 3), (2, 6, 2), (1, 10, 2), (0, 13, 2)],
-        [(0, 2, 2), (1, 6, 2), (3, 10, 3)],
-        [(0, 2, 1), (1, 3, 1), (2, 5, 1), (3, 11, 4)],                 # short pickup -> long
-        [(0, 10, 3), (1, 13, 2)],                                      # answer-only
+        [(5,0,3), (3,5,1), (5,8,4), (6,13,2)],                          # 5-3-5-6 (sung)
+        [(3,0,1), (4,1,2), (5,5,5), (6,13,2)],                          # 3-4-5-6 (pickup + hold)
+        [(3,0,2), (5,5,1), (6,7,3), (3,12,4)],                          # 3-5-6-3 (return)
+        [(1,0,1), (2,1,1), (5,4,4), (1,11,3)],                          # 1-2-5-1 (leap up)
+        [(5,6,2), (4,9,1), (3,11,5)],                                   # 5-4-3 (long descent)
     ],
     "space": [
-        [(0, 0, 6)],
-        [(0, 4, 4), (0, 12, 3)],
-        [(0, 6, 7)],                                                   # one long, late
-        [(0, 2, 2), (1, 11, 5)],                                       # pickup -> hold
+        [(1,0,6)],
+        [(1,4,4), (1,12,3)],
+        [(1,6,7)],
+        [(1,2,2), (2,11,5)],
     ],
-    # 80s-hiphop hook: tight 16th-note bursts in a compact window. Used
-    # with the hook-feel branch in _motif: ONE motif locked per section,
-    # AABA across 4 emit-bars (i.e. an 8-bar A-A-A-B form), emit only on
-    # even bars (every 2 bars).
+    # hook (80s hiphop): tight 16th-note bursts, 3-5 notes in a compact
+    # window. Every bar gets the same hook; AABA over 4 emit-bars (8-bar form).
     "hook": [
-        [(0, 0, 1), (1, 1, 1), (2, 2, 1)],                              # 3 16ths on beat 1
-        [(0, 0, 1), (1, 1, 1), (2, 2, 1), (3, 4, 1)],                   # 4-note burst
-        [(0, 0, 1), (1, 1, 1), (2, 2, 1), (1, 3, 1), (0, 4, 1)],        # 5-note sweep
-        [(0, 8, 1), (1, 9, 1), (2, 10, 1)],                             # late hook (beat 3)
-        [(0, 4, 1), (1, 5, 1), (2, 6, 1), (3, 8, 1)],                   # mid-bar 4 16ths
+        [(1,0,1), (2,1,1), (3,2,1)],                                    # 1-2-3 walkup
+        [(1,0,1), (3,1,1), (5,2,1), (6,4,1)],                           # 1-3-5-6
+        [(1,0,1), (3,1,1), (5,2,1), (3,3,1), (1,4,1)],                  # 1-3-5-3-1 arp
+        [(5,8,1), (3,9,1), (1,10,1)],                                   # 5-3-1 late
+        [(3,4,1), (5,5,1), (6,6,1), (1,8,1)],                           # 3-5-6-1 mid-bar
     ],
 }
 
@@ -1125,24 +1156,57 @@ class CannedSource:
                   vel * 0.5, CH_LEAD)
 
     def _maybe_siren(self, D, rnd, beat, ct, cr):
-        # Dub siren — air-horn announcement at the START of each dub-family
-        # section (bar 0 only). One deterministic siren per section: dramatic
-        # entrance, no per-bar randomness. NOT gated by self.on["lead"] —
-        # the structural arrangement often holds lead out for the first bars,
-        # but the siren IS the section's announcement and fires regardless.
-        if self.bar != 0 or not ct:
+        # Dub siren — fires at section start (bar 0) AND at each major
+        # instrument drop-in moment within the song (when lead/bass/keys
+        # structurally enter). Typically 2-3 sirens per song. NOT gated by
+        # self.on["lead"] — siren IS the announcement, fires regardless.
+        if not ct:
             return
-        pit = (ct[0] + 24) + rnd.choice([0, 5, 7, 12])   # high register
-        dur = beat * 4.4                                  # long whoop (~one bar)
-        D(0, dur, pit, 0.7, CH_LEAD)                      # on bar 0, beat 1
+        triggers = {0}
+        for role in ("lead", "bass", "keys"):
+            v = self._in.get(role)
+            if v is not None and v > 0:
+                triggers.add(v)
+        if self.bar not in triggers:
+            return
+        pit = (ct[0] + 24) + rnd.choice([0, 5, 7, 12])
+        dur = beat * 4.4
+        D(0, dur, pit, 0.7, CH_LEAD)
+
+    def _chord_mode(self, ct, cr):
+        # Infer a 7-degree mode for the CURRENT CHORD by reading its quality
+        # from the chord-tone intervals. The melody's scale degrees (1..7+)
+        # are then interpreted in this mode so the same melodic SHAPE works
+        # against any chord (transposed to that chord's root + quality).
+        if not ct:
+            return [0, 2, 4, 5, 7, 9, 10]
+        iv = {(p - cr) % 12 for p in ct}
+        if 3 in iv and 6 in iv:
+            return [0, 2, 3, 5, 6, 8, 10]   # locrian (half-dim)
+        if 3 in iv:
+            return [0, 2, 3, 5, 7, 8, 10]   # aeolian / natural minor
+        if 4 in iv and 11 in iv:
+            return [0, 2, 4, 5, 7, 9, 11]   # ionian / major
+        if 4 in iv and 10 in iv:
+            return [0, 2, 4, 5, 7, 9, 10]   # mixolydian (dom7)
+        if 4 in iv:
+            return [0, 2, 4, 5, 7, 9, 11]   # default major
+        return [0, 2, 4, 5, 7, 9, 10]
+
+    def _scale_deg_pit(self, deg, cr, mode, base_oct=24):
+        # deg: 1..7 (with 8 = root+oct, 0 / negative supported). Mapped via
+        # the chord's mode and offset from chord root + octave register.
+        o, i = divmod(deg - 1, 7)
+        return cr + mode[i] + 12 * o + base_oct
 
     def _motif(self, D, rnd, beat, sc, ctones):
-        # GROOVE-FIRST LEAD: rotates a per-genre RHYTHMIC motif bank (one
-        # variant per bar -> rhythmic variety), with whole-bar rests + per-
-        # note rests (the gaps ARE the groove), hocketing against the kick
-        # (drops most lead hits that land on the kick's strong slots), and
-        # per-genre push/lay-back micro-timing. Pitch contour still chord-
-        # aware (statement -> answer w/ root resolution + apex octave).
+        # SCALE-DEGREE MELODIES — one melody locked per section, replayed
+        # verbatim across emit-bars. Each motif tuple is (deg, s, du):
+        # deg is a scale degree (1..7+) interpreted via the CURRENT CHORD's
+        # mode, so the same melodic SHAPE follows the chord progression
+        # underneath (user picked the chord-aware transpose option).
+        # AABA across 4 emit-bars (A-A-A-B). Strict mono — no harmony
+        # stacks, no overlapping note slots. Per-feel note length.
         if not ctones:
             return
         if self.genre == "jazz":
@@ -1152,75 +1216,44 @@ class CannedSource:
         if not bank:
             return
         feel = _LEAD_FEEL.get(self.genre, "lyric")
-        # "hook" and "lyric" feels: ONE motif locked per section, AABA across
-        # 4 emit-bars (8-bar form), emit only every 2 bars (even bars). The
-        # B-bar resolves to root (overrides the bar-parity answer logic).
-        # Lyric KEEPS its rest table + per-genre push + harmony; only hook
-        # zeroes the hocket-kick (a clipped first note kills the hook).
-        hook_answer = None
-        if feel in ("hook", "lyric"):
-            if self.bar % 2 != 0:
-                return
-            emit_idx = self.bar // 2
-            use_b = (emit_idx % 4) == 3
-            sec_rnd = random.Random(self._sec * 53 + len(self.genre))
-            a_idx = sec_rnd.randrange(len(bank))
-            b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
-            motif = bank[b_idx if use_b else a_idx]
-            hook_answer = use_b
-        else:
-            motif = bank[self.bar % len(bank)]              # rotate per bar
+        # Per-feel emit cadence: hook/lyric/stab/hypno emit every 2 bars
+        # (odd bars deterministic-silent); funk emits every bar.
+        if feel in _LEAD_EVERY2 and self.bar % 2 != 0:
+            return
+        emit_idx = (self.bar // 2) if feel in _LEAD_EVERY2 else self.bar
+        use_b = (emit_idx % 4) == 3
+        sec_rnd = random.Random(self._sec * 53 + len(self.genre))
+        a_idx = sec_rnd.randrange(len(bank))
+        b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
+        motif = bank[b_idx if use_b else a_idx]
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
         kicks = set() if feel == "hook" else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
+        nlen = _LEAD_NLEN.get(feel, 0.20)
+        cr = ctones[0]                                       # chord root = first ct
+        mode = self._chord_mode(ctones, cr)
         rrr = random.Random(self._sec * 31 + self.bar * 7 + 11)
-        if rrr.random() < bar_p:                            # whole-bar rest
+        if rrr.random() < bar_p:
             return
-        st = _LEAD_STYLE.get(self.genre, _LEAD_DEF)
-        cN = len(ctones)
-        cseed = random.Random(self.root * 17 + len(self.genre) * 5 + 3)
-        shape = _CONTOURS[cseed.randrange(len(_CONTOURS))]
-        base = cseed.choice((0, 0, 1, 2))
         nN = len(motif)
-        answer = hook_answer if hook_answer is not None else (self.bar % 2) == 1
-        rot = 1 if answer else 0
-        degs = [(base + shape[(i + rot) % len(shape)]) % cN for i in range(nN)]
-        peak = max(range(nN), key=lambda i: degs[i])
-        scset = {(self.root + d) % 12 for d in sc}
-        prev = None
-        for i, (ti, s, du) in enumerate(motif):
-            # hocket vs kick: lead hit lands on a strong kick slot -> mostly skip
-            if s in kicks and rrr.random() < 0.45:
-                prev = None
+        for i, (deg, s, du) in enumerate(motif):
+            if s in kicks and rrr.random() < 0.45:           # hocket vs kick
                 continue
-            # general per-note rest (deliberate space)
-            if rrr.random() < note_p:
-                prev = None
+            if rrr.random() < note_p:                         # deliberate per-note rest
                 continue
-            deg = degs[i]
-            if answer and i == nN - 1:
-                deg = 0                                # answer -> root
-            elif answer and i == nN - 2 and cN > 1:
-                deg = 1                                # ...approached via 3rd
-            pit = ctones[deg] + 24                       # +1 octave
-            if i == peak and not answer:
-                pit += 12                          # melodic apex an octave up
-            d2p = 1.0 - abs(i - peak) / max(1, nN - 1)
-            vel = (0.42 + 0.20 * d2p + (0.05 if s % 4 == 0 else 0.0)
-                   + rnd.uniform(-0.03, 0.04))
-            if answer and i >= nN - 2:
-                vel -= 0.06                            # softer resolution
-            vel = max(0.20, min(0.86, vel))
-            D(s + lpush, beat * 0.14 * du, pit, vel, CH_LEAD)  # short gate -> tight
-            if feel != "hook" and rnd.random() < st["harm"] * 0.3:  # sparse soft harmony
-                # funk vamps on dom7#9 — a 3rd/maj-3rd below the chord tone
-                # would foreground the ♭3/♮3 rub, so harmonise a safe 5th below
-                hiv = [7] if self.genre == "funk" else [3, 4, 7]
-                D(s + lpush, beat * 0.14 * du, pit - rnd.choice(hiv),
-                  vel * 0.6, CH_LEAD)
-            prev = pit
+            d = deg
+            if use_b and i == nN - 1:                         # B-bar resolves to 1
+                d = 1
+            pit = self._scale_deg_pit(d, cr, mode, 24)
+            mid = nN / 2.0
+            d2p = 1.0 - abs(i - mid) / max(1.0, nN - 1)
+            vel = 0.46 + 0.18 * d2p + (0.05 if s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
+            if use_b and i >= nN - 2:
+                vel -= 0.05
+            vel = max(0.22, min(0.86, vel))
+            D(s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
     def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
@@ -1310,11 +1343,9 @@ class CannedSource:
                     D(s, beat * 0.35, cr if rnd.random() < 0.7 else cr + 12,
                       self._main(rnd), CH_BASS)
         if self.on["lead"]:
-            if rnd.random() < 0.45:                            # faint pad only
+            if rnd.random() < 0.45:                            # faint pad
                 self._pad(D, rnd, beat, ct)
-            if rnd.random() < 0.18 + 0.2 * e:                  # very rare blip
-                D(rnd.choice([6, 11]), beat * 0.16,
-                  ct[rnd.choice([0, 1, len(ct) - 1])] + 12, 0.4, CH_LEAD)
+            self._motif(D, rnd, beat, sc, ct)                  # hypno-feel melody
 
     def _g_detroit_techno(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # soulful/futurist: driving 4/4, lush stab chords + pad, rolling bass
@@ -1504,6 +1535,7 @@ class CannedSource:
             self._skank(D, rnd, beat, ct, [6, 14], 0.6)
             if rnd.random() < 0.4:
                 self._pad(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)                  # stab-feel melody
 
     def _g_rnb(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # neo-soul: a LOCKED boom-bap pocket. Kick 1 + "&" of 2, snare hard on
@@ -1590,9 +1622,10 @@ class CannedSource:
             if rnd.random() < 0.5:
                 D(10, beat * 0.6, cr + rnd.choice([0, 3, 7]),
                   self._ghost(rnd) + 0.25, CH_BASS)
-        if self.on["lead"]:                                    # hazy chords + pad
+        if self.on["lead"]:                                    # hazy chords + pad + sung lead
             self._comp(D, rnd, beat, ct, [6], oct_shift=0)
             self._pad(D, rnd, beat, ct)
+            self._motif(D, rnd, beat, sc, ct)                  # lyric-feel melody
 
     def _g_electro_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
@@ -1619,8 +1652,10 @@ class CannedSource:
             self._hats(D, rnd, e, (2, 6, 10, 14))
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 14, 15])
-        if self.on["lead"] and rnd.random() < 0.5:
-            self._comp(D, rnd, beat, ct, [10])
+        if self.on["lead"]:
+            if rnd.random() < 0.5:
+                self._comp(D, rnd, beat, ct, [10])
+            self._motif(D, rnd, beat, sc, ct)                  # stab-feel melody
 
     def _g_synthwave(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
