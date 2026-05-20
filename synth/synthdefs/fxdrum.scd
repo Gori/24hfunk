@@ -22,5 +22,8 @@ SynthDef(\fxdrum, { |in=0, out=0, reverb=0.3, delay=0.2, delayTime=0.357,
 	var sid  = (verb[0] - verb[1]) * 0.5;
 	var sig  = [mid + (sid * (0.5 + w)), mid - (sid * (0.5 + w))];
 	sig = (sig * 1.08).softclip;
+	// slight high-cut on the whole drum bus — takes the brittle top off
+	// the hi-hats while leaving them clearly audible (most hat energy <9.5k)
+	sig = [LPF.ar(sig[0], 9500), LPF.ar(sig[1], 9500)];
 	Out.ar(out, Limiter.ar(LeakDC.ar(sig), 0.95));
 }).add;
