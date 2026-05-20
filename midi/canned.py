@@ -392,6 +392,14 @@ _LEAD_NLEN = {
     "space": 0.40,   # n/a (dub family uses skanks)
 }
 
+# per-feel per-note velocity multiplier (the SECOND loudness lever; the
+# first being per-genre _LEAD_LEVEL above). User wanted funk-family leads
+# +30% — bumped both knobs ~1.15 each (combined ~1.32x). Two-levers rule:
+# synthdef level alone never quite shifts perceived loudness enough.
+_LEAD_VEL_BOOST = {
+    "funk":  1.15,   # leadMoog on funk / minneapolis_funk / electro_funk
+}
+
 # per-feel bar interval between emitted phrases. 4 = "one phrase per 4
 # bars" (the phrase plays in bar 0 of the group, bars 1-3 are silent).
 # Jazz is unchanged (uses _jazz_motif, emits continuously). Space = n/a.
@@ -670,10 +678,10 @@ _DRUM_GLUE = {
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
-    "electro": 0.504, "uk_garage": 0.5355, "minneapolis_funk": 0.5418,
+    "electro": 0.504, "uk_garage": 0.5355, "minneapolis_funk": 0.6231,
     "broken_house": 0.5544, "minimal_techno": 0.567, "eighties_hiphop": 0.6048,
     # \lead genres
-    "funk": 0.5166, "electro_funk": 0.7245, "synthwave": 0.6237, "jazz": 0.5292,
+    "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.6237, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6678,
     "dub_techno": 0.693, "neon_dub": 0.7056, "steppers_dub": 0.7056,
@@ -1260,7 +1268,8 @@ class CannedSource:
             vel = 0.46 + 0.18 * d2p + (0.05 if s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
             if use_b and i >= nN - 2:
                 vel -= 0.05
-            vel = max(0.22, min(0.86, vel))
+            vel *= _LEAD_VEL_BOOST.get(feel, 1.0)
+            vel = max(0.22, min(0.95, vel))
             D(s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
