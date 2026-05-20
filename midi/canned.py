@@ -717,7 +717,6 @@ class CannedSource:
         self._bk_len = 0
         self._bk_drop = []
         self._keys_lvl = 1.0
-        self._siren_cd = 0       # dub-siren cooldown (bars) — gates _maybe_siren
 
     def prime(self, section: dict) -> None:
         self.bpm = float(section.get("tempo") or section.get("bpm") or 100)
@@ -1126,24 +1125,16 @@ class CannedSource:
                   vel * 0.5, CH_LEAD)
 
     def _maybe_siren(self, D, rnd, beat, ct, cr):
-        # Dub siren — air-horn punctuation for dub-family genres. Very rare:
-        # gated by a long cooldown AND a small per-bar probability so it
-        # surfaces maybe once every 3-5 minutes when conditions allow.
-        if not self.on["lead"] or not ct:
-            return
-        if self._siren_cd > 0:
-            self._siren_cd -= 1
-            return
-        # ~1.5% per bar when off cooldown -> mean ~one fire per ~65 bars
-        # AFTER the cooldown clears, i.e. roughly one siren per 150+ bars.
-        if rnd.random() > 0.015:
+        # Dub siren — air-horn announcement at the START of each dub-family
+        # section (bar 0 only). One deterministic siren per section: dramatic
+        # entrance, no per-bar randomness. NOT gated by self.on["lead"] —
+        # the structural arrangement often holds lead out for the first bars,
+        # but the siren IS the section's announcement and fires regardless.
+        if self.bar != 0 or not ct:
             return
         pit = (ct[0] + 24) + rnd.choice([0, 5, 7, 12])   # high register
-        s = rnd.choice([0, 4, 8])                         # start on a strong beat
-        dur = beat * (3.6 + rnd.random() * 1.6)           # long whoop
-        vel = 0.58 + rnd.random() * 0.16
-        D(s, dur, pit, vel, CH_LEAD)
-        self._siren_cd = 96                               # ~1.5-3 min minimum between sirens
+        dur = beat * 4.4                                  # long whoop (~one bar)
+        D(0, dur, pit, 0.7, CH_LEAD)                      # on bar 0, beat 1
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # GROOVE-FIRST LEAD: rotates a per-genre RHYTHMIC motif bank (one
@@ -1161,11 +1152,13 @@ class CannedSource:
         if not bank:
             return
         feel = _LEAD_FEEL.get(self.genre, "lyric")
-        # "hook" feel (eighties-hiphop): ONE motif locked per section, AABA
-        # across 4 emit-bars (8-bar form), emit only every 2 bars (even bars).
-        # The B-bar resolves to root (overrides the bar-parity answer logic).
+        # "hook" and "lyric" feels: ONE motif locked per section, AABA across
+        # 4 emit-bars (8-bar form), emit only every 2 bars (even bars). The
+        # B-bar resolves to root (overrides the bar-parity answer logic).
+        # Lyric KEEPS its rest table + per-genre push + harmony; only hook
+        # zeroes the hocket-kick (a clipped first note kills the hook).
         hook_answer = None
-        if feel == "hook":
+        if feel in ("hook", "lyric"):
             if self.bar % 2 != 0:
                 return
             emit_idx = self.bar // 2
@@ -1180,8 +1173,6 @@ class CannedSource:
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
-        # hook = recognisable repeating phrase; hocketing against the kick
-        # would clip the first note ~half the time and undermine the hook
         kicks = set() if feel == "hook" else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
         rrr = random.Random(self._sec * 31 + self.bar * 7 + 11)
