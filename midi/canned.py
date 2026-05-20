@@ -1284,9 +1284,10 @@ class CannedSource:
         bar_in_group = self.bar % every
         if bar_in_group >= phrase_len:
             return
-        # AABA over 4 emitted phrases
+        # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every 8
+        # emitted phrases). Pure-locked A on the other 7 -> strong recurrence.
         phrase_idx = self.bar // every
-        use_b = (phrase_idx % 4) == 3
+        use_b = (phrase_idx % 8) == 7
         sec_rnd = random.Random(self._sec * 53 + len(self.genre))
         a_idx = sec_rnd.randrange(len(bank))
         b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
