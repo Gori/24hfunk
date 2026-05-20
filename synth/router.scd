@@ -27,6 +27,11 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~mono   = IdentityDictionary.new;            // persistent mono voices (glide), by synth
 ~monoFor = IdentityDictionary.new;           // channel -> mono synth (glide voice)
 ~monoFor[0] = \bass;
+// def-keyed mono routing — synthDefs in this set get the persistent-voice
+// path (portamento via Lag.kr(\freq) + filter-env retrigger via \t_trig)
+// regardless of channel. Used for genre-chosen leads that need glide
+// without forcing ALL leads on CH_LEAD to be mono.
+~monoDef = Set[\leadMoog];
 
 ~drumFor = { |pitch|
 	case
@@ -100,7 +105,7 @@ OSCdef(\noteon, { |msg|
 		if(#[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \ride, \perc2].includes(role)) {
 			Synth(def, ~argsFor.(role, freq, vel), ~instGrp);   // one-shot
 		} {
-			if(~monoFor[ch] == role) {
+			if((~monoFor[ch] == role) or: { ~monoDef.includes(def) }) {
 				// persistent MONO voice -> portamento between notes
 				node = ~mono[role];
 				if(node.isNil) {
@@ -126,9 +131,13 @@ OSCdef(\noteon, { |msg|
 // --- /midi/noteoff  ch pitch t_ms ---
 OSCdef(\noteoff, { |msg|
 	var ch = msg[1].asInteger, pitch = msg[2].asInteger;
-	var ms = ~monoFor[ch], key, node;
-	if(ms.notNil and: { ~mono[ms].notNil }) {
-		~mono[ms].set(\gate, 0);             // release but KEEP node (glide cont.)
+	var role = ~chanMap[ch], def, monoRole, key, node;
+	def = role.notNil.if({ ~roleMap[role] ? role });
+	monoRole = nil;
+	if(~monoFor[ch] == role) { monoRole = role };
+	if(def.notNil and: { ~monoDef.includes(def) }) { monoRole = role };
+	if(monoRole.notNil and: { ~mono[monoRole].notNil }) {
+		~mono[monoRole].set(\gate, 0);       // release but KEEP node (glide cont.)
 	} {
 		key = (ch.asString ++ "_" ++ pitch.asString).asSymbol;
 		node = ~active[key];

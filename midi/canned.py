@@ -174,7 +174,7 @@ _FX_SIG = {
 
 # per-genre instrument variants (role -> SynthDef). Omitted roles = default.
 _GENRE_INSTR = {
-    "electro_funk":     {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadTalkbox"},
+    "electro_funk":     {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog"},
     "synthwave":        {"bass": "bass",       "kick": "kick",     "snare": "snare909", "lead": "leadHyper"},
     "neon_dub":         {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
     "broken_house":     {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadGlitch"},
@@ -182,8 +182,8 @@ _GENRE_INSTR = {
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadGlitch"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadHyper"},
     "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadJazz"},
-    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadTalkbox"},
-    "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadTalkbox"},
+    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog"},
+    "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadMoog"},
     "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadGlitch"},
     "detroit_techno":   {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadHyper"},
     "dub":              {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
