@@ -1315,7 +1315,7 @@ class CannedSource:
             if use_b and i == nN - 1:                         # B-phrase resolves to root
                 d = 1
             # KEY-ANCHORED pitch — same MIDI note for same deg every emit
-            pit = self._scale_deg_pit_in_key(d, sc, 24)
+            pit = self._scale_deg_pit_in_key(d, sc, 36)
             mid = nN / 2.0
             d2p = 1.0 - abs(i - mid) / max(1.0, nN - 1)
             vel = 0.46 + 0.18 * d2p + (0.05 if local_s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
