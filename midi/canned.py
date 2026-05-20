@@ -174,22 +174,22 @@ _FX_SIG = {
 
 # per-genre instrument variants (role -> SynthDef). Omitted roles = default.
 _GENRE_INSTR = {
-    "electro_funk":     {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadBrass"},
+    "electro_funk":     {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadTalkbox"},
     "synthwave":        {"bass": "bass",       "kick": "kick",     "snare": "snare909", "lead": "leadHyper"},
-    "neon_dub":         {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadDub"},
+    "neon_dub":         {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
     "broken_house":     {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadGlitch"},
     "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadPluck"},
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadGlitch"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadHyper"},
     "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadJazz"},
-    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadBrass"},
-    "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadBrass"},
+    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadTalkbox"},
+    "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadTalkbox"},
     "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadGlitch"},
     "detroit_techno":   {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadHyper"},
-    "dub":              {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadDub"},
-    "steppers_dub":     {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadDub"},
-    "dub_techno":       {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadDub"},
-    "roots_reggae":     {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadDub"},
+    "dub":              {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
+    "steppers_dub":     {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
+    "dub_techno":       {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadSiren"},
+    "roots_reggae":     {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadSiren"},
     "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
     "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
     "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadPluck"},
@@ -442,18 +442,24 @@ _LEAD_FEEL = {
     "roots_reggae": "space",
 }
 _LEAD_RHYTHM = {
-    # funk: anchored on/just before "the one", syncopated 16ths between
+    # funk (talkbox): sung phrases, not stabs — longer durations, mid-density,
+    # syncopated entries, pentatonic-friendly contours.
     "funk": [
-        [(0, 0, 2), (1, 3, 1), (2, 6, 2), (1, 10, 1), (0, 11, 1)],
-        [(0, 2, 1), (2, 5, 2), (1, 8, 1), (3, 11, 2), (0, 14, 1)],
-        [(0, 0, 1), (1, 4, 1), (2, 7, 2), (0, 10, 1), (2, 13, 1)],
-        [(0, 6, 1), (1, 7, 1), (2, 10, 1), (1, 11, 1), (0, 14, 2)],   # late entry
-        [(0, 0, 1), (1, 2, 1), (2, 5, 1), (3, 9, 1), (2, 12, 1), (0, 15, 1)],  # 16th run
+        [(0, 0, 3), (1, 4, 2), (2, 8, 4), (1, 13, 3)],                 # 4 sung notes
+        [(0, 2, 2), (2, 6, 3), (1, 10, 4)],                            # behind-beat triplet of sustains
+        [(0, 0, 1), (1, 1, 2), (2, 5, 4), (3, 11, 4)],                 # pickup -> two long syllables
+        [(0, 6, 6), (1, 13, 2)],                                       # one long held vowel, brief flick
+        [(0, 0, 2), (1, 3, 1), (2, 5, 3), (1, 9, 1), (3, 11, 4)],      # syncopated 5-syllable phrase
     ],
+    # jazz (bebop): continuous 8ths with chromatic motion — _jazz_motif
+    # uses a CHROMATIC ladder so weak-beat notes are semitone passing tones
+    # connecting chord-tone landings on the strong beats.
     "jazz": [
-        [(0, 0, 2), (1, 4, 1), (2, 6, 1), (3, 8, 2), (1, 12, 2)],
-        [(0, 2, 1), (1, 4, 1), (2, 6, 1), (3, 9, 1), (2, 12, 2), (0, 14, 1)],
-        [(0, 0, 1), (1, 1, 1), (2, 3, 1), (3, 5, 2), (2, 8, 1), (1, 11, 2), (0, 14, 2)],  # bebop run
+        [(0, 0, 1), (1, 2, 1), (2, 4, 1), (3, 6, 1), (2, 8, 1), (1, 10, 1), (2, 12, 1), (0, 14, 1)],  # solid 8ths
+        [(0, 0, 1), (1, 2, 1), (2, 4, 1), (3, 8, 1), (2, 10, 1), (1, 12, 1), (0, 14, 1)],            # breath on 6
+        [(0, 2, 1), (1, 4, 1), (2, 6, 1), (3, 8, 1), (2, 10, 1), (1, 12, 1), (0, 14, 1)],            # pickup on 2
+        [(0, 0, 1), (1, 2, 1), (2, 4, 1), (3, 6, 1), (2, 8, 2), (1, 12, 2)],                          # run -> held resolution
+        [(0, 0, 1), (1, 1, 1), (2, 2, 1), (3, 3, 1), (2, 6, 1), (1, 8, 1), (2, 10, 1), (0, 12, 2)],   # 16th flurry into 8ths
     ],
     "stab": [
         [(0, 2, 2), (2, 6, 2), (1, 10, 2), (3, 14, 2)],
@@ -699,6 +705,7 @@ class CannedSource:
         self._bk_len = 0
         self._bk_drop = []
         self._keys_lvl = 1.0
+        self._siren_cd = 0       # dub-siren cooldown (bars) — gates _maybe_siren
 
     def prime(self, section: dict) -> None:
         self.bpm = float(section.get("tempo") or section.get("bpm") or 100)
@@ -1074,16 +1081,11 @@ class CannedSource:
         # sustain) and soft/intimate, swung via the timing grid.
         cN = len(ctones)
         root = self.root
-        scl = sorted({d % 12 for d in sc}) or [0, 2, 3, 5, 7, 9, 10]
         c0 = ctones[0] + 36                          # lead register (horn/vibe) — +1 octave
-        ladder, o = [], (c0 // 12) - 2
-        while (o * 12) + root <= c0 + 18:
-            for d in scl:
-                p = (o * 12) + root + d
-                if (c0 - 7) <= p <= (c0 + 17):
-                    ladder.append(p)
-            o += 1
-        ladder = sorted(set(ladder))
+        # BEBOP: chromatic ladder so weak-beat passing tones are semitone
+        # neighbours connecting chord-tone landings (chord tones still land
+        # on strong beats via near(ct_oct[...]) below).
+        ladder = list(range(c0 - 7, c0 + 18))
         if not ladder:
             return
         ct_oct = [c + 24 for c in ctones]
@@ -1110,6 +1112,26 @@ class CannedSource:
             if rnd.random() < 0.08:                          # rare 3rd below
                 D(s, beat * 0.30 * du, pit - 3,
                   vel * 0.5, CH_LEAD)
+
+    def _maybe_siren(self, D, rnd, beat, ct, cr):
+        # Dub siren — air-horn punctuation for dub-family genres. Very rare:
+        # gated by a long cooldown AND a small per-bar probability so it
+        # surfaces maybe once every 3-5 minutes when conditions allow.
+        if not self.on["lead"] or not ct:
+            return
+        if self._siren_cd > 0:
+            self._siren_cd -= 1
+            return
+        # ~1.5% per bar when off cooldown -> mean ~one fire per ~65 bars
+        # AFTER the cooldown clears, i.e. roughly one siren per 150+ bars.
+        if rnd.random() > 0.015:
+            return
+        pit = (ct[0] + 24) + rnd.choice([0, 5, 7, 12])   # high register
+        s = rnd.choice([0, 4, 8])                         # start on a strong beat
+        dur = beat * (3.6 + rnd.random() * 1.6)           # long whoop
+        vel = 0.58 + rnd.random() * 0.16
+        D(s, dur, pit, vel, CH_LEAD)
+        self._siren_cd = 96                               # ~1.5-3 min minimum between sirens
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # GROOVE-FIRST LEAD: rotates a per-genre RHYTHMIC motif bank (one
@@ -1343,6 +1365,7 @@ class CannedSource:
             self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.5)
             if rnd.random() < 0.4:
                 self._pad(D, rnd, beat, ct)
+        self._maybe_siren(D, rnd, beat, ct, cr)
 
     def _g_steppers_dub(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # "steppers": four-to-the-floor militant kick, still deeply dub
@@ -1367,6 +1390,7 @@ class CannedSource:
             self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.55)
             if rnd.random() < 0.4:
                 self._pad(D, rnd, beat, ct)
+        self._maybe_siren(D, rnd, beat, ct, cr)
 
     def _g_dub_techno(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # Basic-Channel hypnosis: tight 4/4, vast delayed chord, deep sub
@@ -1389,6 +1413,7 @@ class CannedSource:
                     D(s, beat * 0.4, p, 0.49 + rnd.uniform(-0.03, 0.05), CH_KEYS)
             if rnd.random() < 0.5:
                 self._pad(D, rnd, beat, ct)
+        self._maybe_siren(D, rnd, beat, ct, cr)
 
     def _g_roots_reggae(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # classic one-drop + bubbling skank + prominent melodic bass
@@ -1407,6 +1432,7 @@ class CannedSource:
                       self._main(rnd), CH_BASS)
         if self.on["lead"]:                                       # bubble organ
             self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.8)
+        self._maybe_siren(D, rnd, beat, ct, cr)
 
     def _g_uk_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # CLASSIC 2-STEP, transcribed from the reference clip (deterministic
@@ -1623,6 +1649,7 @@ class CannedSource:
                 D(11, beat * 0.5, cr + 7, self._main(rnd) * 0.8, CH_BASS)
         if self.on["lead"] and rnd.random() < 0.5:
             self._comp(D, rnd, beat, ct, [6])
+        self._maybe_siren(D, rnd, beat, ct, cr)
 
     def _g_lofi(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
