@@ -32,6 +32,12 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // regardless of channel. Used for genre-chosen leads that need glide
 // without forcing ALL leads on CH_LEAD to be mono.
 ~monoDef = Set[\leadMoog];
+// VOICE-STEALING mono channels: only one note at a time on this channel.
+// New noteon releases the previous note's gate before starting the new
+// synth (each note still gets a fresh envelope — no glide). Use this when
+// you want strict mono behavior across DIFFERENT synth defs without
+// needing each synth to support t_trig retriggering.
+~monoCh = Set[1];                            // CH_LEAD = mono (all lead defs)
 
 ~drumFor = { |pitch|
 	case
@@ -116,6 +122,16 @@ OSCdef(\noteon, { |msg|
 					node.set(\freq, freq, \amp, vel, \gate, 1, \t_trig, 1);
 				};
 			} {
+				// VOICE-STEALING mono: release any active note on this channel
+				// before creating the new one (only one synth at a time).
+				if(~monoCh.includes(ch)) {
+					~active.keysValuesDo { |k, n|
+						if(k.asString.beginsWith(ch.asString ++ "_")) {
+							n.set(\gate, 0);
+							~active.removeAt(k);
+						};
+					};
+				};
 				node = Synth(def, ~argsFor.(role, freq, vel) ++ [\gate, 1], ~instGrp);
 				if(~gated.includes(role)) {
 					key = (ch.asString ++ "_" ++ pitch.asString).asSymbol;
