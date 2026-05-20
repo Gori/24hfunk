@@ -381,6 +381,7 @@ _KICK_STRONG = {
 # Per-feel rest probabilities: bar_p = whole-bar silence chance,
 # note_p = individual-note drop chance. The groove lives in the gaps.
 _LEAD_REST = {
+    "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -423,7 +424,7 @@ _LEAD_STYLE = {
     "electro":          {"notes": 1.0,  "fill": 0.42, "run": 2, "span": 6,  "harm": 0.24},
     "broken_house":     {"notes": 0.95, "fill": 0.5,  "run": 3, "span": 7,  "harm": 0.26},
     "uk_garage":        {"notes": 0.95, "fill": 0.5,  "run": 3, "span": 7,  "harm": 0.26},
-    "eighties_hiphop":  {"notes": 0.85, "fill": 0.5,  "run": 3, "span": 6,  "harm": 0.28},
+    "eighties_hiphop":  {"notes": 0.5,  "fill": 0.35, "run": 2, "span": 4,  "harm": 0.18},
 }
 
 # Curated rhythmic motifs make the lead sound PLAYED, not random-sampled.
@@ -437,7 +438,7 @@ _LEAD_FEEL = {
     "electro": "stab", "synthwave": "stab",
     "minimal_techno": "hypno", "detroit_techno": "hypno", "dub_techno": "hypno",
     "rnb": "lyric", "afro_rnb": "lyric", "indie_rnb": "lyric",
-    "lofi": "lyric", "eighties_hiphop": "lyric",
+    "lofi": "lyric", "eighties_hiphop": "hook",
     "dub": "space", "neon_dub": "space", "steppers_dub": "space",
     "roots_reggae": "space",
 }
@@ -484,6 +485,17 @@ _LEAD_RHYTHM = {
         [(0, 4, 4), (0, 12, 3)],
         [(0, 6, 7)],                                                   # one long, late
         [(0, 2, 2), (1, 11, 5)],                                       # pickup -> hold
+    ],
+    # 80s-hiphop hook: tight 16th-note bursts in a compact window. Used
+    # with the hook-feel branch in _motif: ONE motif locked per section,
+    # AABA across 4 emit-bars (i.e. an 8-bar A-A-A-B form), emit only on
+    # even bars (every 2 bars).
+    "hook": [
+        [(0, 0, 1), (1, 1, 1), (2, 2, 1)],                              # 3 16ths on beat 1
+        [(0, 0, 1), (1, 1, 1), (2, 2, 1), (3, 4, 1)],                   # 4-note burst
+        [(0, 0, 1), (1, 1, 1), (2, 2, 1), (1, 3, 1), (0, 4, 1)],        # 5-note sweep
+        [(0, 8, 1), (1, 9, 1), (2, 10, 1)],                             # late hook (beat 3)
+        [(0, 4, 1), (1, 5, 1), (2, 6, 1), (3, 8, 1)],                   # mid-bar 4 16ths
     ],
 }
 
@@ -1148,12 +1160,29 @@ class CannedSource:
         bank = getattr(self, "_motif_bank", None) or ([self.motif] if self.motif else [])
         if not bank:
             return
-        motif = bank[self.bar % len(bank)]                  # rotate per bar
+        feel = _LEAD_FEEL.get(self.genre, "lyric")
+        # "hook" feel (eighties-hiphop): ONE motif locked per section, AABA
+        # across 4 emit-bars (8-bar form), emit only every 2 bars (even bars).
+        # The B-bar resolves to root (overrides the bar-parity answer logic).
+        hook_answer = None
+        if feel == "hook":
+            if self.bar % 2 != 0:
+                return
+            emit_idx = self.bar // 2
+            use_b = (emit_idx % 4) == 3
+            sec_rnd = random.Random(self._sec * 53 + len(self.genre))
+            a_idx = sec_rnd.randrange(len(bank))
+            b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
+            motif = bank[b_idx if use_b else a_idx]
+            hook_answer = use_b
+        else:
+            motif = bank[self.bar % len(bank)]              # rotate per bar
         if not motif:
             return
-        feel = _LEAD_FEEL.get(self.genre, "lyric")
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
-        kicks = _KICK_STRONG.get(self.genre, set())
+        # hook = recognisable repeating phrase; hocketing against the kick
+        # would clip the first note ~half the time and undermine the hook
+        kicks = set() if feel == "hook" else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
         rrr = random.Random(self._sec * 31 + self.bar * 7 + 11)
         if rrr.random() < bar_p:                            # whole-bar rest
@@ -1164,7 +1193,7 @@ class CannedSource:
         shape = _CONTOURS[cseed.randrange(len(_CONTOURS))]
         base = cseed.choice((0, 0, 1, 2))
         nN = len(motif)
-        answer = (self.bar % 2) == 1
+        answer = hook_answer if hook_answer is not None else (self.bar % 2) == 1
         rot = 1 if answer else 0
         degs = [(base + shape[(i + rot) % len(shape)]) % cN for i in range(nN)]
         peak = max(range(nN), key=lambda i: degs[i])
@@ -1193,14 +1222,8 @@ class CannedSource:
             if answer and i >= nN - 2:
                 vel -= 0.06                            # softer resolution
             vel = max(0.20, min(0.86, vel))
-            if (prev is not None and s in (0, 4, 8, 12)
-                    and rnd.random() < 0.18 * st["notes"]):
-                ap = pit - 1                           # one diatonic approach
-                if (ap % 12) not in scset:
-                    ap -= 1
-                D(max(0.0, s + lpush - 0.5), beat * 0.09, ap, vel * 0.7, CH_LEAD)
             D(s + lpush, beat * 0.14 * du, pit, vel, CH_LEAD)  # short gate -> tight
-            if rnd.random() < st["harm"] * 0.3:        # sparse soft harmony
+            if feel != "hook" and rnd.random() < st["harm"] * 0.3:  # sparse soft harmony
                 # funk vamps on dom7#9 — a 3rd/maj-3rd below the chord tone
                 # would foreground the ♭3/♮3 rub, so harmonise a safe 5th below
                 hiv = [7] if self.genre == "funk" else [3, 4, 7]
