@@ -32,10 +32,11 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // regardless of channel. Used for genre-chosen leads that need glide
 // without forcing ALL leads on CH_LEAD to be mono.
 // Synth defs in this set get the persistent-voice (glide) path. Glide
-// adds liveness even on a "horn-section" line — the horn-section reframe
-// was about the musical content (chord tones, varied durations,
-// rhythmically locked) NOT about removing glide.
-~monoDef = Set[\leadMoog];
+// adds liveness even on a "horn-section" line. Sustained-type leads work
+// here; Pluck/Bell/Glitch/Siren stay voice-stealing because their
+// character depends on per-note attacks/decay/whoop fired by initial
+// gate, which persistent-mono only fires once.
+~monoDef = Set[\leadMoog, \leadHyper, \leadJazz];
 // VOICE-STEALING mono channels: only one note at a time on this channel.
 // New noteon releases the previous note's gate before starting the new
 // synth (each note still gets a fresh envelope — no glide). Use this when

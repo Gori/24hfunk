@@ -407,6 +407,43 @@ _LEAD_OCT = {
     "electro": -1,
 }
 
+# B-phrase FILL banks per feel — when use_b is True (1 in every 8 emitted
+# phrases), pick a motif from here INSTEAD of the regular _LEAD_RHYTHM bank.
+# These have MORE notes than the A motifs: chord-tone runs, busier
+# answer-fills. The contrast (7 As locked in identical, then 1 busy B)
+# is the song's "release valve."
+_LEAD_FILL = {
+    # funk: 2-bar busy answer-fill, 1-3-5-7 climb + descent
+    "funk": [
+        [(1,0,1), (3,1,1), (5,2,1), (7,4,2), (5,8,1), (3,9,1), (1,10,2),
+         (5,16,1), (7,18,1), (5,20,1), (3,22,1), (1,24,4)],
+        [(1,0,1), (3,1,1), (5,2,1), (7,3,1), (8,4,2),
+         (8,16,1), (7,17,1), (5,18,1), (3,19,1), (1,20,4)],
+    ],
+    # lyric: 2-bar soul fill, more chord-tone movement
+    "lyric": [
+        [(3,0,2), (5,4,1), (7,6,1), (8,8,2),
+         (8,16,1), (5,18,1), (3,20,1), (1,22,4)],
+        [(1,0,1), (3,2,1), (5,4,1), (7,6,1), (8,8,4),
+         (5,16,1), (3,18,1), (1,20,4)],
+    ],
+    # stab: 1-bar busy chord-tone run (8 notes vs typical 3-4)
+    "stab": [
+        [(1,0,1), (3,2,1), (5,4,1), (7,6,1), (8,8,1), (5,10,1), (3,12,1), (1,14,2)],
+        [(5,0,1), (7,2,1), (8,4,1), (5,6,1), (3,8,1), (1,10,1), (5,12,1), (1,14,2)],
+    ],
+    # hypno: a touch busier than minimal A (still sparse)
+    "hypno": [
+        [(1,0,1), (3,4,1), (5,8,2), (3,12,2)],
+        [(5,0,2), (3,4,1), (1,8,1), (3,12,2)],
+    ],
+    # hook: 8 16th-notes (vs typical 3-5) — full bar of chord-tone run
+    "hook": [
+        [(1,0,1), (3,1,1), (5,2,1), (7,3,1), (8,4,1), (5,5,1), (3,6,1), (1,7,1)],
+        [(5,0,1), (3,1,1), (1,2,1), (3,3,1), (5,4,1), (7,5,1), (8,6,1), (5,7,1)],
+    ],
+}
+
 # per-feel bar interval between emitted phrases. 4 = "one phrase per 4
 # bars" (the phrase plays in bar 0 of the group, bars 1-3 are silent).
 # Jazz is unchanged (uses _jazz_motif, emits continuously). Space = n/a.
@@ -1292,12 +1329,21 @@ class CannedSource:
             return
         # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every 8
         # emitted phrases). Pure-locked A on the other 7 -> strong recurrence.
+        # B picks from a dedicated FILL bank (more notes than the A motifs).
         phrase_idx = self.bar // every
         use_b = (phrase_idx % 8) == 7
         sec_rnd = random.Random(self._sec * 53 + len(self.genre))
         a_idx = sec_rnd.randrange(len(bank))
-        b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
-        motif = bank[b_idx if use_b else a_idx]
+        if use_b:
+            fill = _LEAD_FILL.get(feel)
+            if fill:
+                b_idx = sec_rnd.randrange(len(fill))
+                motif = fill[b_idx]
+            else:
+                b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
+                motif = bank[b_idx]
+        else:
+            motif = bank[a_idx]
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
