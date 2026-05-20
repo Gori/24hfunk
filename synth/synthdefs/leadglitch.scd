@@ -16,8 +16,10 @@ SynthDef(\leadGlitch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, det
 	// crunch: S&H downsample (sample-rate decimation, audible grit)
 	sig = Latch.ar(sig, Impulse.ar(6000 + LFNoise1.kr(4).range(-2500, 2500)));
 	sig = RLPF.ar(sig, (cutoff * (0.6 + v)).clip(400, 8000), 0.4);
+	// occasional amplitude dropout = stutter glitches
+	sig = sig * LFNoise0.kr(6.5).range(0.55, 1.0);
 	sig = (sig * (1 + drive * 0.3)).tanh * 0.7;
-	sig = LPF.ar(sig, 3600);
+	sig = LPF.ar(sig, 3200);
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.006),
 		pan.clip(-1, 1) * 0.35) * env * safety * amp * 2.0 * level);
 }).add;

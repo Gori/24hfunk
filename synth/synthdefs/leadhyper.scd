@@ -8,13 +8,15 @@ SynthDef(\leadHyper, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detu
 	var env     = EnvGen.kr(Env.asr(0.012, 1.0, 0.45, -3), gate);
 	var safety  = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 6), 0.08]),
 		1, doneAction: 2);
+	// slow per-voice drift adds life vs a static stack (analogue feel)
 	var det     = [-0.18, -0.09, 0, 0.09, 0.18] * (detune + 0.02);
-	var saws    = Mix(Saw.ar(fHz * (1 + det))) * 0.18;
+	var drift   = LFNoise2.kr(0.3 ! 5) * 0.004;
+	var saws    = Mix(Saw.ar(fHz * (1 + det + drift))) * 0.18;
 	var fenv    = EnvGen.kr(Env([0.4, 1, 0.7], [0.02, decay * 1.4], [-3, -2]), gate);
 	var cf      = (cutoff * (0.5 + v * 0.9) * fenv).clip(300, 9000);
 	var sig     = RLPF.ar(saws, cf, 0.45);
 	sig = (sig * (1 + drive * 0.25)).tanh * 0.9;
-	sig = LPF.ar(sig, 3600);
+	sig = LPF.ar(sig, 3200);
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.0075),
 		pan.clip(-1, 1) * 0.3) * env * safety * amp * 2.4 * level);
 }).add;

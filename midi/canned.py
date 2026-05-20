@@ -362,6 +362,46 @@ _CONTOURS = (
 # clamp (scale steps), harm=harmonised-interval prob. Sparse genres stay
 # sparse (minimal aesthetic) — this changes note CHOICE, not density.
 _LEAD_DEF = {"notes": 1.0, "fill": 0.45, "run": 2, "span": 6, "harm": 0.30}
+
+# ── GROOVE-FIRST LEAD TUNING ──────────────────────────────────────────
+# Per-genre kick "strong" positions (16th slots). The lead avoids these
+# (hocket): a coincident lead hit is mostly dropped to leave the kick space.
+_KICK_STRONG = {
+    "funk": {0}, "minneapolis_funk": {0}, "electro_funk": {0, 8},
+    "jazz": set(),
+    "lofi": {0, 8}, "rnb": {0, 8}, "afro_rnb": {0, 8}, "indie_rnb": {0, 8},
+    "eighties_hiphop": {0, 8}, "synthwave": {0, 4, 8, 12},
+    "electro": {0, 4, 8, 12}, "broken_house": {0, 4, 8, 12},
+    "minimal_techno": {0, 4, 8, 12}, "detroit_techno": {0, 4, 8, 12},
+    "dub_techno": {0, 4, 8, 12}, "neon_dub": {0, 8},
+    "dub": {0, 8}, "steppers_dub": {4, 12}, "roots_reggae": {8},
+    "uk_garage": {0, 8}, "dub_garage": {0, 8},
+}
+
+# Per-feel rest probabilities: bar_p = whole-bar silence chance,
+# note_p = individual-note drop chance. The groove lives in the gaps.
+_LEAD_REST = {
+    "funk":  (0.06, 0.14),
+    "jazz":  (0.04, 0.06),
+    "stab":  (0.06, 0.10),
+    "hypno": (0.10, 0.15),
+    "lyric": (0.08, 0.15),
+    "space": (0.22, 0.16),
+}
+
+# Per-genre lead micro-timing (in 16th-step units). Negative = push (on
+# top of the beat), positive = lay back behind it.
+_LEAD_PUSH = {
+    "funk": -0.10, "minneapolis_funk": -0.10, "electro_funk": -0.08,
+    "jazz": 0.05,
+    "lofi": 0.20, "rnb": 0.20, "afro_rnb": 0.18, "indie_rnb": 0.18,
+    "eighties_hiphop": 0.06,
+    "dub": 0.22, "neon_dub": 0.22, "steppers_dub": 0.20, "dub_techno": 0.18,
+    "roots_reggae": 0.22, "dub_garage": 0.08,
+    "synthwave": 0.0, "electro": -0.05, "broken_house": -0.05,
+    "minimal_techno": -0.04, "detroit_techno": -0.04, "uk_garage": -0.02,
+}
+
 _LEAD_STYLE = {
     "jazz":             {"notes": 1.25, "fill": 0.78, "run": 4, "span": 10, "harm": 0.22},
     "funk":             {"notes": 1.0,  "fill": 0.42, "run": 2, "span": 5,  "harm": 0.30},
@@ -402,30 +442,42 @@ _LEAD_FEEL = {
     "roots_reggae": "space",
 }
 _LEAD_RHYTHM = {
+    # funk: anchored on/just before "the one", syncopated 16ths between
     "funk": [
         [(0, 0, 2), (1, 3, 1), (2, 6, 2), (1, 10, 1), (0, 11, 1)],
         [(0, 2, 1), (2, 5, 2), (1, 8, 1), (3, 11, 2), (0, 14, 1)],
         [(0, 0, 1), (1, 4, 1), (2, 7, 2), (0, 10, 1), (2, 13, 1)],
+        [(0, 6, 1), (1, 7, 1), (2, 10, 1), (1, 11, 1), (0, 14, 2)],   # late entry
+        [(0, 0, 1), (1, 2, 1), (2, 5, 1), (3, 9, 1), (2, 12, 1), (0, 15, 1)],  # 16th run
     ],
     "jazz": [
         [(0, 0, 2), (1, 4, 1), (2, 6, 1), (3, 8, 2), (1, 12, 2)],
         [(0, 2, 1), (1, 4, 1), (2, 6, 1), (3, 9, 1), (2, 12, 2), (0, 14, 1)],
+        [(0, 0, 1), (1, 1, 1), (2, 3, 1), (3, 5, 2), (2, 8, 1), (1, 11, 2), (0, 14, 2)],  # bebop run
     ],
     "stab": [
         [(0, 2, 2), (2, 6, 2), (1, 10, 2), (3, 14, 2)],
         [(0, 0, 1), (2, 6, 2), (0, 10, 1), (2, 14, 2)],
+        [(0, 2, 1), (0, 3, 1), (2, 10, 1), (2, 11, 1)],               # double stabs
+        [(0, 6, 3), (2, 14, 2)],                                       # only 2 hits
     ],
     "hypno": [
         [(0, 0, 3), (2, 8, 3)],
         [(0, 0, 2), (1, 6, 2), (0, 12, 2)],
+        [(0, 6, 4)],                                                   # one floating hit
+        [(0, 2, 2), (1, 10, 3)],
     ],
     "lyric": [
         [(0, 0, 3), (2, 6, 2), (1, 10, 2), (0, 13, 2)],
         [(0, 2, 2), (1, 6, 2), (3, 10, 3)],
+        [(0, 2, 1), (1, 3, 1), (2, 5, 1), (3, 11, 4)],                 # short pickup -> long
+        [(0, 10, 3), (1, 13, 2)],                                      # answer-only
     ],
     "space": [
         [(0, 0, 6)],
         [(0, 4, 4), (0, 12, 3)],
+        [(0, 6, 7)],                                                   # one long, late
+        [(0, 2, 2), (1, 11, 5)],                                       # pickup -> hold
     ],
 }
 
@@ -564,15 +616,15 @@ _DRUM_GLUE = {
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
-    "electro": 0.72, "uk_garage": 0.765, "minneapolis_funk": 0.774,
-    "broken_house": 0.792, "minimal_techno": 0.81, "eighties_hiphop": 0.864,
+    "electro": 0.504, "uk_garage": 0.5355, "minneapolis_funk": 0.5418,
+    "broken_house": 0.5544, "minimal_techno": 0.567, "eighties_hiphop": 0.6048,
     # \lead genres
-    "funk": 0.738, "electro_funk": 1.035, "synthwave": 0.891, "jazz": 0.756,
+    "funk": 0.5166, "electro_funk": 0.7245, "synthwave": 0.6237, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
-    "detroit_techno": 0.9, "afro_rnb": 0.45, "dub_garage": 0.954,
-    "dub_techno": 0.99, "neon_dub": 1.008, "steppers_dub": 1.008,
-    "lofi": 1.035, "rnb": 1.314, "roots_reggae": 1.08, "dub": 1.098,
-    "indie_rnb": 1.098,
+    "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6678,
+    "dub_techno": 0.693, "neon_dub": 0.7056, "steppers_dub": 0.7056,
+    "lofi": 0.7245, "rnb": 0.9198, "roots_reggae": 0.756, "dub": 0.7686,
+    "indie_rnb": 0.7686,
 }
 
 # Per-genre CHORD (CH_KEYS) loudness multiplier. keys is not in the
@@ -674,7 +726,8 @@ class CannedSource:
         feel = _LEAD_FEEL.get(self.genre, "lyric")
         variants = _LEAD_RHYTHM.get(feel, _LEAD_RHYTHM["lyric"])
         rr = random.Random(int(self.root * 7 + len(self.genre)))
-        self.motif = list(rr.choice(variants))
+        self._motif_bank = [list(v) for v in variants]
+        self.motif = self._motif_bank[0]                  # _jazz_motif reads self.motif
         self.bar = 0
         # which of the 4 researched progressions this section uses: the LLM's
         # composition choice (`harmony` 0..3); absent -> rotate so all four
@@ -1059,31 +1112,51 @@ class CannedSource:
                   vel * 0.5, CH_LEAD)
 
     def _motif(self, D, rnd, beat, sc, ctones):
-        # A "played" lead: the curated per-genre RHYTHMIC motif (self.motif —
-        # intentional syncopation/space) carries a fixed per-section CONTOUR
-        # over the CURRENT bar's CHORD TONES (always follows the changes), as
-        # a 2-bar statement -> answer (the answer resolves to the root), with
-        # a velocity arc toward the phrase peak and at most ONE diatonic
-        # approach note into a strong beat. The phrase plays as written (no
-        # random note-dropping) so it reads as a melody, not noise. Sparse.
-        if not ctones or not self.motif:
+        # GROOVE-FIRST LEAD: rotates a per-genre RHYTHMIC motif bank (one
+        # variant per bar -> rhythmic variety), with whole-bar rests + per-
+        # note rests (the gaps ARE the groove), hocketing against the kick
+        # (drops most lead hits that land on the kick's strong slots), and
+        # per-genre push/lay-back micro-timing. Pitch contour still chord-
+        # aware (statement -> answer w/ root resolution + apex octave).
+        if not ctones:
             return
         if self.genre == "jazz":
             self._jazz_motif(D, rnd, beat, sc, ctones)
+            return
+        bank = getattr(self, "_motif_bank", None) or ([self.motif] if self.motif else [])
+        if not bank:
+            return
+        motif = bank[self.bar % len(bank)]                  # rotate per bar
+        if not motif:
+            return
+        feel = _LEAD_FEEL.get(self.genre, "lyric")
+        bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
+        kicks = _KICK_STRONG.get(self.genre, set())
+        lpush = _LEAD_PUSH.get(self.genre, 0.0)
+        rrr = random.Random(self._sec * 31 + self.bar * 7 + 11)
+        if rrr.random() < bar_p:                            # whole-bar rest
             return
         st = _LEAD_STYLE.get(self.genre, _LEAD_DEF)
         cN = len(ctones)
         cseed = random.Random(self.root * 17 + len(self.genre) * 5 + 3)
         shape = _CONTOURS[cseed.randrange(len(_CONTOURS))]
         base = cseed.choice((0, 0, 1, 2))
-        nN = len(self.motif)
+        nN = len(motif)
         answer = (self.bar % 2) == 1
-        rot = 1 if answer else 0                    # answer = varied consequent
+        rot = 1 if answer else 0
         degs = [(base + shape[(i + rot) % len(shape)]) % cN for i in range(nN)]
         peak = max(range(nN), key=lambda i: degs[i])
         scset = {(self.root + d) % 12 for d in sc}
         prev = None
-        for i, (ti, s, du) in enumerate(self.motif):
+        for i, (ti, s, du) in enumerate(motif):
+            # hocket vs kick: lead hit lands on a strong kick slot -> mostly skip
+            if s in kicks and rrr.random() < 0.45:
+                prev = None
+                continue
+            # general per-note rest (deliberate space)
+            if rrr.random() < note_p:
+                prev = None
+                continue
             deg = degs[i]
             if answer and i == nN - 1:
                 deg = 0                                # answer -> root
@@ -1103,13 +1176,13 @@ class CannedSource:
                 ap = pit - 1                           # one diatonic approach
                 if (ap % 12) not in scset:
                     ap -= 1
-                D(max(0.0, s - 0.5), beat * 0.09, ap, vel * 0.7, CH_LEAD)
-            D(s, beat * 0.14 * du, pit, vel, CH_LEAD)  # short gate -> tight
+                D(max(0.0, s + lpush - 0.5), beat * 0.09, ap, vel * 0.7, CH_LEAD)
+            D(s + lpush, beat * 0.14 * du, pit, vel, CH_LEAD)  # short gate -> tight
             if rnd.random() < st["harm"] * 0.3:        # sparse soft harmony
                 # funk vamps on dom7#9 — a 3rd/maj-3rd below the chord tone
                 # would foreground the ♭3/♮3 rub, so harmonise a safe 5th below
                 hiv = [7] if self.genre == "funk" else [3, 4, 7]
-                D(s, beat * 0.14 * du, pit - rnd.choice(hiv),
+                D(s + lpush, beat * 0.14 * du, pit - rnd.choice(hiv),
                   vel * 0.6, CH_LEAD)
             prev = pit
 

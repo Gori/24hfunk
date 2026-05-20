@@ -18,7 +18,10 @@ SynthDef(\leadDub, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune
 	sig = sig + (DelayC.ar(sig, 0.05,
 		0.022 + SinOsc.kr(0.31).range(0, 0.006)) * 0.55);           // chorus
 	sig = (sig * (1 + drive * 0.15)).tanh * 0.55;
-	sig = LPF.ar(sig, 3600);
+	sig = LPF.ar(sig, 3200);
+	// slow breathing on the output level (dubby, laid-back)
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.03, 0.012),
-		pan.clip(-1, 1) * 0.35) * env * safety * amp * 2.4 * level);
+		pan.clip(-1, 1) * 0.35)
+		* SinOsc.kr(0.13, Rand(0, 6.28)).range(0.78, 1.0)
+		* env * safety * amp * 2.4 * level);
 }).add;
