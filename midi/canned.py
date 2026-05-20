@@ -398,6 +398,7 @@ _LEAD_NLEN = {
 # synthdef level alone never quite shifts perceived loudness enough.
 _LEAD_VEL_BOOST = {
     "funk":  1.15,   # leadMoog on funk / minneapolis_funk / electro_funk
+    "stab":  0.95,   # electro / synthwave / broken_house / uk_garage / dub_garage
 }
 
 # per-feel bar interval between emitted phrases. 4 = "one phrase per 4
@@ -406,7 +407,7 @@ _LEAD_VEL_BOOST = {
 _LEAD_EVERY = {
     "funk":  4,
     "lyric": 4,
-    "stab":  4,
+    "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
     "hypno": 4,
     "hook":  4,
 }
@@ -678,12 +679,12 @@ _DRUM_GLUE = {
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
-    "electro": 0.504, "uk_garage": 0.5355, "minneapolis_funk": 0.6231,
-    "broken_house": 0.5544, "minimal_techno": 0.567, "eighties_hiphop": 0.6048,
+    "electro": 0.4788, "uk_garage": 0.5087, "minneapolis_funk": 0.6231,
+    "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.6048,
     # \lead genres
-    "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.6237, "jazz": 0.5292,
+    "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
-    "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6678,
+    "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
     "dub_techno": 0.693, "neon_dub": 0.7056, "steppers_dub": 0.7056,
     "lofi": 0.7245, "rnb": 0.9198, "roots_reggae": 0.756, "dub": 0.7686,
     "indie_rnb": 0.7686,
