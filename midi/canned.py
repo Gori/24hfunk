@@ -1022,7 +1022,7 @@ class CannedSource:
         cN = len(ctones)
         root = self.root
         scl = sorted({d % 12 for d in sc}) or [0, 2, 3, 5, 7, 9, 10]
-        c0 = ctones[0] + 24                          # lead register (horn/vibe)
+        c0 = ctones[0] + 36                          # lead register (horn/vibe) — +1 octave
         ladder, o = [], (c0 // 12) - 2
         while (o * 12) + root <= c0 + 18:
             for d in scl:
@@ -1089,7 +1089,7 @@ class CannedSource:
                 deg = 0                                # answer -> root
             elif answer and i == nN - 2 and cN > 1:
                 deg = 1                                # ...approached via 3rd
-            pit = ctones[deg] + 12
+            pit = ctones[deg] + 24                       # +1 octave
             if i == peak and not answer:
                 pit += 12                          # melodic apex an octave up
             d2p = 1.0 - abs(i - peak) / max(1, nN - 1)
