@@ -31,7 +31,10 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // path (portamento via Lag.kr(\freq) + filter-env retrigger via \t_trig)
 // regardless of channel. Used for genre-chosen leads that need glide
 // without forcing ALL leads on CH_LEAD to be mono.
-~monoDef = Set[\leadMoog];
+// Empty currently — leads are voice-stealing-mono (see ~monoCh below)
+// which fits the new horn-section character (no glide). Repopulate this
+// set if a specific synth def again needs persistent-voice / glide.
+~monoDef = Set[];
 // VOICE-STEALING mono channels: only one note at a time on this channel.
 // New noteon releases the previous note's gate before starting the new
 // synth (each note still gets a fresh envelope — no glide). Use this when

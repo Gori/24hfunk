@@ -412,6 +412,20 @@ _LEAD_EVERY = {
     "hook":  4,
 }
 
+# Phrase LENGTH in bars per feel — a phrase spans this many bars, notes
+# in the motif have s up to (16 * len - 1). Combined with _LEAD_EVERY:
+# a new phrase STARTS every "_LEAD_EVERY" bars and plays for "_PHRASE_LEN"
+# bars; the remainder is silent breath. Designed for HORN-SECTION feel:
+# tight chord-tone stabs, NOT sustained melodies. 1 bar = single riff;
+# 2 bars allows a call-response within the phrase.
+_PHRASE_LEN = {
+    "funk":  2,    # 2-bar horn riff w/ call-response, then 2 bars breath
+    "lyric": 2,    # 2-bar soul-horn line, then 2 bars breath
+    "stab":  1,    # 1-bar stab riff, 1 bar breath
+    "hypno": 1,    # 1-bar minimal hit, 3 bars breath
+    "hook":  1,    # 1-bar 16th burst, 3 bars breath
+}
+
 _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
     "funk":  (0.06, 0.14),
@@ -486,14 +500,21 @@ _LEAD_FEEL = {
 # replays the A/A/A/B pattern across emit-bars (every bar for funk/jazz,
 # every 2 bars for hook/lyric/stab/hypno).
 _LEAD_RHYTHM = {
-    # funk (talkbox): mostly-stepwise sung phrases. One phrase per 4 bars
-    # (silence on bars 1-3 of the group). 70%+ moves are +/-1 scale-step.
+    # funk (horn section): 2-bar phrases. CHORD TONES (1/3/5/7) primarily.
+    # MIX of stabs (du=1-2) AND held notes (du=4-8) — a real horn section
+    # plays both. Some notes dip to deg -6 = one octave below default lead
+    # register (lead doubling the bass on an anchor note).
     "funk": [
-        [(3,0,2), (4,4,1), (5,6,3), (4,11,1), (3,13,2)],                # 3-4-5-4-3 (wave)
-        [(1,0,1), (2,2,1), (3,4,2), (4,8,2), (5,12,3)],                 # 1-2-3-4-5 (climbing)
-        [(3,0,1), (2,1,1), (1,3,2), (2,7,1), (3,9,4)],                  # 3-2-1-2-3 (pickup + return)
-        [(5,0,1), (4,2,1), (3,4,2), (2,8,1), (1,10,4)],                 # 5-4-3-2-1 (descending sing)
-        [(3,0,1), (4,2,1), (5,4,2), (6,8,1), (3,11,4)],                 # 3-4-5-6-3 (arc + leap home)
+        # "Cold Sweat": 3-stab pickup + HELD note (held = the horn pad)
+        [(1,2,1), (3,3,1), (5,4,1), (1,6,5), (5,20,1), (3,21,1), (1,22,4)],
+        # Long-held 5 + answer riff (call-response: pad then horn stab)
+        [(5,0,7), (5,18,1), (3,19,1), (1,20,4)],
+        # Climb 1-3-5 sustained + answer 7-5-1
+        [(1,0,1), (3,2,1), (5,4,5), (7,18,1), (5,19,1), (1,20,4)],
+        # Punchy stabs with held finish (3 hits + held)
+        [(5,4,1), (1,6,2), (5,12,1), (3,14,1), (5,20,1), (1,22,4)],
+        # Bass-doubling on the 'one', held horn pad, then stab answer
+        [(-6,0,2), (5,4,5), (3,18,1), (5,19,1), (1,20,4)],
     ],
     # jazz (bebop): _jazz_motif uses a CHROMATIC ladder (chord tones on
     # strong beats, semitone passing tones between) -> the deg field here
@@ -505,28 +526,37 @@ _LEAD_RHYTHM = {
         [(0,0,1), (0,2,1), (0,4,1), (0,6,1), (0,8,2), (0,12,2)],
         [(0,0,1), (0,1,1), (0,2,1), (0,3,1), (0,6,1), (0,8,1), (0,10,1), (0,12,2)],
     ],
-    # stab (synthwave/electro): 3-4 short stepwise stabs in one bar.
+    # stab (synthwave/electro horn-stab): 1-bar phrases. MIX of stabs +
+    # one held note for variety. Still mostly punchy by genre name.
     "stab": [
-        [(1,0,1), (2,4,1), (3,8,1), (4,12,1)],                          # 1-2-3-4 (rising)
-        [(5,0,1), (4,4,1), (3,8,1), (2,12,1)],                          # 5-4-3-2 (falling)
-        [(3,2,1), (4,4,1), (5,6,1), (3,14,1)],                          # 3-4-5-3 (arc home)
-        [(5,6,2), (4,10,1), (3,14,1)],                                  # 5-4-3 (late)
-        [(1,0,1), (2,2,1), (3,4,1), (5,8,2)],                           # 1-2-3-5 (walk + one leap)
+        [(1,2,1), (3,4,1), (5,6,1), (5,10,4)],                          # 3 stabs + held 5
+        [(5,0,1), (3,4,1), (1,8,4)],                                    # stab-stab-HOLD
+        [(1,6,1), (3,7,1), (5,8,3)],                                    # late stab + held
+        [(1,0,1), (5,4,1), (1,8,4)],                                    # 1-5-HOLD octave
+        [(3,2,1), (5,3,1), (1,8,4)],                                    # 3-5-HOLD
     ],
-    # hypno (techno): 2-3 note minimal stepwise figure, repeated.
+    # hypno (techno): minimal — long held + sparse hit. Single voice
+    # sustained over the loop.
     "hypno": [
-        [(5,0,3), (6,6,2), (5,12,3)],                                   # 5-6-5 (neighbor)
-        [(3,0,2), (2,6,3), (3,12,3)],                                   # 3-2-3
-        [(5,4,5)],                                                       # single held 5
-        [(1,0,2), (2,6,3), (1,12,3)],                                   # 1-2-1
+        [(1,0,3), (5,8,5)],                                             # 1 stab + 5 HELD
+        [(5,0,7)],                                                       # one long held 5
+        [(1,4,2), (5,8,5)],                                             # 1 + held 5
+        [(5,2,1), (3,4,1), (1,8,5)],                                    # 5-3-1 + held 1
     ],
-    # lyric (rnb/lofi): SUNG mostly-stepwise phrases w/ STRONG du variation.
+    # lyric (rnb/lofi soul-horn): 2-bar phrases. SUSTAINED held notes
+    # alternating with chord-tone stabs — call-response like a Stax horn
+    # section answering a vocal line.
     "lyric": [
-        [(3,0,3), (2,5,1), (1,8,3), (2,12,1), (3,14,2)],                # 3-2-1-2-3 (wave)
-        [(5,0,3), (6,4,2), (7,8,3), (6,13,2)],                          # 5-6-7-6 (climb + step)
-        [(1,0,4), (2,5,2), (3,8,4), (2,13,2)],                          # 1-2-3-2 (sung)
-        [(3,0,2), (4,4,2), (5,8,3), (4,12,1), (3,14,1)],                # 3-4-5-4-3 (arc)
-        [(5,0,2), (4,4,2), (3,8,3), (5,13,2)],                          # 5-4-3-5 (step + leap home)
+        # Held 5 (one bar pad) + chord-tone stab answer on bar 2
+        [(5,0,7), (5,16,1), (3,18,1), (1,20,4)],
+        # Climb 1-3-5 + long held 5 + stab finish
+        [(1,0,1), (3,4,1), (5,8,4), (5,20,1), (1,22,4)],
+        # Question 5-3 stab, answer 5-1 stab + held
+        [(5,2,2), (3,6,1), (5,18,1), (1,20,4)],
+        # Long held 3 + soul-stab answer
+        [(3,0,7), (1,18,1), (3,20,1), (5,22,3)],
+        # Bass-doubling pickup + soul stabs + held
+        [(-6,0,1), (1,4,1), (5,6,4), (1,18,1), (3,20,1), (5,22,3)],
     ],
     "space": [
         [(1,0,6)],
@@ -534,13 +564,13 @@ _LEAD_RHYTHM = {
         [(1,6,7)],
         [(1,2,2), (2,11,5)],
     ],
-    # hook (80s hiphop): tight 16th-note bursts, stepwise.
+    # hook (80s hiphop horn-stab): tight 16th chord-tone bursts.
     "hook": [
-        [(1,0,1), (2,1,1), (3,2,1), (4,3,1)],                           # 1-2-3-4 stairs
-        [(5,0,1), (4,1,1), (3,2,1), (2,3,1), (1,4,1)],                  # 5-4-3-2-1 descending
-        [(3,0,1), (4,1,1), (5,2,1)],                                    # 3-4-5 walkup
-        [(5,8,1), (4,9,1), (3,10,1)],                                   # 5-4-3 late
-        [(1,4,1), (2,5,1), (3,6,1), (2,7,1)],                           # 1-2-3-2 mid-bar
+        [(1,0,1), (3,1,1), (5,2,1)],                                    # 1-3-5 stab
+        [(5,0,1), (3,1,1), (1,2,1)],                                    # 5-3-1 descending
+        [(1,8,1), (3,9,1), (5,10,1)],                                   # 1-3-5 late stab
+        [(5,4,1), (1,5,1), (5,6,1), (3,7,1)],                           # 5-1-5-3 mid-bar
+        [(1,0,1), (5,2,1), (3,4,1)],                                    # 1-5-3 punch
     ],
 }
 
@@ -685,8 +715,8 @@ _LEAD_LEVEL = {
     "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
-    "dub_techno": 0.693, "neon_dub": 0.7056, "steppers_dub": 0.7056,
-    "lofi": 0.7245, "rnb": 0.9198, "roots_reggae": 0.756, "dub": 0.7686,
+    "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
+    "lofi": 0.7245, "rnb": 0.9198, "roots_reggae": 0.9261, "dub": 0.9416,
     "indie_rnb": 0.7686,
 }
 
@@ -1185,7 +1215,7 @@ class CannedSource:
             return
         pit = (ct[0] + 24) + rnd.choice([0, 5, 7, 12])
         dur = beat * 4.4
-        D(0, dur, pit, 0.7, CH_LEAD)
+        D(0, dur, pit, 0.857, CH_LEAD)              # +30% from 0.7 (user: "50% higher on dub sirens")
 
     def _chord_mode(self, ct, cr):
         # Infer a 7-degree mode for the CURRENT CHORD by reading its quality
@@ -1213,6 +1243,22 @@ class CannedSource:
         o, i = divmod(deg - 1, 7)
         return cr + mode[i] + 12 * o + base_oct
 
+    def _scale_deg_pit_in_key(self, deg, sc, base_oct=24):
+        # KEY-ANCHORED variant — pitch is computed from the SECTION'S scale
+        # at the SECTION'S root, NOT from the current chord. Same actual
+        # MIDI pitch for the same deg every emit. Chord progression moves
+        # underneath; melody hits chord tones / color tones as it does.
+        # deg = scale degree of the section. deg > 7 = octave up; deg < 1
+        # = octave below (deg=-6 = tonic one octave below default reg,
+        # i.e. bass-doubling register).
+        scale = sorted({d % 12 for d in sc})[:7]
+        while len(scale) < 7:
+            scale.append((scale[-1] + 2) % 12)
+        o, i = divmod(deg - 1, 7)
+        # Anchor at MIDI ~C3 (36) + section root pitch class + base_oct (24).
+        # Default (deg=1) lands at MIDI 60-ish = C4 area = lead register.
+        return 36 + (self.root % 12) + scale[i] + 12 * o + base_oct
+
     def _motif(self, D, rnd, beat, sc, ctones):
         # SCALE-DEGREE MELODIES — one melody locked per section, replayed
         # verbatim across emit-bars. Each motif tuple is (deg, s, du):
@@ -1230,15 +1276,17 @@ class CannedSource:
         if not bank:
             return
         feel = _LEAD_FEEL.get(self.genre, "lyric")
-        # Per-feel emit cadence: phrase plays in bar 0 of the group, bars
-        # 1..(every-1) are silent. With every=4, one phrase per 4 bars =
-        # heavy breath between phrases. AABA across 4 emit-bars (16-bar
-        # form when every=4).
+        # Per-feel emit cadence + phrase-length: a phrase plays for
+        # _PHRASE_LEN bars starting every _LEAD_EVERY bars. Bars
+        # 0..phrase_len-1 of the group emit; phrase_len..every-1 are silent.
         every = _LEAD_EVERY.get(feel, 1)
-        if every > 1 and self.bar % every != 0:
+        phrase_len = _PHRASE_LEN.get(feel, 1)
+        bar_in_group = self.bar % every
+        if bar_in_group >= phrase_len:
             return
-        emit_idx = self.bar // every if every > 1 else self.bar
-        use_b = (emit_idx % 4) == 3
+        # AABA over 4 emitted phrases
+        phrase_idx = self.bar // every
+        use_b = (phrase_idx % 4) == 3
         sec_rnd = random.Random(self._sec * 53 + len(self.genre))
         a_idx = sec_rnd.randrange(len(bank))
         b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
@@ -1249,29 +1297,33 @@ class CannedSource:
         kicks = set() if feel == "hook" else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
         nlen = _LEAD_NLEN.get(feel, 0.20)
-        cr = ctones[0]                                       # chord root = first ct
-        mode = self._chord_mode(ctones, cr)
+        boost = _LEAD_VEL_BOOST.get(feel, 1.0)
         rrr = random.Random(self._sec * 31 + self.bar * 7 + 11)
         if rrr.random() < bar_p:
             return
         nN = len(motif)
         for i, (deg, s, du) in enumerate(motif):
-            if s in kicks and rrr.random() < 0.45:           # hocket vs kick
+            # Multi-bar phrase: s in 0..(16*phrase_len-1). Filter to current bar.
+            if s // 16 != bar_in_group:
                 continue
-            if rrr.random() < note_p:                         # deliberate per-note rest
+            local_s = s % 16
+            if local_s in kicks and rrr.random() < 0.45:
+                continue
+            if rrr.random() < note_p:
                 continue
             d = deg
-            if use_b and i == nN - 1:                         # B-bar resolves to 1
+            if use_b and i == nN - 1:                         # B-phrase resolves to root
                 d = 1
-            pit = self._scale_deg_pit(d, cr, mode, 24)
+            # KEY-ANCHORED pitch — same MIDI note for same deg every emit
+            pit = self._scale_deg_pit_in_key(d, sc, 24)
             mid = nN / 2.0
             d2p = 1.0 - abs(i - mid) / max(1.0, nN - 1)
-            vel = 0.46 + 0.18 * d2p + (0.05 if s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
+            vel = 0.46 + 0.18 * d2p + (0.05 if local_s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
             if use_b and i >= nN - 2:
                 vel -= 0.05
-            vel *= _LEAD_VEL_BOOST.get(feel, 1.0)
+            vel *= boost
             vel = max(0.22, min(0.95, vel))
-            D(s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
+            D(local_s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
     def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
