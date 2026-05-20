@@ -392,9 +392,16 @@ _LEAD_NLEN = {
     "space": 0.40,   # n/a (dub family uses skanks)
 }
 
-# feels that emit only every OTHER bar (odd bars silent). The remaining
-# feels (funk, jazz) emit every bar.
-_LEAD_EVERY2 = {"hook", "lyric", "stab", "hypno"}
+# per-feel bar interval between emitted phrases. 4 = "one phrase per 4
+# bars" (the phrase plays in bar 0 of the group, bars 1-3 are silent).
+# Jazz is unchanged (uses _jazz_motif, emits continuously). Space = n/a.
+_LEAD_EVERY = {
+    "funk":  4,
+    "lyric": 4,
+    "stab":  4,
+    "hypno": 4,
+    "hook":  4,
+}
 
 _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
@@ -470,14 +477,14 @@ _LEAD_FEEL = {
 # replays the A/A/A/B pattern across emit-bars (every bar for funk/jazz,
 # every 2 bars for hook/lyric/stab/hypno).
 _LEAD_RHYTHM = {
-    # funk (talkbox): sung 4-6 syllable phrases, mostly chord-tones (1/3/5)
-    # with some stepwise motion. Talkbox needs sustain -> mid/long du.
+    # funk (talkbox): mostly-stepwise sung phrases. One phrase per 4 bars
+    # (silence on bars 1-3 of the group). 70%+ moves are +/-1 scale-step.
     "funk": [
-        [(5,0,2), (3,3,1), (5,5,2), (4,10,1), (3,11,1), (1,14,2)],      # 5-3-5-4-3-1
-        [(5,0,1), (3,1,2), (1,5,3), (5,10,2), (3,14,2)],                # 5-3-1-5-3 (push)
-        [(1,0,3), (5,4,2), (3,8,4), (5,13,2)],                          # 1-5-3-5 (anthem leap)
-        [(5,0,2), (3,3,2), (4,6,3), (5,11,4)],                          # 5-3-4-5 (held end)
-        [(3,0,1), (4,1,1), (5,3,3), (7,7,4), (1,13,2)],                 # 3-4-5-7-1 (climb + resolve)
+        [(3,0,2), (4,4,1), (5,6,3), (4,11,1), (3,13,2)],                # 3-4-5-4-3 (wave)
+        [(1,0,1), (2,2,1), (3,4,2), (4,8,2), (5,12,3)],                 # 1-2-3-4-5 (climbing)
+        [(3,0,1), (2,1,1), (1,3,2), (2,7,1), (3,9,4)],                  # 3-2-1-2-3 (pickup + return)
+        [(5,0,1), (4,2,1), (3,4,2), (2,8,1), (1,10,4)],                 # 5-4-3-2-1 (descending sing)
+        [(3,0,1), (4,2,1), (5,4,2), (6,8,1), (3,11,4)],                 # 3-4-5-6-3 (arc + leap home)
     ],
     # jazz (bebop): _jazz_motif uses a CHROMATIC ladder (chord tones on
     # strong beats, semitone passing tones between) -> the deg field here
@@ -489,29 +496,28 @@ _LEAD_RHYTHM = {
         [(0,0,1), (0,2,1), (0,4,1), (0,6,1), (0,8,2), (0,12,2)],
         [(0,0,1), (0,1,1), (0,2,1), (0,3,1), (0,6,1), (0,8,1), (0,10,1), (0,12,2)],
     ],
-    # stab (synthwave/electro): short syncopated chord-tone accents.
+    # stab (synthwave/electro): 3-4 short stepwise stabs in one bar.
     "stab": [
-        [(5,2,2), (3,6,2), (5,10,2), (1,14,2)],                         # 5-3-5-1
-        [(1,0,1), (5,4,1), (3,8,1), (5,12,1)],                          # 1-5-3-5 (octaves)
-        [(3,2,1), (4,3,1), (5,6,1), (1,14,1)],                          # 3-4-5-1 (pickup+leap)
-        [(5,6,3), (3,10,1), (1,14,2)],                                  # 5-3-1 (late)
-        [(5,0,1), (5,4,1), (3,8,1), (5,12,1)],                          # 5-5-3-5 (driving)
+        [(1,0,1), (2,4,1), (3,8,1), (4,12,1)],                          # 1-2-3-4 (rising)
+        [(5,0,1), (4,4,1), (3,8,1), (2,12,1)],                          # 5-4-3-2 (falling)
+        [(3,2,1), (4,4,1), (5,6,1), (3,14,1)],                          # 3-4-5-3 (arc home)
+        [(5,6,2), (4,10,1), (3,14,1)],                                  # 5-4-3 (late)
+        [(1,0,1), (2,2,1), (3,4,1), (5,8,2)],                           # 1-2-3-5 (walk + one leap)
     ],
-    # hypno (techno): 2-3 note repeating figure; one held tone + accent.
+    # hypno (techno): 2-3 note minimal stepwise figure, repeated.
     "hypno": [
-        [(5,0,3), (1,8,3)],                                             # 5-1 pulse
-        [(5,0,2), (3,6,2), (1,12,2)],                                   # 5-3-1
-        [(5,6,4)],                                                      # single held 5
-        [(5,2,2), (2,10,3)],                                            # 5-2 skip
+        [(5,0,3), (6,6,2), (5,12,3)],                                   # 5-6-5 (neighbor)
+        [(3,0,2), (2,6,3), (3,12,3)],                                   # 3-2-3
+        [(5,4,5)],                                                       # single held 5
+        [(1,0,2), (2,6,3), (1,12,3)],                                   # 1-2-1
     ],
-    # lyric (rnb/lofi): SUNG melodic phrases, mostly stepwise w/ one leap,
-    # strong du VARIATION between notes (some short, some long).
+    # lyric (rnb/lofi): SUNG mostly-stepwise phrases w/ STRONG du variation.
     "lyric": [
-        [(5,0,3), (3,5,1), (5,8,4), (6,13,2)],                          # 5-3-5-6 (sung)
-        [(3,0,1), (4,1,2), (5,5,5), (6,13,2)],                          # 3-4-5-6 (pickup + hold)
-        [(3,0,2), (5,5,1), (6,7,3), (3,12,4)],                          # 3-5-6-3 (return)
-        [(1,0,1), (2,1,1), (5,4,4), (1,11,3)],                          # 1-2-5-1 (leap up)
-        [(5,6,2), (4,9,1), (3,11,5)],                                   # 5-4-3 (long descent)
+        [(3,0,3), (2,5,1), (1,8,3), (2,12,1), (3,14,2)],                # 3-2-1-2-3 (wave)
+        [(5,0,3), (6,4,2), (7,8,3), (6,13,2)],                          # 5-6-7-6 (climb + step)
+        [(1,0,4), (2,5,2), (3,8,4), (2,13,2)],                          # 1-2-3-2 (sung)
+        [(3,0,2), (4,4,2), (5,8,3), (4,12,1), (3,14,1)],                # 3-4-5-4-3 (arc)
+        [(5,0,2), (4,4,2), (3,8,3), (5,13,2)],                          # 5-4-3-5 (step + leap home)
     ],
     "space": [
         [(1,0,6)],
@@ -519,14 +525,13 @@ _LEAD_RHYTHM = {
         [(1,6,7)],
         [(1,2,2), (2,11,5)],
     ],
-    # hook (80s hiphop): tight 16th-note bursts, 3-5 notes in a compact
-    # window. Every bar gets the same hook; AABA over 4 emit-bars (8-bar form).
+    # hook (80s hiphop): tight 16th-note bursts, stepwise.
     "hook": [
-        [(1,0,1), (2,1,1), (3,2,1)],                                    # 1-2-3 walkup
-        [(1,0,1), (3,1,1), (5,2,1), (6,4,1)],                           # 1-3-5-6
-        [(1,0,1), (3,1,1), (5,2,1), (3,3,1), (1,4,1)],                  # 1-3-5-3-1 arp
-        [(5,8,1), (3,9,1), (1,10,1)],                                   # 5-3-1 late
-        [(3,4,1), (5,5,1), (6,6,1), (1,8,1)],                           # 3-5-6-1 mid-bar
+        [(1,0,1), (2,1,1), (3,2,1), (4,3,1)],                           # 1-2-3-4 stairs
+        [(5,0,1), (4,1,1), (3,2,1), (2,3,1), (1,4,1)],                  # 5-4-3-2-1 descending
+        [(3,0,1), (4,1,1), (5,2,1)],                                    # 3-4-5 walkup
+        [(5,8,1), (4,9,1), (3,10,1)],                                   # 5-4-3 late
+        [(1,4,1), (2,5,1), (3,6,1), (2,7,1)],                           # 1-2-3-2 mid-bar
     ],
 }
 
@@ -1216,11 +1221,14 @@ class CannedSource:
         if not bank:
             return
         feel = _LEAD_FEEL.get(self.genre, "lyric")
-        # Per-feel emit cadence: hook/lyric/stab/hypno emit every 2 bars
-        # (odd bars deterministic-silent); funk emits every bar.
-        if feel in _LEAD_EVERY2 and self.bar % 2 != 0:
+        # Per-feel emit cadence: phrase plays in bar 0 of the group, bars
+        # 1..(every-1) are silent. With every=4, one phrase per 4 bars =
+        # heavy breath between phrases. AABA across 4 emit-bars (16-bar
+        # form when every=4).
+        every = _LEAD_EVERY.get(feel, 1)
+        if every > 1 and self.bar % every != 0:
             return
-        emit_idx = (self.bar // 2) if feel in _LEAD_EVERY2 else self.bar
+        emit_idx = self.bar // every if every > 1 else self.bar
         use_b = (emit_idx % 4) == 3
         sec_rnd = random.Random(self._sec * 53 + len(self.genre))
         a_idx = sec_rnd.randrange(len(bank))
