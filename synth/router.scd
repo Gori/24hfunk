@@ -36,7 +36,7 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // here; Pluck/Bell/Glitch/Siren stay voice-stealing because their
 // character depends on per-note attacks/decay/whoop fired by initial
 // gate, which persistent-mono only fires once.
-~monoDef = Set[\leadMoog, \leadHyper, \leadJazz];
+~monoDef = Set[\leadMoog, \leadHyper];
 // VOICE-STEALING mono channels: only one note at a time on this channel.
 // New noteon releases the previous note's gate before starting the new
 // synth (each note still gets a fresh envelope — no glide). Use this when

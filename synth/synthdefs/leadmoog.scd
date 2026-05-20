@@ -9,8 +9,16 @@ SynthDef(\leadMoog, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detun
 		wave=0.5, cutoff=3200, decay=0.4, gate=1, t_trig=1, maxSustain=5.0,
 		drive=1.0, glide=0.08, level=1.0, pan=0|
 	var v       = amp.clip(0.05, 1.0);
-	// portamento: heavy lag between note-to-note freq changes (mono only)
-	var fHz     = Lag.kr(freq.clip(55, 2400), glide.clip(0, 0.25));
+	// ARTICULATION + MOVEMENT layered on the freq:
+	// - vibrato: 5.5 Hz +/- a slow drift, depth ~3-8 cents (vocal-like)
+	// - attack pitch-bend: brief upward "horn-lip" slur into pitch on each note
+	//   (re-fires per note via t_trig)
+	var vib_rate = 5.5 + LFNoise2.kr(0.3).range(-0.7, 0.7);
+	var vib_dep  = LFNoise2.kr(0.2).range(0.0030, 0.0080);
+	var vib      = SinOsc.kr(vib_rate, Rand(0, 6.28)) * vib_dep;
+	var bend     = EnvGen.kr(Env([0.97, 1.0], [0.07], -2), t_trig);
+	var fHz      = Lag.kr(freq.clip(55, 2400), glide.clip(0, 0.25))
+		* (1 + vib) * bend;
 	var env     = EnvGen.kr(Env.asr(0.006, 1.0, 0.55, -3), gate);
 	var safety  = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 8), 0.2]),
 		1, doneAction: 2);
@@ -23,7 +31,10 @@ SynthDef(\leadMoog, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detun
 	// the synth alive across notes; t_trig re-fires the "wow" on each hit).
 	var fenv    = EnvGen.kr(Env([0, 1, 0.35], [0.005, decay * 0.9], [-3, -2]),
 		t_trig);
-	var cf      = (cutoff * (0.35 + 0.6 * v + 1.4 * fenv)).clip(150, 8000);
+	// FILTER LFO — slow organic cutoff wobble layered over the envelope:
+	// keeps the tone breathing/talking instead of sitting at a static cutoff
+	var cf_lfo  = LFNoise2.kr(0.7).range(0.85, 1.15);
+	var cf      = (cutoff * (0.35 + 0.6 * v + 1.4 * fenv) * cf_lfo).clip(150, 8000);
 	// 4-pole ladder approximation: two cascaded resonant lowpass filters
 	var sig     = RLPF.ar(src, cf, 0.45);
 	sig = RLPF.ar(sig, cf * 1.08, 0.55);
