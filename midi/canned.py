@@ -795,8 +795,8 @@ _LEAD_GLOBAL = 0.84
 
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
-    "electro": 0.4788, "uk_garage": 0.5087, "minneapolis_funk": 0.6231,
-    "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.6048,
+    "electro": 0.4788, "uk_garage": 0.55, "minneapolis_funk": 0.6231,
+    "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.55,
     # \lead genres
     "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
@@ -1541,7 +1541,17 @@ class CannedSource:
                     vel -= 0.05
                 vel *= boost * _LEAD_GLOBAL
                 vel = max(0.22 * _LEAD_GLOBAL, min(0.95, vel))
-            D(local_s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
+            if feel == "scratch":
+                # Align the scratch's micro-timing to the DRUM it locks to:
+                # a snare-position hit uses the "snare" voice (same sdrag), a
+                # kick-position hit the "kick" voice (same kpush) -> it lands
+                # EXACTLY with the drum, not just near it. No lead lpush.
+                g = self._SCR_GROOVE.get(self.genre, {})
+                scr_vo = ("snare" if local_s in g.get("snare", [])
+                          else "kick" if local_s in g.get("kick", []) else "")
+                D(local_s, beat * nlen * du, pit, vel, CH_LEAD, scr_vo)
+            else:
+                D(local_s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----
     def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
