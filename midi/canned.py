@@ -631,23 +631,22 @@ _LEAD_RHYTHM = {
         [(5,4,1), (1,5,1), (5,6,1), (3,7,1)],                           # 5-1-5-3 mid-bar
         [(1,0,1), (5,2,1), (3,4,1)],                                    # 1-5-3 punch
     ],
-    # scratch (turntablist): 1-bar patterns. Short notes (du=1) = pure scratch
-    # chops; a LONG note (du=10) = the DJ "lets the record go" so the word
-    # plays out forward (leadScratch crossfades scratch->forward after ~0.22s).
-    # deg only sets the scratch's CENTER pitch — rhythm is the point.
+    # scratch (turntablist): 1-bar patterns, VARIED per phrase (not locked).
+    # Short notes (du=1) = pure scratch chops; a LONG note (du=10) = the DJ
+    # "lets the record go" so the word plays out (leadScratch crossfades
+    # scratch->forward after ~0.22s). MOST phrases are pure scratching; the
+    # full-word playout is the occasional payoff. deg only sets the center.
     "scratch": [
-        # wikki pairs, then LET IT PLAY
-        [(1,0,1), (1,1,1), (1,4,1), (1,5,1), (1,8,10)],
-        # chop-chop-chop, then play
-        [(1,0,1), (1,2,1), (1,4,1), (1,8,10)],
-        # quick scratch burst, then play
-        [(1,0,1), (1,1,1), (1,2,1), (1,3,1), (1,8,10)],
-        # pure scratch bar — steady chops, no release (the rhythmic one)
-        [(1,0,1), (1,2,1), (1,4,1), (1,6,1), (1,8,1), (1,10,1), (1,12,1), (1,14,1)],
-        # syncopated cut + play
-        [(1,2,1), (1,3,1), (5,6,1), (1,8,10)],
-        # fast scribble bar — rapid chop clusters, no release (energetic)
-        [(1,0,1), (1,1,1), (1,2,1), (1,3,1), (1,6,1), (1,7,1), (1,10,1), (1,11,1), (1,12,1), (1,13,1)],
+        # --- pure scratch (NO word) — the majority ---
+        [(1,0,1), (1,2,1), (1,4,1), (1,6,1), (1,8,1), (1,10,1), (1,12,1), (1,14,1)],   # steady chops
+        [(1,0,1), (1,1,1), (1,2,1), (1,3,1), (1,6,1), (1,7,1), (1,10,1), (1,11,1), (1,12,1), (1,13,1)],  # fast scribble
+        [(1,0,1), (1,1,1), (1,4,1), (1,5,1), (1,8,1), (1,9,1), (1,12,1), (1,13,1)],     # wikki pairs
+        [(1,2,1), (1,3,1), (5,6,1), (5,7,1), (1,10,1), (1,11,1), (5,14,1), (5,15,1)],   # syncopated cuts
+        [(1,0,1), (1,2,1), (5,4,1), (1,8,1), (1,10,1), (5,12,1)],                       # sparse cuts
+        [(1,0,1), (1,1,1), (1,2,1), (1,8,1), (1,9,1), (1,10,1)],                        # two scribble bursts
+        # --- scratch THEN let the record play the word (occasional payoff) ---
+        [(1,0,1), (1,1,1), (1,4,1), (1,5,1), (1,8,10)],                                 # wikki -> word
+        [(1,0,1), (1,2,1), (1,4,1), (1,8,10)],                                          # chops -> word
     ],
 }
 
@@ -1369,19 +1368,28 @@ class CannedSource:
         # emitted phrases). Pure-locked A on the other 7 -> strong recurrence.
         # B picks from a dedicated FILL bank (more notes than the A motifs).
         phrase_idx = self.bar // every
-        use_b = (phrase_idx % 8) == 7
-        sec_rnd = random.Random(self._sec * 53 + len(self.genre))
-        a_idx = sec_rnd.randrange(len(bank))
-        if use_b:
-            fill = _LEAD_FILL.get(feel)
-            if fill:
-                b_idx = sec_rnd.randrange(len(fill))
-                motif = fill[b_idx]
-            else:
-                b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
-                motif = bank[b_idx]
+        if feel == "scratch":
+            # A DJ doesn't loop ONE pattern — scratch VARIES per phrase.
+            # Pick a fresh motif each phrase (no per-section lock, no AABA).
+            pr = random.Random(self._sec * 17 + self.bar * 13 + 5)
+            motif = bank[pr.randrange(len(bank))]
+            use_b = False
         else:
-            motif = bank[a_idx]
+            # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
+            # 8 emitted phrases). Pure-locked A on the other 7 -> recurrence.
+            use_b = (phrase_idx % 8) == 7
+            sec_rnd = random.Random(self._sec * 53 + len(self.genre))
+            a_idx = sec_rnd.randrange(len(bank))
+            if use_b:
+                fill = _LEAD_FILL.get(feel)
+                if fill:
+                    b_idx = sec_rnd.randrange(len(fill))
+                    motif = fill[b_idx]
+                else:
+                    b_idx = (a_idx + 1 + sec_rnd.randrange(max(1, len(bank) - 1))) % len(bank)
+                    motif = bank[b_idx]
+            else:
+                motif = bank[a_idx]
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
