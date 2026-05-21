@@ -189,7 +189,7 @@ _GENRE_INSTR = {
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadVox", "keys": "keysElectro"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadScratch", "keys": "keysPad"},
     "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadJazz"},
-    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog"},
+    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog", "keys": "keysClav"},
     "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadMoog"},
     "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadGlitch"},
     "detroit_techno":   {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadHyper"},
@@ -392,6 +392,7 @@ _KICK_STRONG = {
 # the actual gate length). Higher = longer-sustained notes.
 _LEAD_NLEN = {
     "funk":  0.45,   # talkbox sings
+    "solo":  0.5,    # expressive Moog solo notes ring/sing
     "jazz":  0.30,   # bebop 8ths (also used by _jazz_motif)
     "stab":  0.16,   # true stabs
     "robotvox": 0.5,  # each word rings ~a beat (electro robot vocal)
@@ -465,6 +466,7 @@ _LEAD_FILL = {
 # Jazz is unchanged (uses _jazz_motif, emits continuously). Space = n/a.
 _LEAD_EVERY = {
     "funk":  4,
+    "solo":  16,   # a featured Moog solo every 16 bars (appears a few times)
     "lyric": 4,
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
     "robotvox": 2,   # 2-bar robot-vocal phrase (electro)
@@ -481,6 +483,7 @@ _LEAD_EVERY = {
 # 2 bars allows a call-response within the phrase.
 _PHRASE_LEN = {
     "funk":  2,    # 2-bar horn riff w/ call-response, then 2 bars breath
+    "solo":  2,    # 2-bar Moog solo statement
     "lyric": 2,    # 2-bar soul-horn line, then 2 bars breath
     "stab":  1,    # 1-bar stab riff, 1 bar breath
     "robotvox": 2,  # 2-bar robot-vocal phrase (electro)
@@ -493,6 +496,7 @@ _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
     "scratch": (0.0, 0.0),   # NO drops -> a repeated pattern is byte-identical
     "robotvox": (0.0, 0.0),  # mechanical: every word lands, identical repeats
+    "solo": (0.0, 0.05),     # the solo statement lands fully (it's featured)
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -543,7 +547,7 @@ _LEAD_STYLE = {
 # (degIdx, step16, dur16). degIdx is unused for pitch (the contour drives
 # pitch) but kept so the tuple shape matches everything that reads motif.
 _LEAD_FEEL = {
-    "funk": "funk", "minneapolis_funk": "funk", "electro_funk": "funk",
+    "funk": "solo", "minneapolis_funk": "funk", "electro_funk": "funk",
     "jazz": "jazz",
     "broken_house": "stab", "uk_garage": "stab", "dub_garage": "stab",
     "boom_bap": "scratch",
@@ -570,6 +574,22 @@ _LEAD_RHYTHM = {
     # REPETITION + follows the BASS — deg -6 (one octave below default
     # lead reg = bass-doubling register) on the 'one' of each bar, echoing
     # the bass kick rhythm. Small repeating figures (5-3, 1-3) hook the ear.
+    # Bernie Worrell / Junie Morrison Mini-Moog SOLO — expressive 2-bar
+    # statements: scale runs, repeated wails, octave leaps, held bends. The
+    # leadMoog glide ties the notes so it SINGS. Appears every 16 bars.
+    "solo": [
+        # ascending run -> wail at the top -> descend home
+        [(1,0,1), (3,2,1), (4,4,1), (5,6,2), (7,10,1), (8,12,3), (7,18,1),
+         (5,20,1), (4,22,1), (3,24,1), (1,26,4)],
+        # repeated-note funk stab -> leap up -> held wail -> turn
+        [(5,0,1), (5,2,1), (4,4,1), (5,6,1), (8,8,4), (7,14,1), (5,16,2),
+         (3,20,1), (1,22,1), (5,24,4)],
+        # call (high held) -> response run down -> resolve
+        [(8,0,4), (7,6,1), (5,8,1), (4,10,1), (3,12,2), (1,16,2), (3,20,1),
+         (5,22,1), (7,24,2), (8,28,3)],
+        # sparse, vocal — leave space, big bends
+        [(5,0,2), (7,4,1), (8,6,3), (5,12,2), (4,16,1), (3,18,2), (1,22,5)],
+    ],
     "funk": [
         # Bass-octave on each 'one' (echoing bass) + chord-tone fills
         [(-6,0,1), (1,2,1), (3,4,1), (-6,8,1), (5,12,1), (-6,16,1), (1,18,1), (3,20,1), (5,22,2)],
@@ -817,7 +837,7 @@ _LEAD_LEVEL = {
     "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.60,
     "boom_bap": 0.60,
     # \lead genres
-    "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
+    "funk": 0.78, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
     "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
@@ -1118,7 +1138,7 @@ class CannedSource:
 
         # soft sustained harmonic pad on the keys voice (energy-gated, not on
         # the spikier genres) — body without density, keeps the space.
-        if self.on.get("keys", True) and self.genre not in ("neon_dub", "electro"):
+        if self.on.get("keys", True) and self.genre not in ("neon_dub", "electro", "funk"):
             self._pad(D, rnd, beat, ctones)
 
         # dedicated percussion layer (per-genre: none / rare spice / lots)
@@ -1570,7 +1590,7 @@ class CannedSource:
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
-        kicks = set() if feel in ("hook", "scratch", "robotvox") else _KICK_STRONG.get(self.genre, set())
+        kicks = set() if feel in ("hook", "scratch", "robotvox", "solo") else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
         nlen = _LEAD_NLEN.get(feel, 0.20)
         boost = _LEAD_VEL_BOOST.get(feel, 1.0)
@@ -1645,10 +1665,12 @@ class CannedSource:
             self._hats(D, rnd, e, (0, 4, 8, 12))
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
+        if self.on.get("keys", True):
+            # Bernie/Junie clavinet "chank" — rhythmic comp on the funk
+            # off-beats (the percussive keysClav gives the wah-clav stab).
+            self._comp(D, rnd, beat, ct, [2, 6, 7, 10, 14, 15], oct_shift=0)
         if self.on["lead"]:
-            self._motif(D, rnd, beat, sc, ct)
-            if rnd.random() < 0.3:
-                self._comp(D, rnd, beat, ct, [6, 14])
+            self._motif(D, rnd, beat, sc, ct)              # Moog SOLO (feel=solo)
 
     def _g_jazz(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["hat"]:
