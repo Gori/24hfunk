@@ -1284,17 +1284,22 @@ class CannedSource:
         # -> short). Simple triad only.
         if not self.on.get("keys", True):
             return
-        vc = self._voicelead(ctones[:3], 50)
         kl = self._keys_lvl
         # SAME velocity (= same volume) for all; LENGTH is set by note duration
         # (keysOberheim is gated). So a held chord + short stabs sit equal-loud.
         vel = 0.62 * kl
+        # Voice the HELD chord LOW and the STABS an octave UP, so no two
+        # simultaneous keys notes share a (ch,pitch) -> the gated voices each
+        # get their own note-off and release cleanly (no hung notes).
+        vc   = self._voicelead(ctones[:3], 48)
+        held = vc
+        stab = [p + 12 for p in vc]
         if rnd.random() < 0.6:                               # a HELD chord (long du)
-            for p in vc:
+            for p in held:
                 D(0, beat * 1.5, p, vel + rnd.uniform(-0.03, 0.03), CH_KEYS)
         for s in (2, 6, 10, 14):                             # off-beat STABS (short du)
             if rnd.random() < 0.5 + (0.25 * self.energy):
-                for p in vc:
+                for p in stab:
                     D(s, beat * 0.18, p, vel + rnd.uniform(-0.03, 0.03), CH_KEYS)
 
     def _perc(self, D, rnd, beat, e):

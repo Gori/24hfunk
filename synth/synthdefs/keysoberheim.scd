@@ -2,7 +2,7 @@
 // (Prince / Jam & Lewis). Fat: saw + a detuned PWM pulse + a sub octave,
 // through a smooth (mild-resonance) lowpass with a quick BRASSY filter-attack
 // envelope (the OB "stab"). Punchy + bright, self-frees. \keys param contract.
-SynthDef(\keysOberheim, { |out=0, amp=0.4, freq=220, cutoff=2800, sus=0.4, drive=1.0, vib=0.12, pan=0, gate=1, maxSustain=4.0|
+SynthDef(\keysOberheim, { |out=0, amp=0.4, freq=220, cutoff=2800, sus=0.4, drive=1.0, vib=0.12, pan=0, gate=1, maxSustain=2.0|
 	var v    = amp.clip(0.05, 1.0);
 	var det  = Rand(-0.02, 0.02).midiratio;
 	var f    = freq * det;
