@@ -1668,8 +1668,8 @@ class CannedSource:
         if self.on.get("keys", True):
             # Bernie/Junie WARM ANALOG comp — sparse, sustained chords (the
             # keysFunk synth rings/connects, so it sits under the groove
-            # rather than stabbing). A couple of placements per bar.
-            self._comp(D, rnd, beat, ct, [0, 8], oct_shift=0)
+            # rather than stabbing). Voiced up an octave to stay clear of mud.
+            self._comp(D, rnd, beat, ct, [0, 8], oct_shift=12)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # Moog SOLO (feel=solo)
 
