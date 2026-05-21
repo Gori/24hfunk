@@ -20,6 +20,14 @@ _running = True
 
 
 def _shuffled_genres() -> list[str]:
+    # STR_GENRES (comma-separated) temporarily restricts the playable pool
+    # for testing specific genres without waiting for the full rotation.
+    pool = os.environ.get("STR_GENRES")
+    if pool:
+        g = [x.strip() for x in pool.split(",") if x.strip() in GENRES]
+        if g:
+            random.shuffle(g)
+            return g
     g = list(GENRES)
     random.shuffle(g)
     return g

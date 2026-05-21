@@ -180,7 +180,7 @@ _GENRE_INSTR = {
     "broken_house":     {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadGlitch"},
     "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadPluck"},
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadGlitch"},
-    "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadHyper"},
+    "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadScratch"},
     "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadJazz"},
     "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog"},
     "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadMoog"},
@@ -190,7 +190,7 @@ _GENRE_INSTR = {
     "steppers_dub":     {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
     "dub_techno":       {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadSiren"},
     "roots_reggae":     {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadSiren"},
-    "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
+    "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadScratch"},
     "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
     "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadPluck"},
     "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadPluck"},
@@ -389,6 +389,7 @@ _LEAD_NLEN = {
     "hypno": 0.20,   # short repetitive
     "lyric": 0.42,   # singable, sustained
     "hook":  0.14,   # tight 16ths (80s hook)
+    "scratch": 0.12, # tight scratch chops
     "space": 0.40,   # n/a (dub family uses skanks)
 }
 
@@ -443,6 +444,11 @@ _LEAD_FILL = {
         [(1,0,1), (3,1,1), (5,2,1), (7,3,1), (8,4,1), (5,5,1), (3,6,1), (1,7,1)],
         [(5,0,1), (3,1,1), (1,2,1), (3,3,1), (5,4,1), (7,5,1), (8,6,1), (5,7,1)],
     ],
+    # scratch B-fill: rapid 16th "scribble" run (continuous chops)
+    "scratch": [
+        [(1,0,1),(5,1,1),(1,2,1),(5,3,1),(1,4,1),(5,5,1),(1,6,1),(5,7,1),
+         (1,8,1),(5,9,1),(1,10,1),(5,11,1),(1,12,1),(5,13,1),(1,14,1),(5,15,1)],
+    ],
 }
 
 # per-feel bar interval between emitted phrases. 4 = "one phrase per 4
@@ -454,6 +460,7 @@ _LEAD_EVERY = {
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
     "hypno": 4,
     "hook":  4,
+    "scratch": 2, # scratch is rhythmic — present every other bar
 }
 
 # Phrase LENGTH in bars per feel — a phrase spans this many bars, notes
@@ -468,10 +475,12 @@ _PHRASE_LEN = {
     "stab":  1,    # 1-bar stab riff, 1 bar breath
     "hypno": 1,    # 1-bar minimal hit, 3 bars breath
     "hook":  1,    # 1-bar 16th burst, 3 bars breath
+    "scratch": 1,  # 1-bar scratch pattern, 1 bar breath
 }
 
 _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
+    "scratch": (0.0, 0.12),  # mostly present; occasional dropped chop
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -524,11 +533,11 @@ _LEAD_STYLE = {
 _LEAD_FEEL = {
     "funk": "funk", "minneapolis_funk": "funk", "electro_funk": "funk",
     "jazz": "jazz",
-    "broken_house": "stab", "uk_garage": "stab", "dub_garage": "stab",
+    "broken_house": "stab", "uk_garage": "scratch", "dub_garage": "stab",
     "electro": "stab", "synthwave": "stab",
     "minimal_techno": "hypno", "detroit_techno": "hypno", "dub_techno": "hypno",
     "rnb": "lyric", "afro_rnb": "lyric", "indie_rnb": "lyric",
-    "lofi": "lyric", "eighties_hiphop": "hook",
+    "lofi": "lyric", "eighties_hiphop": "scratch",
     "dub": "space", "neon_dub": "space", "steppers_dub": "space",
     "roots_reggae": "space",
 }
@@ -620,6 +629,21 @@ _LEAD_RHYTHM = {
         [(1,8,1), (3,9,1), (5,10,1)],                                   # 1-3-5 late stab
         [(5,4,1), (1,5,1), (5,6,1), (3,7,1)],                           # 5-1-5-3 mid-bar
         [(1,0,1), (5,2,1), (3,4,1)],                                    # 1-5-3 punch
+    ],
+    # scratch (turntablist): 1-bar rhythmic chop patterns. Pitch (deg) only
+    # sets the scratch's CENTER — the leadScratch synth swoops around it, so
+    # rhythm is what matters. Mostly root/fifth centers.
+    "scratch": [
+        # steady 16th baby-scratch chops
+        [(1,0,1), (1,2,1), (1,4,1), (1,6,1), (1,8,1), (1,10,1), (1,12,1), (1,14,1)],
+        # syncopated cuts (root + fifth)
+        [(1,0,1), (5,3,1), (1,6,1), (5,8,1), (1,11,1), (5,14,1)],
+        # transform-style double-chops on beats 2 & 4
+        [(1,4,1), (1,5,1), (5,6,1), (1,12,1), (1,13,1), (5,14,1)],
+        # sparse accent scratches
+        [(5,0,1), (1,6,1), (5,8,1), (1,14,1)],
+        # flare doubles
+        [(1,0,1), (1,1,1), (5,4,1), (5,5,1), (1,8,1), (1,9,1), (5,12,1), (5,13,1)],
     ],
 }
 
@@ -1643,8 +1667,7 @@ class CannedSource:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 10, 11, 14, 15])
         if self.on["lead"]:
             self._comp(D, rnd, beat, ct, [3, 6, 10, 14])
-            if rnd.random() < 0.35:
-                self._motif(D, rnd, beat, sc, ct)
+            self._motif(D, rnd, beat, sc, ct)              # scratch (always)
 
     def _g_dub_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         # 2-step skeleton, sparser + dubwise (huge delay via _FX_SIG)
@@ -1897,5 +1920,5 @@ class CannedSource:
                 if rnd.random() < 0.35 + 0.35 * e:
                     D(s, beat * 0.3, rnd.choice([cr, cr, cr + 12, cr + 7]),
                       self._main(rnd), CH_BASS)
-        if self.on["lead"] and rnd.random() < 0.45:
-            self._motif(D, rnd, beat, sc, ct)
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # scratch (always)
