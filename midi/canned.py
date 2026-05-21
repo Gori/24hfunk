@@ -1371,16 +1371,16 @@ class CannedSource:
     _SCR_WEIGHTS = (1,    14,  4,    2,      2,      3,        2,
                     0,      1,        0,         3,     1,      30,   26)
 
-    def _scratch_bar(self, rnd):
+    def _scratch_bar(self, rnd, intensity=1.0):
         # one bar of SPARSE, punchy scratch onsets (0..15). Build a 2-beat
-        # groove UNIT (the downbeat hits + maybe one more hit + an occasional
-        # fast double), then repeat it (often verbatim) for the 2nd half ->
-        # recognisable + space. ~3-4 hits/bar, all on the grid.
+        # groove UNIT (downbeat + maybe one more hit + an occasional fast
+        # double), repeat it for the 2nd half. `intensity` scales how many
+        # extra hits land (0.1 = just the downbeat .. 1.0 = ~3-4 hits/bar).
         def unit():
             out = [0.0]                                   # downbeat hit
-            if rnd.random() < 0.55:                       # a second placed hit
+            if rnd.random() < 0.55 * intensity:           # a second placed hit
                 out.append(rnd.choice([1.0, 1.5, 2.0, 3.0]))
-            if rnd.random() < 0.18:                       # occasional fast double
+            if rnd.random() < 0.20 * intensity:           # occasional fast double
                 out.append(rnd.choice([0.5, 2.5, 3.5]))
             return sorted(set(out))
         u = unit()
@@ -1406,18 +1406,17 @@ class CannedSource:
             notes.append((1, word_at, 10))
         return notes
 
-    def _scratch_pattern(self, rnd, kind="main"):
+    def _scratch_pattern(self, rnd, kind="main", intensity=1.0):
         # GENERATE a 2-bar scratch pattern (notes s in 0..31). "main" = pure
         # scratch (bar 2 often echoes bar 1) that gets REPEATED; "turn" =
-        # scratch then the WORD plays out (the answer at the end of the
-        # repeated main). All onsets land on the grid -> rhythmical.
-        bar1 = self._scratch_bar(rnd)
+        # scratch then the WORD plays out. `intensity` scales the density.
+        bar1 = self._scratch_bar(rnd, intensity)
         if kind == "turn":
             # word in bar 2: usually beat 3 (s=24), seldom middle (s=20)
             word_at = 16.0 + rnd.choices([8.0, 4.0], weights=[75, 25])[0]
-            b2 = [16.0 + o for o in self._scratch_bar(rnd) if 16.0 + o < word_at]
+            b2 = [16.0 + o for o in self._scratch_bar(rnd, intensity) if 16.0 + o < word_at]
             return self._scr_notes(rnd, bar1 + b2, 32.0, word_at=word_at)
-        bar2 = bar1 if rnd.random() < 0.6 else self._scratch_bar(rnd)
+        bar2 = bar1 if rnd.random() < 0.6 else self._scratch_bar(rnd, intensity)
         return self._scr_notes(rnd, bar1 + [16.0 + o for o in bar2], 32.0)
 
     def _motif(self, D, rnd, beat, sc, ctones):
@@ -1450,27 +1449,32 @@ class CannedSource:
         # B picks from a dedicated FILL bank (more notes than the A motifs).
         phrase_idx = self.bar // every
         if feel == "scratch":
-            # POOL of up to 6 two-bar patterns per SONG (even idx = "main",
-            # odd idx = "turn"/word). Each SUB-SECTION (8 bars = 4 two-bar
-            # phrases) uses just 2 of them: a main repeated 3x + a turnaround
-            # at the end (AAAB). Consecutive sub-sections rotate through the
-            # pool so the whole song draws on <= 6 distinct patterns.
+            # BUILD across the song: 4 phases that SCALE UP, monotonic (never
+            # cycles back). phase 0 = no scratches; 1 = a small scratch every
+            # 2 bars; 2 = more; 3 = full density. Each phase = 16 bars.
+            phase = min(3, self.bar // 16)
+            if phase == 0:
+                return                                  # intro: no scratches yet
             if getattr(self, "_scr_sec", None) != self._sec:
                 sr = random.Random(self._sec * 97 + 41)
-                self._scratch_pool = [
-                    self._scratch_pattern(sr, kind=("turn" if i % 2 else "main"))
-                    for i in range(6)
-                ]
+                # one main + one turn per build phase, scaling in density
+                self._scr_phase = {
+                    ph: (self._scratch_pattern(sr, "main", inten),
+                         self._scratch_pattern(sr, "turn", inten))
+                    for ph, inten in ((1, 0.15), (2, 0.55), (3, 1.0))
+                }
                 self._scr_sec = self._sec
-            # One ROUTINE = a main + a turn. The 8-bar AAAB unit (main x3 +
-            # turn) repeats for a LONG stretch (32 bars) before the routine
-            # changes -> strong recurrence, not a new main every 8 bars.
+            main, turn = self._scr_phase[phase]
             ph_i   = self.bar // every          # 2-bar phrase index
-            within = ph_i % 4                   # 0..3 -> AAAB (main main main turn)
-            routine = (ph_i // 8) % 3           # new routine every 8 phrases (16 bars)
-            main_i = (routine * 2) % 6          # even pool idx (main, repeated)
-            turn_i = (routine * 2 + 1) % 6      # odd pool idx (turnaround/word)
-            motif  = self._scratch_pool[turn_i if within == 3 else main_i]
+            within = ph_i % 4                   # 0..3 -> AAAB
+            if phase == 1:
+                # minimal: a small scratch every SECOND bar (bar 0 of each
+                # 2-bar phrase only), no word.
+                if bar_in_group == 1:
+                    return
+                motif = main
+            else:
+                motif = turn if within == 3 else main   # AAAB w/ word turnaround
             use_b  = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
