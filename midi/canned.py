@@ -1601,7 +1601,7 @@ class CannedSource:
                 # octave = word buffer slot, pitch-class = sung carrier tone
                 buf_slot = nbuf if nbuf is not None else scr_slot
                 pit = 60 + buf_slot * 12 + int(deg)
-                vel = 0.60 * _LEAD_GLOBAL          # robot vocal volume (+50%)
+                vel = 0.78 * _LEAD_GLOBAL          # robot vocal volume (+30% more)
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
