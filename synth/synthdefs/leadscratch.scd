@@ -21,7 +21,12 @@ SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, de
 	var div      = Select.kr(divIdx, [1, 2, 3, 4]); // cycles per beat (tempo-locked)
 	var gestRate = (beatHz * div).clip(0.8, 16.0);
 	var sign     = ((code >= 4) * 2) - 1;           // -1 / +1, baked per note
-	var gestDep  = 1.2 * sign;
+	// pitch tracks record VELOCITY: a faster gesture swings the rate WIDER,
+	// so fast scratches reach HIGHER pitch (like a real turntable), not just
+	// swoop the same range faster. spd scales the throw by gesture speed
+	// (div/2: quarter 0.5x .. 16th 2x).
+	var spd      = div / 2.0;
+	var gestDep  = 1.2 * sign * spd;
 	// RELEASE: after ~0.22 s the DJ "lets the record go" -> crossfade to clean
 	// forward playback (rate 1) so the WORD plays out. Short chops end before
 	// the ramp = pure scratch; long notes release into playback.
@@ -29,8 +34,9 @@ SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, de
 	var osc      = LFTri.kr(gestRate, 0);           // fixed phase -> identical repeats
 	var scratchMotion = osc * gestDep;
 	var motion   = (scratchMotion * (1 - rel)) + (1.0 * rel);   // -> forward play
-	// pitch only encodes the gesture; the sample plays at its recorded rate
-	var rate   = motion * BufRateScale.kr(buf);
+	// pitch only encodes the gesture; the sample plays at its recorded rate.
+	// clip to keep the fastest swings musical (~±1.5 octaves).
+	var rate   = (motion * BufRateScale.kr(buf)).clip(-3.0, 3.0);
 	// read the vocal buffer; reset into the vowel body on each note
 	var scr    = PlayBuf.ar(1, buf, rate, trigger: gate,
 		startPos: BufFrames.kr(buf) * 0.20, loop: 1);
