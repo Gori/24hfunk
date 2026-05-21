@@ -1666,10 +1666,10 @@ class CannedSource:
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
         if self.on.get("keys", True):
-            # Bernie/Junie WARM ANALOG comp — sparse, sustained chords (the
-            # keysFunk synth rings/connects, so it sits under the groove
-            # rather than stabbing). Voiced up an octave to stay clear of mud.
-            self._comp(D, rnd, beat, ct, [0, 8], oct_shift=12)
+            # Bernie/Junie WARM ANALOG comp — a RHYTHMIC syncopated funk
+            # pattern (the keysFunk synth is warm + moving, so it grooves
+            # without being stabby). Down an octave (oct_shift 0).
+            self._comp(D, rnd, beat, ct, [0, 6, 10, 11, 14], oct_shift=0)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # Moog SOLO (feel=solo)
 
