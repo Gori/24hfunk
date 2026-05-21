@@ -189,7 +189,7 @@ _GENRE_INSTR = {
     "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadVox", "keys": "keysElectro"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadScratch", "keys": "keysPad"},
     "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadJazz"},
-    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog", "keys": "keysClav"},
+    "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog", "keys": "keysFunk"},
     "minneapolis_funk": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadMoog"},
     "minimal_techno":   {"bass": "bassSquare", "kick": "kick",     "snare": "snare909", "lead": "leadGlitch"},
     "detroit_techno":   {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadHyper"},
@@ -837,7 +837,7 @@ _LEAD_LEVEL = {
     "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.60,
     "boom_bap": 0.60,
     # \lead genres
-    "funk": 0.78, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
+    "funk": 0.234, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
     "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
@@ -1666,9 +1666,10 @@ class CannedSource:
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
         if self.on.get("keys", True):
-            # Bernie/Junie clavinet "chank" — rhythmic comp on the funk
-            # off-beats (the percussive keysClav gives the wah-clav stab).
-            self._comp(D, rnd, beat, ct, [2, 6, 7, 10, 14, 15], oct_shift=0)
+            # Bernie/Junie WARM ANALOG comp — sparse, sustained chords (the
+            # keysFunk synth rings/connects, so it sits under the groove
+            # rather than stabbing). A couple of placements per bar.
+            self._comp(D, rnd, beat, ct, [0, 8], oct_shift=0)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # Moog SOLO (feel=solo)
 
