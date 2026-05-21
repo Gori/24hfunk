@@ -13,17 +13,28 @@ SynthDef(\leadMoog, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detun
 	// - vibrato: 5.5 Hz +/- a slow drift, depth ~3-8 cents (vocal-like)
 	// - attack pitch-bend: brief upward "horn-lip" slur into pitch on each note
 	//   (re-fires per note via t_trig)
-	var vib_rate = 5.5 + LFNoise2.kr(0.3).range(-0.7, 0.7);
-	var vib_dep  = LFNoise2.kr(0.2).range(0.004, 0.011);          // deeper, more vocal
-	// vibrato GROWS in after the attack (held notes sing) — funky/vocal
-	var vibSwell = EnvGen.kr(Env([0, 0, 1], [0.16, 0.5]), t_trig);
-	var vib      = SinOsc.kr(vib_rate, Rand(0, 6.28)) * vib_dep * vibSwell;
-	// funky PITCH BEND: a scoop UP into each note; depth + time vary per note
-	var bDepth   = TRand.kr(0.88, 0.965, t_trig);                 // ~0.6-2.2 semis below
+	// === MOD WHEEL: a slow expressive 'hand' riding the wheel (0..1, drifts
+	// over a few seconds). Drives vibrato depth+rate AND filter brightness, so
+	// the tone sings/swells and opens up as if the player works the wheel. ===
+	var modWheel = Lag.kr(LFNoise1.kr(0.3).range(0.0, 1.0), 0.3);
+	var vib_rate = (4.8 + (modWheel * 2.8)) + LFNoise2.kr(0.3).range(-0.5, 0.5);
+	var vib_dep  = 0.0015 + (modWheel * 0.015);                   // up to ~1.2 semis when wheel up
+	var vibSwell = EnvGen.kr(Env([0, 0, 1], [0.12, 0.4]), t_trig); // swells in per note
+	var vib      = SinOsc.kr(vib_rate, Rand(0, 6.28)) * vib_dep * vibSwell.max(0.25);
+	// === PITCH WHEEL: the player working the bend, extensively ===
+	// (a) scoop UP into each note (depth + time vary per note)
+	var bDepth   = TRand.kr(0.86, 0.965, t_trig);
 	var bTime    = TRand.kr(0.05, 0.13, t_trig);
-	var bend     = EnvGen.kr(Env([bDepth, 1.0], [bTime], -3), t_trig);
+	var scoop    = EnvGen.kr(Env([bDepth, 1.0], [bTime], -3), t_trig);
+	// (b) a continuous wandering bend (the hand never quite still) ~+/-0.35 semi
+	var wander   = Lag.kr(LFNoise1.kr(0.5), 0.1) * 0.02;
+	// (c) occasional BIG bend gesture (~a tone up/down, then resolve to pitch)
+	var gTrig    = Dust.kr(0.35);
+	var gAmt     = TRand.kr(-0.11, 0.13, gTrig);                  // up to ~+/-2 semis
+	var bigBend  = EnvGen.kr(Env([0, 1, 1, 0], [0.12, 0.18, 0.45], \sin), gTrig) * gAmt;
+	var pitchW   = scoop * (1 + wander + bigBend);
 	var fHz      = Lag.kr(freq.clip(55, 2400), glide.clip(0, 0.25))
-		* (1 + vib) * bend;
+		* (1 + vib) * pitchW;
 	var env     = EnvGen.kr(Env.asr(0.006, 1.0, 0.55, -3), gate);
 	var safety  = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 8), 0.2]),
 		1, doneAction: 2);
@@ -39,7 +50,9 @@ SynthDef(\leadMoog, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detun
 	// FILTER LFO — slow organic cutoff wobble layered over the envelope:
 	// keeps the tone breathing/talking instead of sitting at a static cutoff
 	var cf_lfo  = LFNoise2.kr(0.7).range(0.85, 1.15);
-	var cf      = (cutoff * (0.35 + 0.6 * v + 1.4 * fenv) * cf_lfo).clip(150, 8000);
+	// mod wheel also opens the filter (brightness rides the wheel)
+	var cf      = (cutoff * (0.35 + 0.6 * v + 1.4 * fenv) * cf_lfo
+		* (0.75 + (modWheel * 0.6))).clip(150, 8000);
 	// 4-pole ladder approximation: two cascaded resonant lowpass filters
 	var sig     = RLPF.ar(src, cf, 0.45);
 	sig = RLPF.ar(sig, cf * 1.08, 0.55);
