@@ -837,7 +837,7 @@ _LEAD_LEVEL = {
     "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.60,
     "boom_bap": 0.60,
     # \lead genres
-    "funk": 0.234, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
+    "funk": 0.152, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
     "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
@@ -1241,6 +1241,27 @@ class CannedSource:
         if rnd.random() < 0.45 + 0.35 * self.energy:
             for p in self._voicelead(ctones[:4], 52):       # octave lower
                 D(0, beat * 3.4, p, (0.425 + rnd.uniform(-0.03, 0.05)) * self._keys_lvl, CH_KEYS)
+
+    def _funk_comp(self, D, rnd, beat, ctones):
+        # 70s funk keys comp (Bernie/Junie) with VARYING note lengths: a HELD
+        # chord on the 'one' (loud -> rings long on keysFunk) + shorter
+        # syncopated answer-stabs on the & of 2 and & of 4 + an occasional
+        # ghost chank. keysFunk maps velocity->length, so loud=long, quiet=short.
+        if not self.on.get("keys", True):
+            return
+        vc = self._voicelead(ctones, 48)
+        kl = self._keys_lvl
+        if rnd.random() < 0.85:                              # the 'one' — held, rings
+            for p in vc:
+                D(0, beat * 1.2, p, (0.72 + rnd.uniform(-0.03, 0.05)) * kl, CH_KEYS)
+        for s in (6, 14):                                    # & of 2 / & of 4 answer
+            if rnd.random() < 0.6:
+                for p in vc:
+                    D(s, beat * 0.35, p, (0.54 + rnd.uniform(-0.04, 0.05)) * kl, CH_KEYS)
+        if rnd.random() < 0.4:                               # syncopated ghost chank
+            s = rnd.choice([3, 10, 11])
+            for p in vc:
+                D(s, beat * 0.2, p, (0.42 + rnd.uniform(-0.04, 0.04)) * kl, CH_KEYS)
 
     def _perc(self, D, rnd, beat, e):
         # Dedicated percussion layer, dropped into the groove's GAPS (its
@@ -1666,10 +1687,9 @@ class CannedSource:
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
         if self.on.get("keys", True):
-            # Bernie/Junie WARM ANALOG comp — locked to the funk KICK groove
-            # (kick hits 0/6/7/10/14) so the chords belong to the pocket
-            # rather than floating on their own rhythm. Down an octave.
-            self._comp(D, rnd, beat, ct, [0, 6, 10, 14], oct_shift=0)
+            # Bernie/Junie warm analog comp — held 'one' + funk answer-stabs,
+            # with VARYING note lengths (velocity->length on keysFunk).
+            self._funk_comp(D, rnd, beat, ct)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # Moog SOLO (feel=solo)
 

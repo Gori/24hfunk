@@ -4,9 +4,12 @@
 // non-resonant lowpass with only a slow, shallow drift. No resonant per-note
 // sweep (that croaked). Short-ish sustain so the comp grooves rhythmically.
 // Same \keys param contract, self-frees.
-SynthDef(\keysFunk, { |out=0, amp=0.4, freq=220, cutoff=1950, sus=0.3, drive=1.0, vib=0.12, pan=0|
+SynthDef(\keysFunk, { |out=0, amp=0.4, freq=220, cutoff=1950, sus=0.4, drive=1.0, vib=0.12, pan=0|
 	var v    = amp.clip(0.05, 1.0);
-	var sl   = (sus * Rand(0.95, 1.08)).clip(0.16, 0.9);
+	// note length tracks VELOCITY: loud comp hits (the held 'one') ring long,
+	// quiet chanks are short -> a comp with VARYING lengths, never a hard stab
+	// (soft attack + 0.3s floor). The funk comp drives this via per-note vel.
+	var sl   = (sus * (0.5 + (v * 2.5)) * Rand(0.96, 1.06)).clip(0.3, 1.6);
 	var det  = [-0.03, 0.0, 0.03];
 	// detuned-saw ensemble — tighter detune = clearer (less beating thickness)
 	var osc  = Mix.fill(3, { |i|
