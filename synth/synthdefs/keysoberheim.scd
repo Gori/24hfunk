@@ -6,7 +6,9 @@ SynthDef(\keysOberheim, { |out=0, amp=0.4, freq=220, cutoff=2800, sus=0.4, drive
 	var v    = amp.clip(0.05, 1.0);
 	var det  = Rand(-0.02, 0.02).midiratio;
 	var f    = freq * det;
-	var sl   = (sus * Rand(0.95, 1.06)).clip(0.12, 1.0);
+	// length tracks VELOCITY: loud comp hits (a held chord) ring long, quiet
+	// ones are short stabs -> the comp can mix long + short chords.
+	var sl   = (sus * (0.25 + (v * 2.6)) * Rand(0.96, 1.05)).clip(0.16, 1.5);
 	var pw   = SinOsc.kr(0.3, Rand(0, 6.28)).range(0.35, 0.6);   // slow PWM motion
 	var osc  = (Saw.ar(f) * 0.5)
 		+ (Pulse.ar(f * 1.007, pw) * 0.45)                       // detuned PWM twin

@@ -846,7 +846,7 @@ _LEAD_GLOBAL = 0.84
 
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
-    "electro": 0.4788, "uk_garage": 0.55, "minneapolis_funk": 0.436,
+    "electro": 0.4788, "uk_garage": 0.55, "minneapolis_funk": 0.218,
     "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.60,
     "boom_bap": 0.60,
     # \lead genres
@@ -1277,6 +1277,22 @@ class CannedSource:
             s = rnd.choice([3, 10, 11])
             for p in vc:
                 D(s, beat * 0.2, p, (0.42 + rnd.uniform(-0.04, 0.04)) * kl, CH_KEYS)
+
+    def _mpls_comp(self, D, rnd, beat, ctones):
+        # Oberheim stabs with MIXED lengths: an occasional HELD chord (loud ->
+        # rings long on keysOberheim) + the loved short off-beat STABS (quieter
+        # -> short). Simple triad only.
+        if not self.on.get("keys", True):
+            return
+        vc = self._voicelead(ctones[:3], 50)
+        kl = self._keys_lvl
+        if rnd.random() < 0.6:                               # a HELD chord (long)
+            for p in vc:
+                D(0, beat * 1.5, p, (0.9 + rnd.uniform(-0.04, 0.04)) * kl, CH_KEYS)
+        for s in (2, 6, 10, 14):                             # off-beat STABS (short)
+            if rnd.random() < 0.5 + (0.25 * self.energy):
+                for p in vc:
+                    D(s, beat * 0.2, p, (0.5 + rnd.uniform(-0.04, 0.05)) * kl, CH_KEYS)
 
     def _perc(self, D, rnd, beat, e):
         # Dedicated percussion layer, dropped into the groove's GAPS (its
@@ -1735,22 +1751,40 @@ class CannedSource:
             self._motif(D, rnd, beat, sc, ct)
 
     def _g_minneapolis_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # Prince / LinnDrum: punchy SYNCOPATED kick, BIG gated snare LAYERED
+        # with a clap on the backbeat, crisp machine 16th hats + open hat, a
+        # little tambourine sizzle. Bright Oberheim stabs + syncopated synth bass.
         if self.on["kick"]:
-            for s in (0, 10):
-                D(s, 0.2, KICK, self._acc(rnd) if s == 0 else self._main(rnd), CH_DRUMS, "kick", True)
-            if rnd.random() < 0.4 + 0.4 * e:
-                D(6, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", True)         # the boom
+            if rnd.random() < 0.55 + 0.3 * e:
+                D(10, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)  # & of 3
+            if rnd.random() < 0.35 + 0.3 * e:
+                D(6, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick")         # & of 2
+            if rnd.random() < 0.2:
+                D(3, 0.16, KICK, self._main(rnd) * 0.85, CH_DRUMS, "kick")  # e-of-1 push
         if self.on["snare"]:
-            for s in (4, 12):                                # big gated snare
+            for s in (4, 12):                                # gated snare + CLAP (Prince/Linn)
                 D(s, 0.22, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
-            self._ghost_sn(D, rnd, e * 0.6)
+                D(s, 0.2, CLAP, 0.82, CH_DRUMS, "snare")
+            self._ghost_sn(D, rnd, e * 0.5)
+            if fill:                                         # machine tom-ish fill
+                for s in (13, 14, 15):
+                    D(s, 0.08, SNARE, 0.55 + 0.06 * s, CH_DRUMS, "snare")
         if self.on["hat"]:
-            self._hats(D, rnd, e, (0, 4, 8, 12))
+            for s in range(16):                              # crisp machine 16ths
+                if rnd.random() < 0.85:
+                    v = (self._main(rnd) if (s % 4 == 0)
+                         else self._ghost(rnd) + (0.1 if s % 2 == 0 else 0.0))
+                    D(s, 0.04, HAT, v * 0.85, CH_DRUMS, "hat")
+            if rnd.random() < 0.4:
+                D(rnd.choice([6, 14]), 0.16, OHAT, 0.4, CH_DRUMS, "hat")
+            for s in (2, 10):                                # tambourine sizzle (LinnDrum)
+                if rnd.random() < 0.3:
+                    D(s, 0.05, PERC, self._ghost(rnd) * 0.8, CH_DRUMS)
         if self.on["bass"]:                                  # syncopated synth-bass
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [2, 3, 6, 10, 11, 14])
         if self.on.get("keys", True):
-            # simple Oberheim stabs — TRIAD only (root/3/5), off-beat
-            self._comp(D, rnd, beat, ct[:3], [2, 6, 10, 14], oct_shift=0)
+            self._mpls_comp(D, rnd, beat, ct)                # Oberheim stabs, mixed lengths
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)                # Moog hook (feel=mplslead)
 
