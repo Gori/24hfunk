@@ -1463,9 +1463,9 @@ class CannedSource:
                 # phase 1: a SINGLE small scratch. phase 2: a full one-bar
                 # scratch. phase 3: 2-bar main + turn. All seeded once per song.
                 self._scr_p1   = self._scr_notes(sr, [0.0], 16.0)
-                self._scr_p2   = self._scr_notes(sr, self._scratch_bar(sr, 1.0), 16.0)
-                self._scr_main = self._scratch_pattern(sr, "main", 1.0)
-                self._scr_turn = self._scratch_pattern(sr, "turn", 1.0)
+                self._scr_p2   = self._scr_notes(sr, self._scratch_bar(sr, 0.35), 16.0)
+                self._scr_main = self._scratch_pattern(sr, "main", 0.45)
+                self._scr_turn = self._scratch_pattern(sr, "turn", 0.45)
                 self._scr_sec  = self._sec
             if phase < 3:
                 # ONE bar per 4-bar group gets the scratch — bar "1" or "4"
@@ -1523,7 +1523,7 @@ class CannedSource:
                 # pitch so the synth decodes the scratch speed+direction. Since
                 # the pattern repeats, repeats scratch identically.
                 pit = 60 + int(deg)
-                vel = 0.31 * _LEAD_GLOBAL          # scratch at 50% volume
+                vel = 0.14 * _LEAD_GLOBAL          # scratch volume
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
