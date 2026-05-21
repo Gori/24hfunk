@@ -13,7 +13,10 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~chanMap[2] = \keys;                          // comp/pad — self-terminating
 ~chanMap[3] = \perc2;                         // dedicated percussion layer
 ~chanMap[9] = \drums;                        // pitch-routed to kick/snare/hat
-~gated     = Set[\bass, \lead];              // ROLES that hold a gate (need noteoff)
+~gated     = Set[\bass, \lead, \keys];       // ROLES that hold a gate (need noteoff)
+                                             // keys: gated synths (keysOberheim)
+                                             // length-track note dur; non-gated
+                                             // keys defs ignore the gate harmlessly
 // role -> actual SynthDef (genre picks variants via /synth/map). Default = self.
 ~roleMap = IdentityDictionary.new;
 [\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \ride, \bass, \lead, \keys].do { |r|
@@ -173,6 +176,9 @@ OSCdef(\noteon, { |msg|
 				if(~gated.includes(role)) {
 					key = (ch.asString ++ "_" ++ pitch.asString).asSymbol;
 					~active[key] = node;
+					// drop the ref when the node frees (self-terminating keys
+					// defs free before their noteoff) -> no stale-node set/spam.
+					node.onFree({ if(~active[key] == node) { ~active.removeAt(key) } });
 				};
 			};
 		};

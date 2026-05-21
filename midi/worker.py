@@ -20,7 +20,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 from midi.osc_out import ScSender
 from midi.canned import CannedSource
 from midi.recorder import SongRecorder
-from midi.source import CH_BASS, CH_LEAD
+from midi.source import CH_BASS, CH_LEAD, CH_KEYS
 
 CTRL_PORT = int(os.environ.get("MIDI_CTRL_OSC_PORT", "57121"))
 SOURCE_NAME = os.environ.get("STR_MIDI_SOURCE", "canned").lower()
@@ -169,7 +169,7 @@ class Worker:
                     t0 = horizon + n.t
                     seq += 1
                     heapq.heappush(heap, (t0, seq, "on", n.ch, n.pitch, n.vel))
-                    if n.ch in (CH_BASS, CH_LEAD):
+                    if n.ch in (CH_BASS, CH_LEAD, CH_KEYS):
                         seq += 1
                         heapq.heappush(
                             heap, (t0 + max(0.05, n.dur), seq, "off",

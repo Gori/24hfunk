@@ -2,22 +2,24 @@
 // (Prince / Jam & Lewis). Fat: saw + a detuned PWM pulse + a sub octave,
 // through a smooth (mild-resonance) lowpass with a quick BRASSY filter-attack
 // envelope (the OB "stab"). Punchy + bright, self-frees. \keys param contract.
-SynthDef(\keysOberheim, { |out=0, amp=0.4, freq=220, cutoff=2800, sus=0.4, drive=1.0, vib=0.12, pan=0|
+SynthDef(\keysOberheim, { |out=0, amp=0.4, freq=220, cutoff=2800, sus=0.4, drive=1.0, vib=0.12, pan=0, gate=1, maxSustain=4.0|
 	var v    = amp.clip(0.05, 1.0);
 	var det  = Rand(-0.02, 0.02).midiratio;
 	var f    = freq * det;
-	// length tracks VELOCITY: loud comp hits (a held chord) ring long, quiet
-	// ones are short stabs -> the comp can mix long + short chords.
-	var sl   = (sus * (0.25 + (v * 2.6)) * Rand(0.96, 1.05)).clip(0.16, 1.5);
 	var pw   = SinOsc.kr(0.3, Rand(0, 6.28)).range(0.35, 0.6);   // slow PWM motion
 	var osc  = (Saw.ar(f) * 0.5)
 		+ (Pulse.ar(f * 1.007, pw) * 0.45)                       // detuned PWM twin
 		+ (Pulse.ar(f * 0.5, 0.5) * 0.2);                        // sub octave
-	// brassy stab: filter opens fast then settles (OB SEM character)
-	var fenv = EnvGen.kr(Env([0.45, 1.0, 0.5], [0.02, sl * 0.7], [-2, -3]));
+	// brassy stab: filter opens fast then settles (OB SEM character, fixed)
+	var fenv = EnvGen.kr(Env([0.45, 1.0, 0.55], [0.02, 0.35], [-2, -3]));
 	var cf   = (cutoff * (0.5 + (v * 0.7)) * fenv).clip(450, 7000);
-	var env  = EnvGen.kr(Env.perc(0.006, sl, 1, -3.5), doneAction: 2);
+	// GATED: LENGTH = how long the note is held (the comp's note duration),
+	// VOLUME = velocity (amp). Length + volume are now INDEPENDENT, so a long
+	// held chord and a short stab can sit at the SAME volume.
+	var env  = EnvGen.kr(Env.asr(0.006, 1.0, 0.14, -3), gate, doneAction: 2);
+	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 8), 0.1]),
+		1, doneAction: 2);
 	var sig  = RLPF.ar(osc, cf, 0.42);                           // mild resonance, smooth
 	sig = ((sig * (1 + drive * 0.25)).tanh) * 0.7;
-	Out.ar(out, Pan2.ar(sig, pan.clip(-1, 1)) * env * amp * 1.3);
+	Out.ar(out, Pan2.ar(sig, pan.clip(-1, 1)) * env * safety * amp * 1.3);
 }).add;

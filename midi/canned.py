@@ -1286,13 +1286,16 @@ class CannedSource:
             return
         vc = self._voicelead(ctones[:3], 50)
         kl = self._keys_lvl
-        if rnd.random() < 0.6:                               # a HELD chord (long)
+        # SAME velocity (= same volume) for all; LENGTH is set by note duration
+        # (keysOberheim is gated). So a held chord + short stabs sit equal-loud.
+        vel = 0.62 * kl
+        if rnd.random() < 0.6:                               # a HELD chord (long du)
             for p in vc:
-                D(0, beat * 1.5, p, (0.9 + rnd.uniform(-0.04, 0.04)) * kl, CH_KEYS)
-        for s in (2, 6, 10, 14):                             # off-beat STABS (short)
+                D(0, beat * 1.5, p, vel + rnd.uniform(-0.03, 0.03), CH_KEYS)
+        for s in (2, 6, 10, 14):                             # off-beat STABS (short du)
             if rnd.random() < 0.5 + (0.25 * self.energy):
                 for p in vc:
-                    D(s, beat * 0.2, p, (0.5 + rnd.uniform(-0.04, 0.05)) * kl, CH_KEYS)
+                    D(s, beat * 0.18, p, vel + rnd.uniform(-0.03, 0.03), CH_KEYS)
 
     def _perc(self, D, rnd, beat, e):
         # Dedicated percussion layer, dropped into the groove's GAPS (its
