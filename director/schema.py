@@ -13,7 +13,7 @@ GENRES = ("electro_funk", "synthwave", "neon_dub",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
-          "dub_garage", "uk_garage", "boom_bap",
+          "uk_garage", "boom_bap",
           "rnb", "afro_rnb", "indie_rnb")
 SCENES = ("raycaster", "glyphfield")
 # vocal words the scratch lead can sample (synthesized formant recipes in
@@ -176,7 +176,7 @@ class SectionState(_Clamped):
                    "lofi", "electro", "eighties_hiphop", "jazz", "funk",
                    "minneapolis_funk", "minimal_techno", "detroit_techno",
                    "dub", "steppers_dub", "dub_techno", "roots_reggae",
-                   "dub_garage", "uk_garage", "boom_bap",
+                   "uk_garage", "boom_bap",
                    "rnb", "afro_rnb", "indie_rnb"] = "funk"
     bpm: int = Field(96, ge=70, le=150)
     key: str = "C minor"

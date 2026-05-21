@@ -42,7 +42,7 @@ GENRES = ("electro_funk", "synthwave", "neon_dub",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
-          "dub_garage", "uk_garage", "boom_bap",
+          "uk_garage", "boom_bap",
           "rnb", "afro_rnb", "indie_rnb")
 
 # scale (for melody/passing) + chord progression as (scale_degree, quality)

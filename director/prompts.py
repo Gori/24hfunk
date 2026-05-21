@@ -28,7 +28,6 @@ rotate the genre, move the key, change energy. The stream should surprise.
   dub_techno    : Basic-Channel hypnosis, tight 4/4 + delayed chord
   roots_reggae  : one-drop + bubbling organ skank, singing bass
   uk_garage     : 2-step shuffle, syncopated sub, organ stabs
-  dub_garage    : sparse dubwise 2-step, big delay
   boom_bap      : golden-age 90s hip-hop (1992 Illmatic) — dusty swung
                   boom-bap drums, jazz-sampled minor chords, sampled-soul
                   bass, DJ-SCRATCH lead
@@ -41,14 +40,14 @@ Schema and HARD ranges (out-of-range values are clamped; stay inside):
 id            : short string
 duration_sec  : int 300..480
 mood          : 2-3 word lowercase phrase
-genre         : one of the 21 above
+genre         : one of the 20 above
 bpm           : int 68..160 (lofi 70-90, funk 96-112, house 120-128,
                 synthwave 100-118, neon_dub 70-100,
                 electro 110-130, eighties_hiphop 95-112, jazz 110-160,
                 minneapolis_funk 108-120, minimal_techno 124-130,
                 detroit_techno 122-132, dub 68-82, steppers_dub 74-86,
                 dub_techno 118-126, roots_reggae 70-84,
-                uk_garage 128-135, dub_garage 128-134, boom_bap 86-94,
+                uk_garage 128-135, boom_bap 86-94,
                 rnb 68-92, afro_rnb 100-114, indie_rnb 70-88)
 key           : musical key string (e.g. "F# minor")
 density       : float 0..1  (idm/funk 0.6-0.9, dub/lofi 0.3-0.55)
