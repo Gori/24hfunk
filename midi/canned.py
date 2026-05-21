@@ -837,7 +837,7 @@ _LEAD_LEVEL = {
     "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.60,
     "boom_bap": 0.60,
     # \lead genres
-    "funk": 0.152, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
+    "funk": 0.30, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
     "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
@@ -1249,7 +1249,9 @@ class CannedSource:
         # ghost chank. keysFunk maps velocity->length, so loud=long, quiet=short.
         if not self.on.get("keys", True):
             return
-        vc = self._voicelead(ctones, 48)
+        # drop the 9th/#9 tension tone — voiced low it formed a muddy/dissonant
+        # cluster next to the root. A clean dom7 shell (root/3/5/b7) is clear.
+        vc = self._voicelead(ctones[:4], 50)
         kl = self._keys_lvl
         if rnd.random() < 0.85:                              # the 'one' — held, rings
             for p in vc:
