@@ -1365,12 +1365,13 @@ class CannedSource:
     _SCR_WEIGHTS = (16,    16,   10,  14,      13,        9,
                     10,     10,    8,   5,      4)
 
-    def _scratch_pattern(self, rnd):
+    def _scratch_pattern(self, rnd, play=None):
         # GENERATE a rhythmically-coherent 1-bar scratch: pick a beat-aligned
         # CELL for each beat. Every note lands on the grid (0/0.5/1/1.5/...),
-        # so it reads as rhythm. ~1 in 5 phrases scratches 2 beats then lets
-        # the record PLAY the word out (long du=10 note from beat 3).
-        play   = rnd.random() < 0.20
+        # so it reads as rhythm. If `play`, scratch 2 beats then let the
+        # record PLAY the word out (long du=10 note from beat 3).
+        if play is None:
+            play = rnd.random() < 0.20
         nbeats = 2 if play else 4
         notes  = []
         for b in range(nbeats):
@@ -1412,11 +1413,20 @@ class CannedSource:
         # B picks from a dedicated FILL bank (more notes than the A motifs).
         phrase_idx = self.bar // every
         if feel == "scratch":
-            # GENERATE a fresh rhythmic scratch pattern each phrase (beat-
-            # aligned cells -> always rhythmical; randomness only in WHICH
-            # cell per beat). No bank lookup, no per-section lock.
-            pr = random.Random(self._sec * 17 + self.bar * 13 + 5)
-            motif = self._scratch_pattern(pr)
+            # GENERATE a small per-SONG set of rhythmic scratch patterns
+            # (beat-aligned cells), then REPEAT them AABA across phrases so the
+            # scratch routine recurs within the song but differs song-to-song.
+            # A = pure scratch (always); B = often the word-playout.
+            if getattr(self, "_scr_sec", None) != self._sec:
+                sr = random.Random(self._sec * 97 + 41)
+                self._scratch_set = [
+                    self._scratch_pattern(sr, play=False),                 # A
+                    self._scratch_pattern(sr, play=(sr.random() < 0.6)),   # B
+                ]
+                self._scr_sec = self._sec
+            phrase_idx = self.bar // every
+            cyc = (0, 0, 1, 0)                       # AABA
+            motif = self._scratch_set[cyc[phrase_idx % 4]]
             use_b = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
