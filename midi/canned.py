@@ -466,7 +466,7 @@ _LEAD_FILL = {
 # Jazz is unchanged (uses _jazz_motif, emits continuously). Space = n/a.
 _LEAD_EVERY = {
     "funk":  4,
-    "solo":  16,   # a featured Moog solo every 16 bars (appears a few times)
+    "solo":  12,   # a featured Moog solo every 12 bars (funk only)
     "lyric": 4,
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
     "robotvox": 2,   # 2-bar robot-vocal phrase (electro)
@@ -1666,10 +1666,10 @@ class CannedSource:
         if self.on["bass"]:
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [3, 6, 7, 10, 11, 14])
         if self.on.get("keys", True):
-            # Bernie/Junie WARM ANALOG comp — a RHYTHMIC syncopated funk
-            # pattern (the keysFunk synth is warm + moving, so it grooves
-            # without being stabby). Down an octave (oct_shift 0).
-            self._comp(D, rnd, beat, ct, [0, 6, 10, 11, 14], oct_shift=0)
+            # Bernie/Junie WARM ANALOG comp — locked to the funk KICK groove
+            # (kick hits 0/6/7/10/14) so the chords belong to the pocket
+            # rather than floating on their own rhythm. Down an octave.
+            self._comp(D, rnd, beat, ct, [0, 6, 10, 14], oct_shift=0)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # Moog SOLO (feel=solo)
 
