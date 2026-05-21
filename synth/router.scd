@@ -99,9 +99,19 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 ~argsFor = { |role, freq, vel|
 	var grp = ~busFor[role] ? \mel;              // role -> its FX bus
 	var def = ~roleMap[role] ? role;             // genre-chosen variant
-	var a = [\freq, freq, \amp, vel, \out, ~fxBuses[grp].index];
-	var p = ~params[role];                       // params are keyed by ROLE
-	if(p.notNil) { p.keysValuesDo { |k, v| a = a ++ [k, v] } };
+	var p   = ~params[role];                     // params are keyed by ROLE
+	// section amp (from the director). For the LEAD it is an instrument-level
+	// SCALER that the per-note velocity multiplies (so scratch/lead volume +
+	// dynamics actually respond); drums/bass/keys keep amp = section amp as
+	// before. (Was: params \amp appended last -> clobbered \amp=vel for
+	// everything, so per-note lead volume changes had NO effect.)
+	var hasAmp = (p.notNil and: { p[\amp].notNil });
+	var amp = (def == \leadScratch).if(
+		{ vel * (hasAmp.if({ p[\amp] }, { 1.0 })) },   // scratch: per-note velocity controls volume
+		{ hasAmp.if({ p[\amp] }, { vel }) }            // everything else: UNCHANGED
+	);
+	var a = [\freq, freq, \amp, amp, \out, ~fxBuses[grp].index];
+	if(p.notNil) { p.keysValuesDo { |k, v| if(k != \amp) { a = a ++ [k, v] } } };
 	// leadScratch reads the procedural vocal buffer (buffer-scratching) and
 	// needs the tempo so its hand-motion rate is in RHYTHMIC divisions.
 	if((def == \leadScratch) and: { ~scratchBuf.notNil }) {
