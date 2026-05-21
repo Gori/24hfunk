@@ -33,27 +33,36 @@ s.waitForBoot {
 		f2a = 1100, f2b = 1100, f2c = 1100,
 		f3a = 2600, f3b = 2600, f3c = 2600,
 		head = 0, tail = 0|
-		var f1   = EnvGen.kr(Env([f1a, f1b, f1c], [dur * 0.5, dur * 0.5]));
-		var f2   = EnvGen.kr(Env([f2a, f2b, f2c], [dur * 0.5, dur * 0.5]));
-		var f3   = EnvGen.kr(Env([f3a, f3b, f3c], [dur * 0.5, dur * 0.5]));
+		// formants glide start->mid->end (sin shape = smoother vowel motion)
+		var f1   = EnvGen.kr(Env([f1a, f1b, f1c], [dur * 0.45, dur * 0.55], \sin));
+		var f2   = EnvGen.kr(Env([f2a, f2b, f2c], [dur * 0.45, dur * 0.55], \sin));
+		var f3   = EnvGen.kr(Env([f3a, f3b, f3c], [dur * 0.45, dur * 0.55], \sin));
 		var env  = EnvGen.kr(
-			Env([0, 1, 0.9, 0.85, 0], [0.02, dur * 0.4, dur * 0.4, (dur * 0.2).max(0.03)]),
+			Env([0, 1, 1, 0.9, 0], [0.02, dur * 0.35, dur * 0.4, (dur * 0.23).max(0.03)], \sin),
 			doneAction: 2);
-		var f0   = 145 * (1 + SinOsc.kr(5.5).range(-0.012, 0.012));
-		var glot = (Saw.ar(f0) * 0.6) + (Pulse.ar(f0, 0.4) * 0.3);
-		var vow  = (BPF.ar(glot, f1.clip(100, 5000), 0.10) * 5.0)
-			+ (BPF.ar(glot, f2.clip(200, 7000), 0.12) * 3.2)
-			+ (BPF.ar(glot, f3.clip(400, 10000), 0.15) * 1.6);
-		// consonant noise: head (first ~55ms) + tail (last ~80ms). Types:
-		// 0 none, 1 f/s hiss (HPF), 2 g/k burst (low-mid BPF), 3 sh (mid BPF)
+		// natural pitch contour (rise then declination) + vibrato — more vocal
+		var f0   = EnvGen.kr(Env([128, 162, 138], [dur * 0.30, dur * 0.70], \sin))
+			* (1 + SinOsc.kr(5.5).range(-0.010, 0.010));
+		// glottal source: saw rolled off ~-12dB/oct (vocal spectrum) + a little
+		// pulse for buzz. Sharper formants (low rq) = clearer, more word-like.
+		var glot = LPF.ar(Saw.ar(f0), 4200) + (Pulse.ar(f0, 0.35) * 0.18);
+		var vow  = (BPF.ar(glot, f1.clip(120, 5000), 0.085) * 6.0)
+			+ (BPF.ar(glot, f2.clip(200, 7000), 0.095) * 4.0)
+			+ (BPF.ar(glot, f3.clip(400, 9500), 0.110) * 2.2)
+			+ (BPF.ar(glot, 3400,               0.130) * 0.8);   // F4 sheen
+		// consonant noise: head (first ~60ms) + tail (last ~95ms). Types:
+		// 0 none, 1 f/s hiss (HPF), 2 g/k burst (low-mid), 3 sh (mid BPF)
 		var noise   = WhiteNoise.ar;
-		var headEnv = EnvGen.kr(Env.perc(0.004, 0.05));
-		var tailEnv = EnvGen.kr(Env([0, 0, 1, 0], [(dur - 0.10).max(0.02), 0.02, 0.08]));
+		var headEnv = EnvGen.kr(Env([0, 1, 0], [0.008, 0.055], \sin));
+		var tailEnv = EnvGen.kr(Env([0, 0, 1, 0], [(dur - 0.11).max(0.02), 0.03, 0.085], \sin));
 		var pick    = { |sel| Select.ar(sel, [
-			Silent.ar, HPF.ar(noise, 4800), BPF.ar(noise, 1700, 0.55), BPF.ar(noise, 3000, 0.4)]) };
-		var sig = ((vow * 1.2).tanh * env)
-			+ (pick.(head) * headEnv * 0.55)
-			+ (pick.(tail) * tailEnv * 0.55);
+			Silent.ar,
+			HPF.ar(noise, 5200) * 0.9,                       // 1: f / s hiss
+			LPF.ar(BPF.ar(noise, 1500, 0.7), 2600) * 1.1,    // 2: g / k burst
+			BPF.ar(noise, 2900, 0.5) * 1.0]) };              // 3: sh
+		var sig = ((vow * 1.25).tanh * env)
+			+ (pick.(head) * headEnv * 0.6)
+			+ (pick.(tail) * tailEnv * 0.6);
 		RecordBuf.ar(sig, buf, loop: 0, doneAction: 0);
 	}).add;
 	s.sync;

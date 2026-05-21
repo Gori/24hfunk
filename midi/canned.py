@@ -1379,24 +1379,33 @@ class CannedSource:
         # slot). If `play`, scratch 2 beats then let the record PLAY the word.
         if play is None:
             play = rnd.random() < 0.20
-        nbeats = 2 if play else 4
+        # Build with intra-bar STRUCTURE: a 2-beat groove UNIT repeated across
+        # the bar (beats 1-2 recur as beats 3-4) with an occasional turnaround
+        # on the last beat. This makes the pattern coherent/recognisable
+        # instead of 4 unrelated random beats. Downbeat always hits.
+        pick     = lambda: rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]
+        nonrest  = [n for n in self._SCR_NAMES if n != "rest"]
+        pick_hit = lambda: rnd.choices(nonrest,
+                       weights=[self._SCR_WEIGHTS[self._SCR_NAMES.index(n)] for n in nonrest])[0]
+        if play:
+            plan = [pick_hit(), pick()]                 # 2 beats, then the word
+        else:
+            a, b = pick_hit(), pick()                   # the 2-beat unit
+            plan = [a, b, a, (pick() if rnd.random() < 0.45 else b)]  # repeat + turnaround
         onsets = []
-        for b in range(nbeats):
-            cell = self._SCR_CELLS[rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]]
-            for off in cell:
-                onsets.append(round(b * 4 + off, 3))
+        for bi, name in enumerate(plan):
+            for off in self._SCR_CELLS[name]:
+                onsets.append(round(bi * 4 + off, 3))
         onsets = sorted(set(onsets))
         end = 8.0 if play else 16.0
         notes = []
         for i, s in enumerate(onsets):
             nxt  = onsets[i + 1] if i + 1 < len(onsets) else end
             slot = max(0.5, min(4.0, round(nxt - s, 3)))
-            # GESTURE SPEED is its own per-note choice (baked, seeded) for
-            # VARIETY — not strictly tied to the slot. divIdx 0..3 ->
-            # quarter/8th/triplet/16th wobble (the slower set). Bias by slot
-            # (fast slots lean faster) but allow spread.
-            base   = 3 if slot <= 0.5 else (2 if slot <= 1.0 else 1)
-            divIdx = max(0, min(3, base + rnd.choice([-1, 0, 0, 1])))
+            # GESTURE SPEED (baked, seeded): divIdx 0..3 = quarter/8th/triplet/
+            # 16th wobble. Weighted toward SLOW — the fast (16th) wobble is
+            # rare. Mostly quarter/8th drags.
+            divIdx = rnd.choices((0, 1, 2, 3), weights=(28, 38, 22, 12))[0]
             code   = divIdx + rnd.randint(0, 1) * 4      # + direction (seeded)
             notes.append((code, s, slot))                 # du = slot -> fills the gate
         if play:
@@ -1447,8 +1456,8 @@ class CannedSource:
                 self._scr_emit = 0
             # Cycle tied to ACTUAL emissions (not absolute bars) so the AABA
             # lands reliably despite arrangement gaps -> word every 4th emit.
-            cyc = (0, 0, 1, 0)                       # AABA
-            motif = self._scratch_set[cyc[self._scr_emit % 4]]
+            cyc = (0, 0, 1)                          # AAB -> word every 3rd emit
+            motif = self._scratch_set[cyc[self._scr_emit % 3]]
             self._scr_emit += 1
             use_b = False
         else:
