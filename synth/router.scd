@@ -102,9 +102,10 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	var a = [\freq, freq, \amp, vel, \out, ~fxBuses[grp].index];
 	var p = ~params[role];                       // params are keyed by ROLE
 	if(p.notNil) { p.keysValuesDo { |k, v| a = a ++ [k, v] } };
-	// leadScratch reads the procedural vocal buffer (buffer-scratching)
+	// leadScratch reads the procedural vocal buffer (buffer-scratching) and
+	// needs the tempo so its hand-motion rate is in RHYTHMIC divisions.
 	if((def == \leadScratch) and: { ~scratchBuf.notNil }) {
-		a = a ++ [\buf, ~scratchBuf.bufnum];
+		a = a ++ [\buf, ~scratchBuf.bufnum, \beatHz, (~bpm ? 120) / 60];
 	};
 	a;
 };

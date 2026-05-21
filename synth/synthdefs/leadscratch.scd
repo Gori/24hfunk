@@ -8,14 +8,16 @@
 // Voice-stealing, self-frees. Gated contract.
 SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=0.12,
 		wave=0.5, cutoff=4000, decay=0.2, gate=1, t_trig=1, maxSustain=1.0,
-		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0|
+		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0, beatHz=2|
 	var v      = amp.clip(0.05, 1.0);
-	// scratch motion = a hand moving the record back and forth. The SPEED of
-	// that motion is RANDOMIZED PER NOTE (4 Hz slow drag .. 28 Hz fast
-	// scribble) so successive scratches sound genuinely different speeds —
-	// this is the fix for "all scratches are the same speed".
+	// scratch motion = a hand moving the record back and forth, IN TIME. The
+	// rate is a RHYTHMIC DIVISION of the beat chosen per note (one back-and-
+	// forth per 8th / 16th / 32nd), so it locks to tempo instead of an
+	// arbitrary Hz. beatHz = bpm/60, passed by the router.
 	var sign     = (Rand(0.0, 1.0) - 0.5).sign;
-	var gestRate = Rand(4.0, 28.0);                 // per-note scratch SPEED (Hz)
+	// divisions (cycles per beat): 2=8th, 4=16th, 8=32nd — fast-leaning
+	var div      = Select.kr(Rand(0, 6).floor, [2, 4, 4, 4, 8, 8]);
+	var gestRate = (beatHz * div).clip(1.0, 22.0);  // per-note scratch SPEED, tempo-locked
 	var gestDep  = Rand(0.7, 1.7) * sign;           // pitch-swing depth + direction
 	// RELEASE: after ~0.22 s the DJ "lets the record go" -> crossfade to clean
 	// forward playback (rate 1) so the WORD plays out. Short chops end before
