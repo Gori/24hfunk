@@ -89,12 +89,13 @@ scratch_articulation : (scratch genres) one of soft / neutral / aggressive
                 — how the scratched voice is delivered (soft = slower +
                 darker + gentle; aggressive = faster + bright + distorted).
                 Fit the section's energy.
-robot_phrase  : (electro ONLY) a short evocative phrase, 2-5 words, that a
-                ROBOT VOICE chants on the beat, word-by-word, repeating
-                through the section. Think Kraftwerk / Cybotron / electro:
-                machines, circuits, control, the future, the body, the city
-                (e.g. "we are the machines", "control the signal", "enter the
-                grid", "metal heart"). Punchy, chantable, fits the mood.
+robot_phrase  : (electro ONLY) a REFRAIN — 8-16 words — that a ROBOT VOICE
+                chants on the beat, word-by-word, repeating through the
+                section. Think Kraftwerk / Cybotron / electro: machines,
+                circuits, control, the future, the body, the city. Write a
+                full hook, e.g. "we are the machines we never sleep we feel
+                the current in our veins" or "enter the grid control the
+                signal we are the future now". Chantable, rhythmic, on theme.
 
 instruments.kick  : {enabled, amp 0..1, fmRatio 0.5..3, fmIndex 0..8, decay 0.1..0.8}
 instruments.snare : {enabled, amp 0..1, tone 0..1, decay 0.05..0.5}

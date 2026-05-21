@@ -7,12 +7,11 @@
 // Voice-stealing mono, self-frees. Same gated contract as leadScratch.
 SynthDef(\leadVox, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=0.12,
 		wave=0.5, cutoff=4000, decay=0.2, gate=1, t_trig=1, maxSustain=1.0,
-		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0, beatHz=2|
-	// the note octave carries the WORD SLOT (router picks the buffer); the
-	// pitch-class 0..11 sets the SUNG tone in a low robot register.
-	var midi    = freq.cpsmidi;
-	var deg     = (midi - 60).round % 12;
-	var carFreq = (44 + deg).midicps;                  // ~G#2..G3 robot register
+		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0, beatHz=2, carHz=110|
+	// the note pitch carries the WORD SLOT (router picks the buffer). The
+	// robot chants MONOTONE on carHz (the song root, set by the director),
+	// so a long refrain reads out word-by-word over a steady robotic tone.
+	var carFreq = carHz.clip(40, 400);
 	// play the word buffer once per note (retrigger on gate)
 	var play    = PlayBuf.ar(1, buf, BufRateScale.kr(buf), trigger: gate,
 		startPos: 0, loop: 0);
@@ -24,8 +23,8 @@ SynthDef(\leadVox, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune
 		1, doneAction: 2);
 	// blend mostly ring-mod (robotic) with a touch of dry for intelligibility
 	var sig     = (ring * 0.85) + (play * 0.15);
-	sig = sig.round(0.08);                             // amplitude bitcrush
-	sig = Latch.ar(sig, Impulse.ar(13000));            // sample-rate reduction
+	sig = sig.round(0.02);                             // light amplitude bitcrush
+	sig = Latch.ar(sig, Impulse.ar(28000));            // gentle sample-rate reduction
 	sig = LPF.ar(sig, cutoff.clip(800, 9000));
 	sig = ((sig * (1 + drive * 0.5)).tanh) * 0.7;
 	Out.ar(out, Pan2.ar(sig, pan.clip(-1, 1)) * env * safety * amp * 2.0 * level);

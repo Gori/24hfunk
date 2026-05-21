@@ -394,7 +394,7 @@ _LEAD_NLEN = {
     "funk":  0.45,   # talkbox sings
     "jazz":  0.30,   # bebop 8ths (also used by _jazz_motif)
     "stab":  0.16,   # true stabs
-    "robotvox": 0.5,  # each word rings ~a beat (electro robot vocal)
+    "robotvox": 1.2,  # each word rings ~a beat (electro robot vocal)
     "hypno": 0.20,   # short repetitive
     "lyric": 0.42,   # singable, sustained
     "hook":  0.14,   # tight 16ths (80s hook)
@@ -467,7 +467,7 @@ _LEAD_EVERY = {
     "funk":  4,
     "lyric": 4,
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
-    "robotvox": 2,   # 2-bar robot-vocal phrase (electro)
+    "robotvox": 1,   # robot vocal: emit every bar (refrain reads across bars)
     "hypno": 4,
     "hook":  4,
     "scratch": 2, # scratch is rhythmic — present every other bar
@@ -483,7 +483,7 @@ _PHRASE_LEN = {
     "funk":  2,    # 2-bar horn riff w/ call-response, then 2 bars breath
     "lyric": 2,    # 2-bar soul-horn line, then 2 bars breath
     "stab":  1,    # 1-bar stab riff, 1 bar breath
-    "robotvox": 2,  # 2-bar robot-vocal phrase (electro)
+    "robotvox": 1,  # robot vocal emits every bar
     "hypno": 1,    # 1-bar minimal hit, 3 bars breath
     "hook":  1,    # 1-bar 16th burst, 3 bars breath
     "scratch": 2,  # 2-bar scratch patterns (main repeated + turnaround)
@@ -803,6 +803,10 @@ _DRUM_GLUE = {
 # drive/decay give very different perceived levels for the same velocity.
 # This trims output ONLY (not velocity) so tone and the visualizer's
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
+# global mix balance (per-channel velocity scale): drums sit back 10%, the
+# melodic/bass instruments come up 10%. Applied centrally in _build's D().
+_CH_GAIN = {CH_DRUMS: 0.9, CH_PERC: 0.9, CH_BASS: 1.1, CH_LEAD: 1.1, CH_KEYS: 1.1}
+
 # global lead-volume multiplier applied to BOTH levers (level + velocity)
 # so the combined effect is one global trim. 0.84 x 0.84 = 0.706 ~= -30%.
 _LEAD_GLOBAL = 0.84
@@ -906,7 +910,7 @@ class CannedSource:
                 v.get("enabled", True) if isinstance(v, dict) else v)
         # electro robot vocal: how many word buffers to cycle on the beat
         try:
-            self._vox_n = max(1, min(6, int(section.get("robot_words") or 4)))
+            self._vox_n = max(1, min(16, int(section.get("robot_words") or 4)))
         except (TypeError, ValueError):
             self._vox_n = 4
         d = section.get("density")
@@ -1106,6 +1110,7 @@ class CannedSource:
 
         core, orn = [], []
         def D(st, du, pi, ve, ch, vo="", structural=False):
+            ve = ve * _CH_GAIN.get(ch, 1.0)         # global mix: drums -10%, rest +10%
             (core if structural else orn).append(Note(t(st, vo), du, pi, ve, ch))
 
         getattr(self, f"_g_{self.genre}")(D, rnd, beat, sc, ctones, croot,
@@ -1525,25 +1530,25 @@ class CannedSource:
                 scr_slot = 4                    # title word 1 (turn overrides per-note)
             use_b = False
         elif feel == "robotvox":
-            # ELECTRO robot vocal: chant the phrase word-by-word ON THE BEAT,
-            # repeating across the section. Words cycle through the loaded
-            # buffer slots (0..vox_n-1). Build: silent intro, then half the
-            # phrase, then the full phrase. Mechanical in-key carrier line.
-            vox_n = max(1, min(6, getattr(self, "_vox_n", 4)))
+            # ELECTRO robot vocal: chant the REFRAIN word-by-word ON THE BEAT.
+            # The whole phrase (up to 16 words) reads out at 4 words/bar across
+            # ceil(n/4) bars, then repeats. Monotone carrier (set per section by
+            # the director from the song root). Build: silent intro -> sparse
+            # (beats 1 & 3) -> full (every beat).
+            vox_n = max(1, min(16, getattr(self, "_vox_n", 4)))
             phase = self.bar // 12              # ~12-bar phases
             if phase == 0:
                 return                          # intro: vocal enters after ~12 bars
-            if getattr(self, "_vox_sec", None) != self._sec:
-                degs  = [sc[0], sc[0], sc[min(4, len(sc) - 1)], sc[min(2, len(sc) - 1)],
-                         sc[0], sc[min(4, len(sc) - 1)]]
-                steps = [0, 8, 16, 24, 4, 20]   # one word per half-note over 2 bars
-                self._vox_full = [(degs[i % len(degs)], steps[i], 2.0, i % vox_n)
-                                  for i in range(min(vox_n, 6))]
-                # sparser early phase: first two words, one per bar
-                self._vox_half = [(degs[0], 0, 2.0, 0),
-                                  (degs[1], 16, 2.0, 1 % vox_n)]
-                self._vox_sec  = self._sec
-            motif    = self._vox_half if phase == 1 else self._vox_full
+            span = (vox_n + 3) // 4             # bars to read the whole refrain
+            rbar = self.bar % span
+            motif = []
+            for j, st in enumerate((0, 4, 8, 12)):
+                wi = rbar * 4 + j               # word index = slot
+                if wi >= vox_n:
+                    break
+                if phase == 1 and (j % 2 == 1):  # sparser intro phase: beats 1 & 3
+                    continue
+                motif.append((0, st, 1.0, wi))   # deg unused (monotone), slot = wi
             scr_slot = 0
             use_b    = False
         else:
@@ -1593,10 +1598,11 @@ class CannedSource:
                 pit = 60 + buf_slot * 12 + int(deg)
                 vel = 0.37 * _LEAD_GLOBAL          # scratch volume (+20%; level lever also up)
             elif feel == "robotvox":
-                # octave = word buffer slot, pitch-class = sung carrier tone
+                # pitch IS the word-buffer slot index (0..15); carrier is
+                # monotone (carHz from the router), so no pitch-class needed.
                 buf_slot = nbuf if nbuf is not None else scr_slot
-                pit = 60 + buf_slot * 12 + int(deg)
-                vel = 0.40 * _LEAD_GLOBAL          # robot vocal volume
+                pit = 36 + buf_slot
+                vel = 0.60 * _LEAD_GLOBAL          # robot vocal volume (+50%)
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
@@ -2107,6 +2113,8 @@ class CannedSource:
                       CH_BASS, "kick" if s == 0 else "", structural=(s == 0))
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)
+        if self.on.get("keys", True):
+            self._comp(D, rnd, beat, ct, [0, 6, 10, 14], oct_shift=0)   # electro stabs
 
     def _g_eighties_hiphop(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
