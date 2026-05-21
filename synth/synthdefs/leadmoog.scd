@@ -14,9 +14,14 @@ SynthDef(\leadMoog, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detun
 	// - attack pitch-bend: brief upward "horn-lip" slur into pitch on each note
 	//   (re-fires per note via t_trig)
 	var vib_rate = 5.5 + LFNoise2.kr(0.3).range(-0.7, 0.7);
-	var vib_dep  = LFNoise2.kr(0.2).range(0.0030, 0.0080);
-	var vib      = SinOsc.kr(vib_rate, Rand(0, 6.28)) * vib_dep;
-	var bend     = EnvGen.kr(Env([0.97, 1.0], [0.07], -2), t_trig);
+	var vib_dep  = LFNoise2.kr(0.2).range(0.004, 0.011);          // deeper, more vocal
+	// vibrato GROWS in after the attack (held notes sing) — funky/vocal
+	var vibSwell = EnvGen.kr(Env([0, 0, 1], [0.16, 0.5]), t_trig);
+	var vib      = SinOsc.kr(vib_rate, Rand(0, 6.28)) * vib_dep * vibSwell;
+	// funky PITCH BEND: a scoop UP into each note; depth + time vary per note
+	var bDepth   = TRand.kr(0.88, 0.965, t_trig);                 // ~0.6-2.2 semis below
+	var bTime    = TRand.kr(0.05, 0.13, t_trig);
+	var bend     = EnvGen.kr(Env([bDepth, 1.0], [bTime], -3), t_trig);
 	var fHz      = Lag.kr(freq.clip(55, 2400), glide.clip(0, 0.25))
 		* (1 + vib) * bend;
 	var env     = EnvGen.kr(Env.asr(0.006, 1.0, 0.55, -3), gate);

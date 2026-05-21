@@ -17,9 +17,11 @@ SynthDef(\keysFunk, { |out=0, amp=0.4, freq=220, cutoff=1950, sus=0.4, drive=1.0
 	}) * 0.24;
 	var env  = EnvGen.kr(Env([0, 1, 0.72, 0], [0.02, sl, 0.24], [2, 0, -3]),
 		doneAction: 2);
-	// gentle, slow, SHALLOW filter drift — warmth that breathes, no croak
-	var lfo  = SinOsc.kr(0.12, Rand(0, 6.28)).range(0.85, 1.15);
-	var cf   = (cutoff * (0.6 + (v * 0.5)) * lfo).clip(450, 4600);
+	// EVOLVING tone: the filter opens gradually as the chord rings (a slow
+	// smooth swell) over a gentle slow LFO drift. Non-resonant -> no croak.
+	var swell = EnvGen.kr(Env([0.55, 1.0], [sl * 0.85], -2));
+	var lfo  = SinOsc.kr(0.16, Rand(0, 6.28)).range(0.8, 1.2);
+	var cf   = (cutoff * (0.5 + (v * 0.45)) * swell * lfo).clip(450, 4800);
 	var sig  = LPF.ar(osc, cf);                          // smooth, non-resonant
 	sig = HPF.ar(sig, 280);                              // roll off low-end mud (clarity)
 	sig = ((sig * (1 + drive * 0.2)).tanh) * 0.7;

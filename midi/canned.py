@@ -466,7 +466,7 @@ _LEAD_FILL = {
 # Jazz is unchanged (uses _jazz_motif, emits continuously). Space = n/a.
 _LEAD_EVERY = {
     "funk":  4,
-    "solo":  12,   # a featured Moog solo every 12 bars (funk only)
+    "solo":  8,    # a featured Moog solo every 8 bars (funk only)
     "lyric": 4,
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
     "robotvox": 2,   # 2-bar robot-vocal phrase (electro)
@@ -837,7 +837,7 @@ _LEAD_LEVEL = {
     "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.60,
     "boom_bap": 0.60,
     # \lead genres
-    "funk": 0.30, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
+    "funk": 0.21, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
     "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
