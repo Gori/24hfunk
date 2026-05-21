@@ -259,7 +259,23 @@ OSCdef(\synthmap, { |msg|
 	};
 };
 OSCdef(\scratchword, { |msg| ~renderWord.(msg[1].asString.asSymbol); }, '/scratch/word');
-~renderWord.(\ahh);                       // initial buffer content
+~renderWord.(\ahh);                       // initial buffer content (procedural fallback)
+
+// --- /scratch/load  path  : load a TTS wav (the song title) as the scratch
+// buffer, replacing the procedural vowel. Frees the old buffer after a short
+// delay so any in-flight scratch note finishes reading it first.
+OSCdef(\scratchload, { |msg|
+	var path = msg[1].asString;
+	if(File.exists(path)) {
+		Buffer.read(Server.default, path, action: { |b|
+			var old = ~scratchBuf;
+			~scratchBuf = b;
+			if(old.notNil and: { old != b }) {
+				SystemClock.sched(2.0, { old.free; nil });
+			};
+		});
+	};
+}, '/scratch/load');
 
 // --- /section/begin  id  : release held notes so drones don't cross sections ---
 OSCdef(\sectionbegin, { |msg|

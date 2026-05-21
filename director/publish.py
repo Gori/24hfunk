@@ -8,10 +8,18 @@ from __future__ import annotations
 import json
 import os
 
+import threading
+
 import requests
 from pythonosc.udp_client import SimpleUDPClient
 
+from director import tts
 from director.schema import SectionState
+
+# genres whose lead is the DJ scratch — render their title via TTS so the
+# scratch samples the actual song title.
+_SCRATCH_GENRES = {"uk_garage", "eighties_hiphop"}
+_SCRATCH_WAV = "/tmp/str_scratch.wav"
 
 SC_HOST = "127.0.0.1"
 SC_PORT = int(os.environ.get("SC_OSC_PORT", "57120"))
@@ -21,6 +29,13 @@ BRIDGE_URL = f"http://localhost:{os.environ.get('BRIDGE_HTTP_PORT', '8080')}/sec
 
 _sc = SimpleUDPClient(SC_HOST, SC_PORT)
 _midi = SimpleUDPClient(MIDI_HOST, MIDI_PORT)
+
+
+def _render_scratch_title(text: str) -> None:
+    """Render the title to a wav (Kokoro) and tell SC to load it as the
+    scratch buffer. Runs in a daemon thread; silent no-op if TTS fails."""
+    if tts.render(text, _SCRATCH_WAV):
+        _sc.send_message("/scratch/load", [_SCRATCH_WAV])
 
 # which numeric params of each instrument map to /synth/param
 _INSTR_PARAMS = {
@@ -47,6 +62,13 @@ def publish(section: SectionState) -> None:
         _sc.send_message("/synth/param", ["fx", p, float(getattr(section.fx, p))])
     # scratch lead: re-render the vocal buffer with this section's word
     _sc.send_message("/scratch/word", [str(section.scratch_word)])
+    # for scratch genres, render the SONG TITLE via Kokoro TTS (background
+    # thread so it never blocks the director) and load it into the scratch
+    # buffer. Falls back to the /scratch/word procedural vowel if TTS fails.
+    if section.genre in _SCRATCH_GENRES:
+        title = section.name if (section.name and section.name != "untitled") \
+            else str(section.scratch_word)
+        threading.Thread(target=_render_scratch_title, args=(title,), daemon=True).start()
 
     # 2) MIDI worker: re-prime hints
     enabled = {k: getattr(instr, k).enabled for k in _INSTR_PARAMS}

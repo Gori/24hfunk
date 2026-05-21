@@ -10,3 +10,6 @@ songs/
 
 .claude/
 *.egg-info/
+
+# Kokoro TTS model files (large, downloaded separately)
+models/
