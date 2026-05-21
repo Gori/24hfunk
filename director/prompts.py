@@ -30,6 +30,9 @@ rotate the genre, move the key, change energy. The stream should surprise.
   roots_reggae  : one-drop + bubbling organ skank, singing bass
   uk_garage     : 2-step shuffle, syncopated sub, organ stabs
   dub_garage    : sparse dubwise 2-step, big delay
+  boom_bap      : golden-age 90s hip-hop (1992 Illmatic) — dusty swung
+                  boom-bap drums, jazz-sampled minor chords, sampled-soul
+                  bass, DJ-SCRATCH lead
   rnb           : neo-soul, laid-back pocket, lush Rhodes chords, spacious
   afro_rnb      : afrobeats-tinged R&B, syncopated kick, log-drum perc
   indie_rnb     : slow, sparse, dreamy/melancholic, washy reverb
@@ -39,14 +42,14 @@ Schema and HARD ranges (out-of-range values are clamped; stay inside):
 id            : short string
 duration_sec  : int 300..480
 mood          : 2-3 word lowercase phrase
-genre         : one of the 21 above
+genre         : one of the 22 above
 bpm           : int 68..160 (lofi 70-90, funk 96-112, house 120-128,
                 synthwave 100-118, neon_dub 70-100,
                 electro 110-130, eighties_hiphop 95-112, jazz 110-160,
                 minneapolis_funk 108-120, minimal_techno 124-130,
                 detroit_techno 122-132, dub 68-82, steppers_dub 74-86,
                 dub_techno 118-126, roots_reggae 70-84,
-                uk_garage 128-135, dub_garage 128-134,
+                uk_garage 128-135, dub_garage 128-134, boom_bap 86-94,
                 rnb 68-92, afro_rnb 100-114, indie_rnb 70-88)
 key           : musical key string (e.g. "F# minor")
 density       : float 0..1  (idm/funk 0.6-0.9, dub/lofi 0.3-0.55)
@@ -66,13 +69,13 @@ name          : a short evocative TRACK TITLE, 2-4 words, Title Case
                 fits the mood + genre. This is the song's name.
 scratch_word  : (legacy fallback vowel) ONE of: ahh, ohh, eee, uh, yeah,
                 wow, hey, fresh, go, funk.
-scratch_words : (uk_garage + eighties_hiphop only) a list of TWO short
+scratch_words : (eighties_hiphop + boom_bap only) a list of TWO short
                 phrases (1-2 words each) that a DJ would SCRATCH — punchy,
                 vowel-rich or percussive, FUN to cut up (e.g. ["fresh",
                 "check it"], ["yeah yeah", "uptown"], ["bass", "drop it"]).
                 These play in the first two build phases. Make them
                 interesting + fit the mood.
-scratch_title : (uk_garage + eighties_hiphop only) a punchy TWO-WORD
+scratch_title : (eighties_hiphop + boom_bap only) a punchy TWO-WORD
                 version of the song title — the "reveal" the scratch builds
                 to in the final phase (e.g. title "Chrome Alley Nights" ->
                 "Chrome Alley"). Catchy + scratchable.

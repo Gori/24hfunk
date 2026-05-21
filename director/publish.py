@@ -18,8 +18,15 @@ from director.schema import SectionState
 
 # genres whose lead is the DJ scratch — render their title via TTS so the
 # scratch samples the actual song title.
-_SCRATCH_GENRES = {"uk_garage", "eighties_hiphop"}
+_SCRATCH_GENRES = {"eighties_hiphop", "boom_bap"}
 _SCRATCH_WAV = "/tmp/str_scratch.wav"
+
+# classic one-word DJ-scratch vocab — the FIRST build phase scratches a
+# rotating pair of these (Kokoro-rendered) instead of a teaser word. The
+# emphatic spelling is intentional + honored: Kokoro elongates the vowels
+# (Aaaaahhhhhh) and the caps/!!! add punch — it does NOT spell them out.
+_CANON_SCRATCH = ("Aaaaahhhhhh", "FRESH!!!", "ROCK!", "AND!!", "HUHHHHH", "WIKKI-WIKKI")
+_canon_i = 0
 
 SC_HOST = "127.0.0.1"
 SC_PORT = int(os.environ.get("SC_OSC_PORT", "57120"))
@@ -90,11 +97,16 @@ def publish(section: SectionState) -> None:
     # thread so it never blocks the director) and load it into the scratch
     # buffer. Falls back to the /scratch/word procedural vowel if TTS fails.
     if section.genre in _SCRATCH_GENRES:
+        global _canon_i
         words = list(section.scratch_words)[:2] or ["fresh", "go"]
         while len(words) < 2:
             words.append("go")
-        # phases 1 & 2 = the two teaser phrases; phase 3 = the two-word title
-        phrases = [words[0], words[1], section.scratch_title]
+        # phase 1 = a rotating pair of CLASSIC scratch words (ahh/fresh/rock..),
+        # phase 2 = the LLM teaser phrase, phase 3 = the two-word title.
+        n = len(_CANON_SCRATCH)
+        canon = f"{_CANON_SCRATCH[_canon_i % n]} {_CANON_SCRATCH[(_canon_i + 1) % n]}"
+        _canon_i += 1
+        phrases = [canon, words[0], section.scratch_title]
         speed, drive, cutoff = _ARTIC.get(section.scratch_articulation, _ARTIC["neutral"])
         # articulation -> scratch-synth drive + brightness (router applies to leadScratch)
         _sc.send_message("/scratch/artic", [float(drive), float(cutoff)])

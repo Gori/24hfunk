@@ -42,7 +42,7 @@ GENRES = ("electro_funk", "synthwave", "neon_dub", "broken_house",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
-          "dub_garage", "uk_garage",
+          "dub_garage", "uk_garage", "boom_bap",
           "rnb", "afro_rnb", "indie_rnb")
 
 # scale (for melody/passing) + chord progression as (scale_degree, quality)
@@ -70,6 +70,11 @@ PROFILE = {
     "eighties_hiphop": (DORIAN,
         [(0, "min9"), (0, "min9"), (3, "dom9"), (0, "min9")],
         0.30, 0.030, 0.0, 0.008, 0.0, 40),
+    # golden-age boom-bap (1992 Illmatic): dusty jazz-sampled minor, heavy
+    # MPC swing, laid-back snare drag, DJ-scratch lead.
+    "boom_bap": (DORIAN,
+        [(1, "min7"), (4, "dom9"), (0, "min9"), (0, "min9")],   # jazzy ii-V-i vamp
+        0.54, 0.040, -0.004, 0.010, 0.0, 45),
     "jazz": (DORIAN,
         [(1, "min7"), (4, "dom9"), (0, "min7"), (5, "min7")],   # minor ii-V-i-vi
         0.46, 0.030, 0.0, 0.006, 0.0, 60),
@@ -165,7 +170,8 @@ _FX_SIG = {
                      "fxDrums": {"reverb": 0.18, "delay": 0.2}},
     "dub_garage": {"fxMel": {"reverb": 0.5, "delay": 0.5, "delayTime": 0.5},
                    "fxDrums": {"delay": 0.28, "delayTime": 0.375}},
-    "uk_garage": {"fxMel": {"reverb": 0.08, "delay": 0.05}},   # dry — scratch needs to hit
+    "uk_garage": {"fxMel": {"reverb": 0.2, "delay": 0.18, "delayTime": 0.353}},  # organ stabs
+    "boom_bap": {"fxMel": {"reverb": 0.1, "delay": 0.08}},      # dry — scratch needs to hit
     "eighties_hiphop": {"fxMel": {"reverb": 0.1, "delay": 0.06}},  # dry scratch
     "rnb": {"fxMel": {"reverb": 0.42, "delay": 0.2}, "fxBass": {"reverb": 0.04}},
     "afro_rnb": {"fxMel": {"reverb": 0.32, "delay": 0.22}},
@@ -191,7 +197,8 @@ _GENRE_INSTR = {
     "steppers_dub":     {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
     "dub_techno":       {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadSiren"},
     "roots_reggae":     {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadSiren"},
-    "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadScratch"},
+    "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
+    "boom_bap":         {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadScratch"},
     "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
     "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadPluck"},
     "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadPluck"},
@@ -534,7 +541,8 @@ _LEAD_STYLE = {
 _LEAD_FEEL = {
     "funk": "funk", "minneapolis_funk": "funk", "electro_funk": "funk",
     "jazz": "jazz",
-    "broken_house": "stab", "uk_garage": "scratch", "dub_garage": "stab",
+    "broken_house": "stab", "uk_garage": "stab", "dub_garage": "stab",
+    "boom_bap": "scratch",
     "electro": "stab", "synthwave": "stab",
     "minimal_techno": "hypno", "detroit_techno": "hypno", "dub_techno": "hypno",
     "rnb": "lyric", "afro_rnb": "lyric", "indie_rnb": "lyric",
@@ -797,6 +805,7 @@ _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
     "electro": 0.4788, "uk_garage": 0.55, "minneapolis_funk": 0.6231,
     "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.55,
+    "boom_bap": 0.55,
     # \lead genres
     "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
@@ -1369,6 +1378,7 @@ class CannedSource:
     _SCR_GROOVE = {
         "uk_garage":       {"kick": [0, 10],    "snare": [4, 12]},
         "eighties_hiphop": {"kick": [0, 6, 10], "snare": [4, 12]},
+        "boom_bap":        {"kick": [0, 6, 10], "snare": [4, 12]},
     }
     _SCR_NAMES   = ("16", "8", "8.", "8_16", "16_8", "gallop", "rgallop",
                     "burst", "hburst", "hburst2", "off", "off2", "q", "rest")
@@ -1548,7 +1558,7 @@ class CannedSource:
                 # phase's current word slot. Repeats -> scratches identically.
                 buf_slot = nbuf if nbuf is not None else scr_slot
                 pit = 60 + buf_slot * 12 + int(deg)
-                vel = 0.20 * _LEAD_GLOBAL          # scratch volume
+                vel = 0.26 * _LEAD_GLOBAL          # scratch volume (+30%)
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
@@ -2081,6 +2091,40 @@ class CannedSource:
             for s in (6, 10, 14):
                 if rnd.random() < 0.35 + 0.35 * e:
                     D(s, beat * 0.3, rnd.choice([cr, cr, cr + 12, cr + 7]),
+                      self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # scratch (always)
+
+    def _g_boom_bap(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # golden-age boom-bap (1992 Illmatic): dusty boom kick, fat laid-back
+        # snare on the backbeat, swung 8th hats, sampled-soul bass, DJ-scratch
+        # lead. Heavy MPC swing comes from PROFILE; warmth from the kit choice.
+        if self.on["kick"]:
+            D(0, 0.30, KICK, self._acc(rnd), CH_DRUMS, "kick", True)        # the boom
+            if rnd.random() < 0.55 + 0.3 * e:
+                D(10, 0.26, KICK, self._main(rnd), CH_DRUMS, "kick", True)  # & of 3
+            if rnd.random() < 0.25 + 0.3 * e:
+                D(6, 0.24, KICK, self._main(rnd) * 0.85, CH_DRUMS, "kick")  # ghost push
+        if self.on["snare"]:
+            for s in (4, 12):                                              # fat backbeat
+                D(s, 0.22, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            if rnd.random() < 0.35:                                        # dusty ghost
+                D(rnd.choice([7, 11, 15]), 0.12, SNARE, self._ghost(rnd), CH_DRUMS, "snare")
+            if fill:
+                for s in (13, 14, 15):
+                    D(s, 0.07, SNARE, 0.5 + 0.06 * s, CH_DRUMS, "snare")
+        if self.on["hat"]:
+            for s in range(0, 16, 2):                                      # swung 8ths
+                if rnd.random() < 0.6 + 0.3 * e:
+                    D(s, 0.05, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd),
+                      CH_DRUMS, "hat")
+            if rnd.random() < 0.35:
+                D(rnd.choice([6, 14]), 0.2, OHAT, 0.42, CH_DRUMS, "hat")
+        if self.on["bass"]:                                                # sampled-soul, walks
+            D(0, beat * 0.9, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (6, 10, 14):
+                if rnd.random() < 0.4 + 0.3 * e:
+                    D(s, beat * 0.45, cr + rnd.choice([0, 0, 7, 12, -5]),
                       self._main(rnd), CH_BASS)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # scratch (always)
