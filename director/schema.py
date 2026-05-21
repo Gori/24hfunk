@@ -183,6 +183,11 @@ class SectionState(_Clamped):
     # the vocal word the scratch lead samples this section (uk_garage +
     # eighties_hiphop). Re-renders the scratch buffer on section change.
     scratch_word: str = "ahh"
+    # DJ scratch build (TTS, scratch genres): two punchy standalone words for
+    # the first two build phases, + a two-word version of the title for the
+    # final phase. The LLM should pick words that are fun/punchy to scratch.
+    scratch_words: List[str] = Field(default_factory=lambda: ["fresh", "go"])
+    scratch_title: str = "the cut"
 
     @field_validator("genre", mode="before")
     @classmethod
@@ -200,6 +205,20 @@ class SectionState(_Clamped):
     def _scratch_word_ok(cls, v):
         v = str(v or "").strip().lower()
         return v if v in SCRATCH_WORDS else "ahh"
+
+    @field_validator("scratch_words", mode="before")
+    @classmethod
+    def _scratch_words_ok(cls, v):
+        v = [str(s).strip()[:24] for s in (v or []) if str(s).strip()]
+        while len(v) < 2:
+            v.append(["fresh", "go"][len(v)])
+        return v[:2]
+
+    @field_validator("scratch_title", mode="before")
+    @classmethod
+    def _scratch_title_ok(cls, v):
+        v = str(v or "").strip()
+        return v[:24] if v else "the cut"
     instruments: Instruments = Instruments()
     fx: Fx = Fx()
     palette: Palette = Palette()

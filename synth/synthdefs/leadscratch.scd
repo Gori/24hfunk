@@ -16,7 +16,9 @@ SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, de
 	//   divIdx = code % 4  -> speed: 0=quarter,1=8th,2=triplet,3=16th wobble
 	//   dir    = code >= 4 -> swoop direction
 	// Slower set than before (quarter/8th/16th, not 8th/16th/32nd).
-	var code     = (freq.cpsmidi - 60).round.clip(0, 7);
+	// gesture code is the pitch MOD 12 (the octave carries the build phase /
+	// buffer slot, handled by the router); code 0..7 = divIdx + dir*4.
+	var code     = ((freq.cpsmidi - 60).round % 12).clip(0, 7);
 	var divIdx   = code % 4;
 	var div      = Select.kr(divIdx, [1, 2, 3, 4]); // cycles per beat (tempo-locked)
 	var gestRate = (beatHz * div).clip(0.8, 16.0);

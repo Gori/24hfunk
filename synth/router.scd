@@ -112,10 +112,13 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	);
 	var a = [\freq, freq, \amp, amp, \out, ~fxBuses[grp].index];
 	if(p.notNil) { p.keysValuesDo { |k, v| if(k != \amp) { a = a ++ [k, v] } } };
-	// leadScratch reads the procedural vocal buffer (buffer-scratching) and
-	// needs the tempo so its hand-motion rate is in RHYTHMIC divisions.
-	if((def == \leadScratch) and: { ~scratchBuf.notNil }) {
-		a = a ++ [\buf, ~scratchBuf.bufnum, \beatHz, (~bpm ? 120) / 60];
+	// leadScratch: the note PITCH encodes the build phase in its octave
+	// (60-71 = phase 1 / slot 0, 72-83 = phase 2 / slot 1, 84+ = phase 3 /
+	// slot 2) so each phase scratches a DIFFERENT word/title buffer. Also
+	// needs the tempo for rhythmic-division hand motion.
+	if((def == \leadScratch) and: { ~scratchBufs.notNil }) {
+		var bidx = ((freq.cpsmidi - 60) / 12).floor.clip(0, 5).asInteger;
+		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60];
 	};
 	a;
 };
@@ -260,17 +263,23 @@ OSCdef(\synthmap, { |msg|
 };
 OSCdef(\scratchword, { |msg| ~renderWord.(msg[1].asString.asSymbol); }, '/scratch/word');
 ~renderWord.(\ahh);                       // initial buffer content (procedural fallback)
+// SIX scratch buffer slots — one per WORD (2 words x 3 build phases):
+// 0/1 = phase-1 phrase words, 2/3 = phase-2 phrase words, 4/5 = title words.
+// Each word is its own sample so multi-word phrases scratch SEPARATELY.
+// All start on the procedural vowel; /scratch/load swaps slots in per render.
+~scratchBufs = Array.fill(6, { ~scratchBuf });
 
-// --- /scratch/load  path  : load a TTS wav (the song title) as the scratch
-// buffer, replacing the procedural vowel. Frees the old buffer after a short
-// delay so any in-flight scratch note finishes reading it first.
+// --- /scratch/load  idx path  : load a TTS wav into scratch buffer slot idx
+// (0..5). Frees the previous (non-procedural) buffer after a short delay so
+// an in-flight scratch note finishes reading it first.
 OSCdef(\scratchload, { |msg|
-	var path = msg[1].asString;
-	if(File.exists(path)) {
+	var idx  = msg[1].asInteger;
+	var path = msg[2].asString;
+	if((idx >= 0) and: { idx < 6 } and: { File.exists(path) }) {
 		Buffer.read(Server.default, path, action: { |b|
-			var old = ~scratchBuf;
-			~scratchBuf = b;
-			if(old.notNil and: { old != b }) {
+			var old = ~scratchBufs[idx];
+			~scratchBufs[idx] = b;
+			if(old.notNil and: { old != b } and: { old != ~scratchBuf }) {
 				SystemClock.sched(2.0, { old.free; nil });
 			};
 		});

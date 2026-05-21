@@ -1392,25 +1392,26 @@ class CannedSource:
             onsets.append(0.0)
         return sorted(set(round(o, 3) for o in onsets if 0.0 <= o < 16.0))
 
-    def _scr_notes(self, rnd, onsets, end, word_at=None):
-        # turn onsets into (code, s, du): du = slot to next onset (fills the
-        # rhythmic space); gesture code = speed(0..3, slow-weighted) + dir*4,
-        # baked here so a REPEATED pattern scratches identically.
+    def _scr_notes(self, rnd, onsets, end, word_at=None, bufslot=None):
+        # turn onsets into (code, s, du, bufslot): du = gap to next onset;
+        # gesture code = speed(0..3, slow-weighted) + dir*4, baked here so a
+        # REPEATED pattern scratches identically. bufslot = which word buffer
+        # this note scratches (None -> the phase's current word, set at emit).
         onsets = sorted(set(onsets))
         notes = []
         for i, s in enumerate(onsets):
             nxt = onsets[i + 1] if i + 1 < len(onsets) else end
             if word_at is not None and s < word_at <= nxt:
                 nxt = word_at
-            slot   = max(0.5, min(4.0, round(nxt - s, 3)))
+            du     = max(0.5, min(4.0, round(nxt - s, 3)))
             divIdx = rnd.choices((0, 1, 2, 3), weights=(28, 38, 22, 12))[0]
             code   = divIdx + rnd.randint(0, 1) * 4
-            notes.append((code, s, slot))
+            notes.append((code, s, du, bufslot))
         if word_at is not None:
-            notes.append((1, word_at, 10))
+            notes.append((1, word_at, 10, bufslot))
         return notes
 
-    def _scratch_pattern(self, rnd, kind="main", intensity=1.0):
+    def _scratch_pattern(self, rnd, kind="main", intensity=1.0, bufslot=None):
         # GENERATE a 2-bar scratch pattern (notes s in 0..31). "main" = pure
         # scratch (bar 2 often echoes bar 1) that gets REPEATED; "turn" =
         # scratch then the WORD plays out. `intensity` scales the density.
@@ -1419,9 +1420,20 @@ class CannedSource:
             # word in bar 2: usually beat 3 (s=24), seldom middle (s=20)
             word_at = 16.0 + rnd.choices([8.0, 4.0], weights=[75, 25])[0]
             b2 = [16.0 + o for o in self._scratch_bar(rnd, intensity) if 16.0 + o < word_at]
-            return self._scr_notes(rnd, bar1 + b2, 32.0, word_at=word_at)
+            return self._scr_notes(rnd, bar1 + b2, 32.0, word_at=word_at, bufslot=bufslot)
         bar2 = bar1 if rnd.random() < 0.6 else self._scratch_bar(rnd, intensity)
-        return self._scr_notes(rnd, bar1 + [16.0 + o for o in bar2], 32.0)
+        return self._scr_notes(rnd, bar1 + [16.0 + o for o in bar2], 32.0, bufslot=bufslot)
+
+    def _scratch_twoword(self, rnd, slot_a, slot_b, intensity=1.0):
+        # 2-bar routine that scratches + PLAYS two words SEPARATELY: bar 1 =
+        # scratch + play the word in buffer slot_a; bar 2 = scratch + play the
+        # word in slot_b. Used when a phrase has >1 word, or to reveal both
+        # teaser words in one routine.
+        b1 = [o for o in self._scratch_bar(rnd, intensity) if o < 8.0]
+        n1 = self._scr_notes(rnd, b1, 16.0, word_at=8.0, bufslot=slot_a)
+        b2 = [16.0 + o for o in self._scratch_bar(rnd, intensity) if 16.0 + o < 24.0]
+        n2 = self._scr_notes(rnd, b2, 32.0, word_at=24.0, bufslot=slot_b)
+        return n1 + n2
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # SCALE-DEGREE MELODIES — one melody locked per section, replayed
@@ -1465,26 +1477,31 @@ class CannedSource:
             if getattr(self, "_scr_sec", None) != self._sec:
                 sr = random.Random(self._sec * 97 + 41)
                 # phase 1: a SINGLE small scratch. phase 2: a full one-bar
-                # scratch. phase 3: 2-bar main + turn. All seeded once per song.
+                # scratch. phase 3: 2-bar main + a two-word title reveal turn.
                 self._scr_p1   = self._scr_notes(sr, [4.0], 16.0)   # single hit ON the backbeat
                 self._scr_p2   = self._scr_notes(sr, self._scratch_bar(sr, 0.35), 16.0)
-                self._scr_main = self._scratch_pattern(sr, "main", 0.45)
-                self._scr_turn = self._scratch_pattern(sr, "turn", 0.45)
+                self._scr_main = self._scratch_pattern(sr, "main", 0.45, bufslot=4)
+                # turn = scratch+PLAY title word 1 (slot 4) then word 2 (slot 5)
+                self._scr_turn = self._scratch_twoword(sr, 4, 5, 0.45)
                 self._scr_sec  = self._sec
+            # Each phase owns 2 word-buffer slots: phase p -> [(p-1)*2, +1]
+            # (its phrase's two words). Teaser phases alternate the two words
+            # across emissions; phase 3 main scratches title word 1.
+            base = (phase - 1) * 2
             if phase < 3:
-                # ONE bar per 4-bar group gets the scratch — bar "1" or "4"
-                # of the group (alternates per group). phase 1 = single hit,
-                # phase 2 = a full one-bar scratch.
+                # ONE bar per 4-bar group gets the scratch (bar "1" or "4").
                 grp = self.bar // 4
                 tgt = 3 if ((self._sec + grp) % 2) else 0
                 if (self.bar % 4) != tgt:
                     return
+                scr_slot = base + (grp % 2)     # alternate this phase's 2 words
                 motif = self._scr_p1 if phase == 1 else self._scr_p2
                 bar_in_group = 0                # 1-bar pattern emits this bar
             else:
                 ph_i   = self.bar // every      # 2-bar phrase index
                 within = ph_i % 4               # 0..3 -> AAAB w/ word turnaround
                 motif  = self._scr_turn if within == 3 else self._scr_main
+                scr_slot = 4                    # title word 1 (turn overrides per-note)
             use_b = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
@@ -1513,7 +1530,9 @@ class CannedSource:
         if rrr.random() < bar_p:
             return
         nN = len(motif)
-        for i, (deg, s, du) in enumerate(motif):
+        for i, note in enumerate(motif):
+            deg, s, du = note[0], note[1], note[2]
+            nbuf = note[3] if len(note) > 3 else None     # per-note buffer slot (scratch)
             # Multi-bar phrase: s in 0..(16*phrase_len-1). Filter to current bar.
             if s // 16 != bar_in_group:
                 continue
@@ -1523,11 +1542,13 @@ class CannedSource:
             if rrr.random() < note_p:
                 continue
             if feel == "scratch":
-                # `deg` is a GESTURE CODE 0..5 (divIdx + dir*3) — encoded as a
-                # pitch so the synth decodes the scratch speed+direction. Since
-                # the pattern repeats, repeats scratch identically.
-                pit = 60 + int(deg)
-                vel = 0.14 * _LEAD_GLOBAL          # scratch volume
+                # pitch encodes the WORD BUFFER SLOT (octave: slot 0..5 ->
+                # +0/12/.../60) AND the gesture code 0..7 (mod 12, decoded by
+                # the synth). Per-note bufslot wins (two-word reveal); else the
+                # phase's current word slot. Repeats -> scratches identically.
+                buf_slot = nbuf if nbuf is not None else scr_slot
+                pit = 60 + buf_slot * 12 + int(deg)
+                vel = 0.20 * _LEAD_GLOBAL          # scratch volume
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root

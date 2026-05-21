@@ -31,11 +31,27 @@ _sc = SimpleUDPClient(SC_HOST, SC_PORT)
 _midi = SimpleUDPClient(MIDI_HOST, MIDI_PORT)
 
 
-def _render_scratch_title(text: str) -> None:
-    """Render the title to a wav (Kokoro) and tell SC to load it as the
-    scratch buffer. Runs in a daemon thread; silent no-op if TTS fails."""
-    if tts.render(text, _SCRATCH_WAV):
-        _sc.send_message("/scratch/load", [_SCRATCH_WAV])
+def _phrase_words(phrase: str) -> list[str]:
+    """A phrase -> exactly TWO word tokens (so each gets its own buffer; a
+    1-word phrase fills both slots with the same word)."""
+    words = [w for w in str(phrase).split() if w][:2]
+    if not words:
+        words = ["fresh"]
+    if len(words) == 1:
+        words = [words[0], words[0]]
+    return words
+
+
+def _render_scratch_set(phase_phrases: list[str]) -> None:
+    """Render each WORD of the 3 phase phrases into its own buffer slot, so
+    multi-word phrases scratch word-by-word. Slots: phase1 words -> 0,1;
+    phase2 -> 2,3; title -> 4,5. Daemon thread; silent no-op on failure."""
+    for p, phrase in enumerate(phase_phrases[:3]):
+        for w, word in enumerate(_phrase_words(phrase)):
+            slot = p * 2 + w
+            path = f"/tmp/str_scratch_{slot}.wav"
+            if tts.render(word, path):
+                _sc.send_message("/scratch/load", [slot, path])
 
 # which numeric params of each instrument map to /synth/param
 _INSTR_PARAMS = {
@@ -66,9 +82,12 @@ def publish(section: SectionState) -> None:
     # thread so it never blocks the director) and load it into the scratch
     # buffer. Falls back to the /scratch/word procedural vowel if TTS fails.
     if section.genre in _SCRATCH_GENRES:
-        title = section.name if (section.name and section.name != "untitled") \
-            else str(section.scratch_word)
-        threading.Thread(target=_render_scratch_title, args=(title,), daemon=True).start()
+        words = list(section.scratch_words)[:2] or ["fresh", "go"]
+        while len(words) < 2:
+            words.append("go")
+        # phases 1 & 2 = the two teaser phrases; phase 3 = the two-word title
+        phrases = [words[0], words[1], section.scratch_title]
+        threading.Thread(target=_render_scratch_set, args=(phrases,), daemon=True).start()
 
     # 2) MIDI worker: re-prime hints
     enabled = {k: getattr(instr, k).enabled for k in _INSTR_PARAMS}
