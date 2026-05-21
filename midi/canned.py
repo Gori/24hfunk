@@ -38,7 +38,7 @@ CHORD = {
     "dom7b9": [0, 4, 7, 10, 13], "min11": [0, 3, 7, 10, 14, 17],
 }
 
-GENRES = ("electro_funk", "synthwave", "neon_dub", "broken_house",
+GENRES = ("electro_funk", "synthwave", "neon_dub",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
@@ -201,7 +201,7 @@ _GENRE_INSTR = {
     "boom_bap":         {"bass": "bass",       "kick": "kickHard", "snare": "snare",    "lead": "leadScratch", "keys": "keysJazz"},
     "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
     "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadSoftBell"},
-    "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadPluck"},
+    "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadMallet"},
     "indie_rnb":        {"bass": "bass",       "kick": "kick808",  "snare": "snareBrush", "lead": "leadPluck"},
 }
 
@@ -394,6 +394,7 @@ _LEAD_NLEN = {
     "funk":  0.45,   # talkbox sings
     "solo":  0.5,    # expressive Moog solo notes ring/sing
     "mplslead": 0.4,  # mix of short stabs + long held notes (via du in the licks)
+    "afromel": 0.5,   # mallet rings (percussive synth decides length anyway)
     "jazz":  0.30,   # bebop 8ths (also used by _jazz_motif)
     "stab":  0.16,   # true stabs
     "robotvox": 0.5,  # each word rings ~a beat (electro robot vocal)
@@ -419,6 +420,7 @@ _LEAD_OCT = {
     "electro": -1,
     "funk":    -1,
     "minneapolis_funk": -1,
+    "afro_rnb": -1,
 }
 
 # B-phrase FILL banks per feel — when use_b is True (1 in every 8 emitted
@@ -470,6 +472,7 @@ _LEAD_EVERY = {
     "funk":  4,
     "solo":  8,    # a featured Moog solo every 8 bars (funk only)
     "mplslead": 2,  # mpls Moog hook comes often (every 2 bars)
+    "afromel": 2,   # afro mallet melody is cyclic/present (every 2 bars)
     "lyric": 4,
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
     "robotvox": 2,   # 2-bar robot-vocal phrase (electro)
@@ -488,6 +491,7 @@ _PHRASE_LEN = {
     "funk":  2,    # 2-bar horn riff w/ call-response, then 2 bars breath
     "solo":  2,    # 2-bar Moog solo statement
     "mplslead": 1,  # 1-bar hook + 1 bar breath (repeats often)
+    "afromel": 2,   # 2-bar cyclic afro mallet phrase
     "lyric": 2,    # 2-bar soul-horn line, then 2 bars breath
     "stab":  1,    # 1-bar stab riff, 1 bar breath
     "robotvox": 2,  # 2-bar robot-vocal phrase (electro)
@@ -502,6 +506,7 @@ _LEAD_REST = {
     "robotvox": (0.0, 0.0),  # mechanical: every word lands, identical repeats
     "solo": (0.0, 0.05),     # the solo statement lands fully (it's featured)
     "mplslead": (0.05, 0.1),  # mostly lands; a little space
+    "afromel": (0.05, 0.12),  # cyclic, mostly lands
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -558,7 +563,7 @@ _LEAD_FEEL = {
     "boom_bap": "scratch",
     "electro": "robotvox", "synthwave": "stab",
     "minimal_techno": "hypno", "detroit_techno": "hypno", "dub_techno": "hypno",
-    "rnb": "bellarp", "afro_rnb": "lyric", "indie_rnb": "lyric",
+    "rnb": "bellarp", "afro_rnb": "afromel", "indie_rnb": "lyric",
     "lofi": "lyric", "eighties_hiphop": "scratch",
     "dub": "space", "neon_dub": "space", "steppers_dub": "space",
     "roots_reggae": "space",
@@ -589,6 +594,13 @@ _LEAD_RHYTHM = {
         [(1, 0, 1), (3, 2, 1), (5, 4, 6), (8, 12, 1), (5, 14, 1)], # pickup -> hold -> short tag
         [(5, 0, 1), (5, 2, 1), (3, 4, 1), (1, 6, 1), (5, 8, 8)],   # repeated short hook -> long
         [(8, 0, 6), (5, 8, 1), (3, 10, 1), (1, 12, 4)],           # long note -> short answer
+    ],
+    # afro mallet (balafon/kalimba): cyclic, syncopated, PENTATONIC melodic
+    # cells (degrees 1/3/5/6/8) that interlock + roll across 2 bars.
+    "afromel": [
+        [(1,0,1),(3,2,1),(5,5,1),(3,8,1),(6,10,1),(5,13,1),(1,16,1),(3,18,1),(5,21,1),(6,24,1),(8,27,1),(5,30,1)],
+        [(5,0,1),(8,3,1),(6,6,1),(5,8,1),(3,11,1),(1,14,1),(5,16,1),(6,19,1),(8,22,1),(6,24,1),(5,27,1),(3,30,1)],
+        [(1,0,1),(5,4,1),(3,6,1),(6,10,1),(5,12,1),(1,16,1),(5,20,1),(8,22,1),(6,26,1),(5,29,1)],
     ],
     "solo": [
         # ascending run -> wail at the top -> descend home
@@ -1400,11 +1412,16 @@ class CannedSource:
         for j, (ti, s, du) in enumerate(self.motif):
             strong = (s % 4) == 0
             if strong:
-                pi = near(ct_oct[(sct + (j // 2)) % cN])    # land on a chord tone
+                tgt = ct_oct[(sct + (j // 2)) % cN]
+                if rnd.random() < 0.22:                     # melodic PEAK (octave leap up)
+                    tgt = tgt + 12
+                pi = near(tgt)                              # land on a chord tone
             else:
                 goal = near(ct_oct[(sct + (j // 2) + 1) % cN])
+                # melodic motion: mostly a scale step, sometimes a 3rd LEAP
+                stp = 1 if rnd.random() < 0.6 else 2
                 pi = max(0, min(len(ladder) - 1,
-                                pi + (1 if goal >= pi else -1)))  # scale step
+                                pi + (stp if goal >= pi else (-1 * stp))))
             pit = ladder[pi]
             vel = 0.40 + (0.06 if strong else 0.0) + rnd.uniform(-0.03, 0.05)
             vel = max(0.22, min(0.80, vel))
@@ -1679,7 +1696,7 @@ class CannedSource:
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
-        kicks = set() if feel in ("hook", "scratch", "robotvox", "solo") else _KICK_STRONG.get(self.genre, set())
+        kicks = set() if feel in ("hook", "scratch", "robotvox", "solo", "afromel") else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
         nlen = _LEAD_NLEN.get(feel, 0.20)
         boost = _LEAD_VEL_BOOST.get(feel, 1.0)

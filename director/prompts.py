@@ -15,7 +15,6 @@ rotate the genre, move the key, change energy. The stream should surprise.
   electro_funk  : syncopated funk, snappy, groove-forward
   synthwave     : driving 4-on-floor, bright arps, retro-future
   neon_dub      : sparse, deep sub, huge space, off-beat skank
-  broken_house  : shuffled garage/house, syncopated stabs
   lofi          : laid-back, mellow (use sparingly, for contrast)
   electro       : early-80s Detroit electro, 808, robotic, syncopated
   eighties_hiphop : old-school electro-rap, punchy, spacious head-nod
@@ -42,7 +41,7 @@ Schema and HARD ranges (out-of-range values are clamped; stay inside):
 id            : short string
 duration_sec  : int 300..480
 mood          : 2-3 word lowercase phrase
-genre         : one of the 22 above
+genre         : one of the 21 above
 bpm           : int 68..160 (lofi 70-90, funk 96-112, house 120-128,
                 synthwave 100-118, neon_dub 70-100,
                 electro 110-130, eighties_hiphop 95-112, jazz 110-160,

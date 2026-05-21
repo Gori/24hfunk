@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 
 GLYPH_SETS = ("abstract_blocks", "ascii_punct", "mixed_unicode", "text_heavy")
 PACINGS = ("still", "slow_drift", "active", "fast")
-GENRES = ("electro_funk", "synthwave", "neon_dub", "broken_house",
+GENRES = ("electro_funk", "synthwave", "neon_dub",
           "lofi", "electro", "eighties_hiphop", "jazz", "funk",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
@@ -172,7 +172,7 @@ class SectionState(_Clamped):
     id: str = "sec"
     duration_sec: int = Field(360, ge=20, le=600)
     mood: str = "neutral"
-    genre: Literal["electro_funk", "synthwave", "neon_dub", "broken_house",
+    genre: Literal["electro_funk", "synthwave", "neon_dub",
                    "lofi", "electro", "eighties_hiphop", "jazz", "funk",
                    "minneapolis_funk", "minimal_techno", "detroit_techno",
                    "dub", "steppers_dub", "dub_techno", "roots_reggae",
