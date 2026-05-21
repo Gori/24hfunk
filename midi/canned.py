@@ -841,7 +841,7 @@ _KEYS_LEVEL = {
     "dub_garage": 0.64,
     "dub_techno": 0.64,
     "eighties_hiphop": 0.64,
-    "electro": 0.64,
+    "electro": 0.32,
     "electro_funk": 0.64,
     "funk": 0.64,
     "indie_rnb": 0.64,
@@ -2114,7 +2114,16 @@ class CannedSource:
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)
         if self.on.get("keys", True):
-            self._comp(D, rnd, beat, ct, [0, 6, 10, 14], oct_shift=0)   # electro stabs
+            # electro: a driving 16th-note ARP up through the chord tones,
+            # wrapping two octaves (soft digital synth, quiet). Recurs per bar.
+            tones = self._voicelead(ct, 48)
+            if tones:
+                ext = tones + [t + 12 for t in tones]      # two octaves
+                for s in range(0, 16):                     # 16th notes
+                    if rnd.random() < 0.92:
+                        p = ext[s % len(ext)]
+                        vel = (0.5 + (0.06 if s % 4 == 0 else 0.0)) * self._keys_lvl
+                        D(s, beat * 0.22, p, vel, CH_KEYS)
 
     def _g_eighties_hiphop(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:

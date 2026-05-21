@@ -252,9 +252,9 @@ class SectionState(_Clamped):
     @field_validator("robot_phrase", mode="before")
     @classmethod
     def _robot_phrase_ok(cls, v):
-        # a refrain — keep up to ~16 words
+        # short punchy phrase (cap generously at 16 words for safety)
         v = " ".join(str(v or "").split()[:16])
-        return v if v else "we are the machines we are the machines"
+        return v if v else "we are the machines"
     instruments: Instruments = Instruments()
     fx: Fx = Fx()
     palette: Palette = Palette()
