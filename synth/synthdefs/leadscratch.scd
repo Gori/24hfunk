@@ -1,35 +1,53 @@
-// leadScratch — synthesized turntablist scratch (no samples). A vocal-ish
-// formant tone whose pitch is swept rapidly back-and-forth per note (the
-// record pushed/pulled under the needle), a tight percussive amplitude
-// chop (the crossfader cut), and a short noise transient on the attack
-// (the "ch" of the cut). Each note = ONE scratch gesture; runs
-// voice-stealing (NOT in ~monoDef) so every note is a fresh swoop with a
-// new random depth/direction. Gated contract.
+// leadScratch — REAL buffer-scratching of a procedural vocal sample. The
+// boot script renders a vowel "ahh" into ~scratchBuf; the router passes its
+// bufnum here. Each note plays the buffer with a bipolar rate driven by the
+// scratch-motion envelope: rate > 0 = forward (pitch up), rate < 0 = reverse
+// (the backspin). Because we're moving a fixed RECORDING back and forth, the
+// pitch+formant shift is physically correct = it actually sounds scratched.
+// Friction noise + an attack "chk" add the groove drag and crossfader cut.
+// Voice-stealing, self-frees. Gated contract.
 SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, detune=0.12,
-		wave=0.5, cutoff=4000, decay=0.16, gate=1, t_trig=1, maxSustain=1.0,
-		drive=1.0, glide=0.02, level=1.0, pan=0|
+		wave=0.5, cutoff=4000, decay=0.2, gate=1, t_trig=1, maxSustain=1.0,
+		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0|
 	var v      = amp.clip(0.05, 1.0);
-	// scratch motion: bipolar pitch swoop. Random depth + random direction
-	// per note (Rand fixes once per synth = once per note in voice-stealing)
-	// -> forward-cut vs back-cut variation, like a hand working the platter.
+	// scratch motion: bipolar swoop (forward / reverse) + jagged stepped jitter
 	var sign   = (Rand(0.0, 1.0) - 0.5).sign;
-	var depth  = Rand(0.5, 1.2) * sign;
-	var scr    = EnvGen.kr(
-		Env([0, 1, -0.7, 0.5, 0], [0.035, 0.05, 0.045, 0.05], \sin), gate) * depth;
-	var fHz    = (freq * (2 ** scr)).clip(60, 5000);
-	// vocal-ish source: saw + pulse through three formant bandpasses ("aah")
-	var src    = Saw.ar(fHz) + (Pulse.ar(fHz, 0.4) * 0.5);
-	var vow    = (BPF.ar(src, 800,  0.35) * 4.0)
-		+ (BPF.ar(src, 1760, 0.45) * 3.0)
-		+ (BPF.ar(src, 2680, 0.50) * 1.6);
-	// attack transient: short noise "ch" of the cut
-	var chh    = HPF.ar(WhiteNoise.ar, 3000)
-		* EnvGen.kr(Env.perc(0.001, 0.02, 1, -6)) * 0.5;
-	// amp env: tight percussive chop, self-frees after the gesture
-	var env    = EnvGen.kr(Env.perc(0.004, decay, 1, -3), gate, doneAction: 2);
-	var sig    = (vow * 0.22) + chh;
-	sig = (sig * (1 + drive * 0.5)).tanh * 0.7;
+	var depth  = Rand(1.0, 2.2) * sign;
+	var swoop  = EnvGen.kr(Env([0, 1, -0.85, 0.6, 0], [0.05, 0.06, 0.05, 0.04], \sin),
+		gate);
+	// RELEASE: after ~0.22 s the DJ "lets the record go" -> crossfade from the
+	// scratch motion to clean forward playback (rate 1) so the WORD plays out.
+	// Short chop notes end before this ramp = pure scratch; long notes release.
+	var rel    = EnvGen.kr(Env([0, 0, 1], [0.22, 0.07], \lin), gate);
+	var jitter = LFNoise0.kr(38) * 0.18 * (1 - rel);
+	// ~half the notes are FAST scribble scratches (rapid 13-26 Hz back-and-
+	// forth, the energetic part) intermixed with the slower swoops. Fades on
+	// release so the played-out word is clean.
+	var fast   = (Rand(0.0, 1.0) > 0.45);
+	var wiggle = SinOsc.kr(LFNoise1.kr(7).range(13, 26)) * Rand(0.4, 0.9) * fast * (1 - rel);
+	var scratchMotion = (swoop * depth) + wiggle + jitter;
+	var motion = (scratchMotion * (1 - rel)) + (1.0 * rel);   // -> forward play
+	// note pitch sets the base playback rate (different notes = different
+	// scratch pitch); motion scales it bipolar for the back-and-forth.
+	var baseRate = (freq / 330).clip(0.35, 1.7);
+	var rate   = motion * baseRate * BufRateScale.kr(buf);
+	// read the vocal buffer; reset into the vowel body on each note
+	var scr    = PlayBuf.ar(1, buf, rate, trigger: gate,
+		startPos: BufFrames.kr(buf) * 0.20, loop: 1);
+	// friction: noise band tracking the scratch motion = the groove drag.
+	// Fades out on release so the played-out vocal is clean.
+	var fHz    = (220 * (2 ** scratchMotion)).clip(80, 4000);
+	var friction = BPF.ar(PinkNoise.ar, (fHz * 2).clip(180, 6000), 0.5) * 0.85 * (1 - rel);
+	// attack "chk" — the crossfader cut
+	var click  = BPF.ar(WhiteNoise.ar, 1500, 0.5)
+		* EnvGen.kr(Env.perc(0.0005, 0.025, 1, -5)) * 1.4;
+	// amp: sustains while gate held (long notes play out), releases on gate off
+	var env    = EnvGen.kr(Env.asr(0.004, 1.0, 0.06, -3), gate, doneAction: 2);
+	var safety = EnvGen.kr(Env([1, 1, 0], [maxSustain.clip(0.05, 3), 0.05]),
+		1, doneAction: 2);
+	var sig    = (scr * 1.5) + (friction * 0.4) + click;
+	sig = (sig * (1 + drive * 0.8)).tanh * 0.7;
 	sig = LPF.ar(sig, 3600);
-	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.005),
-		pan.clip(-1, 1) * 0.4) * env * amp * 2.2 * level);
+	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.004),
+		pan.clip(-1, 1) * 0.4) * env * safety * amp * 2.3 * level);
 }).add;

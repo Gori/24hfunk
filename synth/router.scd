@@ -98,9 +98,14 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // --- helpers ---
 ~argsFor = { |role, freq, vel|
 	var grp = ~busFor[role] ? \mel;              // role -> its FX bus
+	var def = ~roleMap[role] ? role;             // genre-chosen variant
 	var a = [\freq, freq, \amp, vel, \out, ~fxBuses[grp].index];
 	var p = ~params[role];                       // params are keyed by ROLE
 	if(p.notNil) { p.keysValuesDo { |k, v| a = a ++ [k, v] } };
+	// leadScratch reads the procedural vocal buffer (buffer-scratching)
+	if((def == \leadScratch) and: { ~scratchBuf.notNil }) {
+		a = a ++ [\buf, ~scratchBuf.bufnum];
+	};
 	a;
 };
 
@@ -216,6 +221,34 @@ OSCdef(\synthmap, { |msg|
 	~mono.values.do { |n| n.free };
 	~mono.clear;
 };
+
+// --- scratch vocal WORD recipes -> re-render ~scratchBuf -------------------
+// each word = 3 formant frames (F1/F2/F3 glide start->mid->end) + head/tail
+// consonant noise (0 none, 1 f/s hiss, 2 g/k burst, 3 sh). See _vocalRender.
+~scratchWords = (
+	ahh:   (dur: 0.42, f1: [700,700,700],  f2: [1100,1100,1100], f3: [2600,2600,2600], head: 0, tail: 0),
+	ohh:   (dur: 0.42, f1: [450,450,450],  f2: [800,800,800],    f3: [2600,2600,2600], head: 0, tail: 0),
+	eee:   (dur: 0.40, f1: [300,300,300],  f2: [2300,2300,2300], f3: [3000,3000,3000], head: 0, tail: 0),
+	uh:    (dur: 0.28, f1: [600,600,600],  f2: [1000,1000,1000], f3: [2400,2400,2400], head: 0, tail: 0),
+	yeah:  (dur: 0.46, f1: [300,500,750],  f2: [2300,1700,1100], f3: [3000,2700,2600], head: 0, tail: 0),
+	wow:   (dur: 0.46, f1: [350,650,350],  f2: [750,1100,750],   f3: [2400,2500,2400], head: 0, tail: 0),
+	hey:   (dur: 0.42, f1: [600,500,300],  f2: [1500,1900,2300], f3: [2600,2800,3000], head: 1, tail: 0),
+	fresh: (dur: 0.52, f1: [500,550,550],  f2: [1400,1700,1700], f3: [2500,2600,2600], head: 1, tail: 3),
+	go:    (dur: 0.40, f1: [450,450,450],  f2: [900,800,800],    f3: [2400,2400,2400], head: 2, tail: 0),
+	funk:  (dur: 0.44, f1: [600,600,500],  f2: [1000,1000,900],  f3: [2400,2400,2400], head: 1, tail: 2),
+);
+~renderWord = { |w|
+	var r = ~scratchWords[w] ? ~scratchWords[\ahh];
+	if(~scratchBuf.notNil) {
+		Synth(\_vocalRender, [\buf, ~scratchBuf, \dur, r[\dur],
+			\f1a, r[\f1][0], \f1b, r[\f1][1], \f1c, r[\f1][2],
+			\f2a, r[\f2][0], \f2b, r[\f2][1], \f2c, r[\f2][2],
+			\f3a, r[\f3][0], \f3b, r[\f3][1], \f3c, r[\f3][2],
+			\head, r[\head], \tail, r[\tail]]);
+	};
+};
+OSCdef(\scratchword, { |msg| ~renderWord.(msg[1].asString.asSymbol); }, '/scratch/word');
+~renderWord.(\ahh);                       // initial buffer content
 
 // --- /section/begin  id  : release held notes so drones don't cross sections ---
 OSCdef(\sectionbegin, { |msg|

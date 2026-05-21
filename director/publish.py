@@ -45,6 +45,8 @@ def publish(section: SectionState) -> None:
             _sc.send_message("/synth/param", [name, p, float(getattr(inst, p))])
     for p in ("reverb", "delay", "delayTime"):
         _sc.send_message("/synth/param", ["fx", p, float(getattr(section.fx, p))])
+    # scratch lead: re-render the vocal buffer with this section's word
+    _sc.send_message("/scratch/word", [str(section.scratch_word)])
 
     # 2) MIDI worker: re-prime hints
     enabled = {k: getattr(instr, k).enabled for k in _INSTR_PARAMS}

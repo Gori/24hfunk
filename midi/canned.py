@@ -165,7 +165,8 @@ _FX_SIG = {
                      "fxDrums": {"reverb": 0.18, "delay": 0.2}},
     "dub_garage": {"fxMel": {"reverb": 0.5, "delay": 0.5, "delayTime": 0.5},
                    "fxDrums": {"delay": 0.28, "delayTime": 0.375}},
-    "uk_garage": {"fxMel": {"reverb": 0.3, "delay": 0.22}},
+    "uk_garage": {"fxMel": {"reverb": 0.08, "delay": 0.05}},   # dry — scratch needs to hit
+    "eighties_hiphop": {"fxMel": {"reverb": 0.1, "delay": 0.06}},  # dry scratch
     "rnb": {"fxMel": {"reverb": 0.42, "delay": 0.2}, "fxBass": {"reverb": 0.04}},
     "afro_rnb": {"fxMel": {"reverb": 0.32, "delay": 0.22}},
     "indie_rnb": {"fxMel": {"reverb": 0.6, "delay": 0.4, "delayTime": 0.5},
@@ -630,20 +631,23 @@ _LEAD_RHYTHM = {
         [(5,4,1), (1,5,1), (5,6,1), (3,7,1)],                           # 5-1-5-3 mid-bar
         [(1,0,1), (5,2,1), (3,4,1)],                                    # 1-5-3 punch
     ],
-    # scratch (turntablist): 1-bar rhythmic chop patterns. Pitch (deg) only
-    # sets the scratch's CENTER — the leadScratch synth swoops around it, so
-    # rhythm is what matters. Mostly root/fifth centers.
+    # scratch (turntablist): 1-bar patterns. Short notes (du=1) = pure scratch
+    # chops; a LONG note (du=10) = the DJ "lets the record go" so the word
+    # plays out forward (leadScratch crossfades scratch->forward after ~0.22s).
+    # deg only sets the scratch's CENTER pitch — rhythm is the point.
     "scratch": [
-        # steady 16th baby-scratch chops
+        # wikki pairs, then LET IT PLAY
+        [(1,0,1), (1,1,1), (1,4,1), (1,5,1), (1,8,10)],
+        # chop-chop-chop, then play
+        [(1,0,1), (1,2,1), (1,4,1), (1,8,10)],
+        # quick scratch burst, then play
+        [(1,0,1), (1,1,1), (1,2,1), (1,3,1), (1,8,10)],
+        # pure scratch bar — steady chops, no release (the rhythmic one)
         [(1,0,1), (1,2,1), (1,4,1), (1,6,1), (1,8,1), (1,10,1), (1,12,1), (1,14,1)],
-        # syncopated cuts (root + fifth)
-        [(1,0,1), (5,3,1), (1,6,1), (5,8,1), (1,11,1), (5,14,1)],
-        # transform-style double-chops on beats 2 & 4
-        [(1,4,1), (1,5,1), (5,6,1), (1,12,1), (1,13,1), (5,14,1)],
-        # sparse accent scratches
-        [(5,0,1), (1,6,1), (5,8,1), (1,14,1)],
-        # flare doubles
-        [(1,0,1), (1,1,1), (5,4,1), (5,5,1), (1,8,1), (1,9,1), (5,12,1), (5,13,1)],
+        # syncopated cut + play
+        [(1,2,1), (1,3,1), (5,6,1), (1,8,10)],
+        # fast scribble bar — rapid chop clusters, no release (energetic)
+        [(1,0,1), (1,1,1), (1,2,1), (1,3,1), (1,6,1), (1,7,1), (1,10,1), (1,11,1), (1,12,1), (1,13,1)],
     ],
 }
 

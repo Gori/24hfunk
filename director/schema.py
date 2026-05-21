@@ -16,6 +16,11 @@ GENRES = ("electro_funk", "synthwave", "neon_dub", "broken_house",
           "dub_garage", "uk_garage",
           "rnb", "afro_rnb", "indie_rnb")
 SCENES = ("raycaster", "glyphfield")
+# vocal words the scratch lead can sample (synthesized formant recipes in
+# router.scd ~scratchWords). Vowels/glides sound cleanest; consonant words
+# (fresh/go/funk) are more synthetic but add DJ vocabulary.
+SCRATCH_WORDS = ("ahh", "ohh", "eee", "uh", "yeah", "wow", "hey",
+                 "fresh", "go", "funk")
 
 
 def _clamp(v, lo, hi):
@@ -175,6 +180,9 @@ class SectionState(_Clamped):
     structure: int = Field(0, ge=0, le=3)
     # a short evocative track title — drives the HUD + text visuals
     name: str = "untitled"
+    # the vocal word the scratch lead samples this section (uk_garage +
+    # eighties_hiphop). Re-renders the scratch buffer on section change.
+    scratch_word: str = "ahh"
 
     @field_validator("genre", mode="before")
     @classmethod
@@ -186,6 +194,12 @@ class SectionState(_Clamped):
     def _name_ok(cls, v):
         v = str(v or "").strip()
         return v[:40] if v else "untitled"
+
+    @field_validator("scratch_word", mode="before")
+    @classmethod
+    def _scratch_word_ok(cls, v):
+        v = str(v or "").strip().lower()
+        return v if v in SCRATCH_WORDS else "ahh"
     instruments: Instruments = Instruments()
     fx: Fx = Fx()
     palette: Palette = Palette()

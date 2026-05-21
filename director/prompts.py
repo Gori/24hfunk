@@ -64,6 +64,11 @@ structure     : int 0..3 — arrangement: how instruments enter and
 name          : a short evocative TRACK TITLE, 2-4 words, Title Case
                 (e.g. "Chrome Alley", "Slow Tide", "Night Bus") that
                 fits the mood + genre. This is the song's name.
+scratch_word  : the vocal word the DJ scratch lead samples (ONLY heard on
+                uk_garage + eighties_hiphop, ignored elsewhere). Pick ONE
+                of: ahh, ohh, eee, uh, yeah, wow, hey, fresh, go, funk.
+                Choose what fits the mood/energy (e.g. "fresh"/"funk" for
+                punchy, "ahh"/"ohh" for smooth). Vary it across sections.
 
 instruments.kick  : {enabled, amp 0..1, fmRatio 0.5..3, fmIndex 0..8, decay 0.1..0.8}
 instruments.snare : {enabled, amp 0..1, tone 0..1, decay 0.05..0.5}
