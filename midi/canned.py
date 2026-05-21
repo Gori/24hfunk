@@ -2099,8 +2099,11 @@ class CannedSource:
                 D(s, beat * 0.34, cr + (12 if s == 10 else 0),
                   self._acc(rnd) if s == 0 else self._main(rnd), CH_BASS,
                   "kick", structural=(s == 0))
+        if self.on.get("keys", True):
+            # afrobeats BOUNCE: syncopated off-beat chord stabs (e/&/a hits,
+            # avoiding the downbeats) with a bouncy 10+11 double.
+            self._comp(D, rnd, beat, ct, [2, 6, 10, 11, 14])
         if self.on["lead"]:
-            self._comp(D, rnd, beat, ct, [2, 11])
             if rnd.random() < 0.5:
                 self._motif(D, rnd, beat, sc, ct)
 
