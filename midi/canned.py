@@ -805,7 +805,7 @@ _DRUM_GLUE = {
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
 # global mix balance (per-channel velocity scale): drums sit back 10%, the
 # melodic/bass instruments come up 10%. Applied centrally in _build's D().
-_CH_GAIN = {CH_DRUMS: 0.81, CH_PERC: 0.81, CH_BASS: 1.21, CH_LEAD: 1.21, CH_KEYS: 1.21}
+_CH_GAIN = {CH_DRUMS: 0.69, CH_PERC: 0.69, CH_BASS: 1.21, CH_LEAD: 1.21, CH_KEYS: 1.21}
 
 # global lead-volume multiplier applied to BOTH levers (level + velocity)
 # so the combined effect is one global trim. 0.84 x 0.84 = 0.706 ~= -30%.
@@ -1601,7 +1601,7 @@ class CannedSource:
                 # octave = word buffer slot, pitch-class = sung carrier tone
                 buf_slot = nbuf if nbuf is not None else scr_slot
                 pit = 60 + buf_slot * 12 + int(deg)
-                vel = 0.78 * _LEAD_GLOBAL          # robot vocal volume (+30% more)
+                vel = 0.90 * _LEAD_GLOBAL          # robot vocal volume (electro lead +15% more)
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
