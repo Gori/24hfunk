@@ -1450,32 +1450,38 @@ class CannedSource:
         phrase_idx = self.bar // every
         if feel == "scratch":
             # BUILD across the song: 4 phases that SCALE UP, monotonic (never
-            # cycles back). phase 0 = no scratches; 1 = a small scratch every
-            # 2 bars; 2 = more; 3 = full density. Each phase = 16 bars.
+            # cycles back). Each phase = 16 bars.
+            #   phase 0 : no scratches (intro)
+            #   phase 1 : a SMALL scratch every 4th bar
+            #   phase 2 : MORE scratch, still every 4th bar
+            #   phase 3 : full density, every bar (the routine + word)
             phase = min(3, self.bar // 16)
             if phase == 0:
-                return                                  # intro: no scratches yet
+                return
             if getattr(self, "_scr_sec", None) != self._sec:
                 sr = random.Random(self._sec * 97 + 41)
-                # one main + one turn per build phase, scaling in density
-                self._scr_phase = {
-                    ph: (self._scratch_pattern(sr, "main", inten),
-                         self._scratch_pattern(sr, "turn", inten))
-                    for ph, inten in ((1, 0.15), (2, 0.55), (3, 1.0))
-                }
-                self._scr_sec = self._sec
-            main, turn = self._scr_phase[phase]
-            ph_i   = self.bar // every          # 2-bar phrase index
-            within = ph_i % 4                   # 0..3 -> AAAB
-            if phase == 1:
-                # minimal: a small scratch every SECOND bar (bar 0 of each
-                # 2-bar phrase only), no word.
-                if bar_in_group == 1:
+                # phase 1: a SINGLE small scratch. phase 2: a full one-bar
+                # scratch. phase 3: 2-bar main + turn. All seeded once per song.
+                self._scr_p1   = self._scr_notes(sr, [0.0], 16.0)
+                self._scr_p2   = self._scr_notes(sr, self._scratch_bar(sr, 1.0), 16.0)
+                self._scr_main = self._scratch_pattern(sr, "main", 1.0)
+                self._scr_turn = self._scratch_pattern(sr, "turn", 1.0)
+                self._scr_sec  = self._sec
+            if phase < 3:
+                # ONE bar per 4-bar group gets the scratch — bar "1" or "4"
+                # of the group (alternates per group). phase 1 = single hit,
+                # phase 2 = a full one-bar scratch.
+                grp = self.bar // 4
+                tgt = 3 if ((self._sec + grp) % 2) else 0
+                if (self.bar % 4) != tgt:
                     return
-                motif = main
+                motif = self._scr_p1 if phase == 1 else self._scr_p2
+                bar_in_group = 0                # 1-bar pattern emits this bar
             else:
-                motif = turn if within == 3 else main   # AAAB w/ word turnaround
-            use_b  = False
+                ph_i   = self.bar // every      # 2-bar phrase index
+                within = ph_i % 4               # 0..3 -> AAAB w/ word turnaround
+                motif  = self._scr_turn if within == 3 else self._scr_main
+            use_b = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
             # 8 emitted phrases). Pure-locked A on the other 7 -> recurrence.
@@ -1517,7 +1523,7 @@ class CannedSource:
                 # pitch so the synth decodes the scratch speed+direction. Since
                 # the pattern repeats, repeats scratch identically.
                 pit = 60 + int(deg)
-                vel = 0.62 * _LEAD_GLOBAL
+                vel = 0.31 * _LEAD_GLOBAL          # scratch at 50% volume
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
