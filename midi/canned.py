@@ -1366,24 +1366,27 @@ class CannedSource:
     }
     _SCR_NAMES   = ("16", "8", "8.", "8_16", "16_8", "gallop", "rgallop",
                     "burst", "hburst", "hburst2", "off", "off2", "q", "rest")
-    # CALM/groovy: quarter + 8th + rest dominate; 16ths rare; the 8-note 32nd
-    # "burst" removed (weight 0) — it was the hectic part. ~5-6 notes/bar.
-    _SCR_WEIGHTS = (2,    18,  6,    3,      3,      6,        4,
-                    0,      1,        1,         5,     2,      24,   22)
+    # SPARSE/punchy: quarter + rest dominate (a few well-placed scratches +
+    # space), 8ths next; multi-note cells rare; no 32nd burst. ~3-4 notes/bar.
+    _SCR_WEIGHTS = (1,    14,  4,    2,      2,      3,        2,
+                    0,      1,        0,         3,     1,      30,   26)
 
     def _scratch_bar(self, rnd):
-        # one bar of structured scratch onsets (0..15): a 2-beat groove unit
-        # repeated with a turnaround; downbeat always hits.
-        pick    = lambda: rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]
-        nonrest = [n for n in self._SCR_NAMES if n != "rest"]
-        nrw     = [self._SCR_WEIGHTS[self._SCR_NAMES.index(n)] for n in nonrest]
-        a, b = rnd.choices(nonrest, weights=nrw)[0], pick()
-        plan = [a, b, a, (pick() if rnd.random() < 0.45 else b)]
-        onsets = []
-        for bi, name in enumerate(plan):
-            for off in self._SCR_CELLS[name]:
-                onsets.append(round(bi * 4 + off, 3))
-        return sorted(set(onsets))
+        # one bar of SPARSE, punchy scratch onsets (0..15). Build a 2-beat
+        # groove UNIT (the downbeat hits + maybe one more hit + an occasional
+        # fast double), then repeat it (often verbatim) for the 2nd half ->
+        # recognisable + space. ~3-4 hits/bar, all on the grid.
+        def unit():
+            out = [0.0]                                   # downbeat hit
+            if rnd.random() < 0.55:                       # a second placed hit
+                out.append(rnd.choice([1.0, 1.5, 2.0, 3.0]))
+            if rnd.random() < 0.18:                       # occasional fast double
+                out.append(rnd.choice([0.5, 2.5, 3.5]))
+            return sorted(set(out))
+        u = unit()
+        second = u if rnd.random() < 0.6 else unit()      # repeat (often) or vary
+        return sorted(set([round(o, 3) for o in u]
+                          + [round(o + 8.0, 3) for o in second]))
 
     def _scr_notes(self, rnd, onsets, end, word_at=None):
         # turn onsets into (code, s, du): du = slot to next onset (fills the
@@ -1464,7 +1467,7 @@ class CannedSource:
             # changes -> strong recurrence, not a new main every 8 bars.
             ph_i   = self.bar // every          # 2-bar phrase index
             within = ph_i % 4                   # 0..3 -> AAAB (main main main turn)
-            routine = (ph_i // 16) % 3          # new routine every 16 phrases (32 bars)
+            routine = (ph_i // 8) % 3           # new routine every 8 phrases (16 bars)
             main_i = (routine * 2) % 6          # even pool idx (main, repeated)
             turn_i = (routine * 2 + 1) % 6      # odd pool idx (turnaround/word)
             motif  = self._scratch_pool[turn_i if within == 3 else main_i]
