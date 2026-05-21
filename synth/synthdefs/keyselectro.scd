@@ -15,6 +15,6 @@ SynthDef(\keysElectro, { |out=0, amp=0.4, freq=220, cutoff=2600, sus=0.25, drive
 	var env  = EnvGen.kr(Env.perc(0.012, sl, 1, -3.2), doneAction: 2);
 	var cf   = (cutoff * (0.4 + v * 0.4) * Rand(0.97, 1.04)).clip(500, 4200);
 	var sig  = LPF.ar(osc, cf);
-	sig = ((sig * (1 + drive * 0.1)).tanh) * 0.6;        // very light drive, soft
-	Out.ar(out, Pan2.ar(sig * env * amp * 1.0, pan));    // gentle output
+	sig = ((sig * (1 + drive * 0.1)).tanh) * 0.7;        // very light drive, soft
+	Out.ar(out, Pan2.ar(sig * env * amp * 1.4, pan));    // audible but soft (timbre/arp = the gentleness)
 }).add;

@@ -122,13 +122,11 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60,
 			\drive, (~scratchDrive ? 1.0), \cutoff, (~scratchCutoff ? 3600)];
 	};
-	// leadVox (electro robot vocal): the note pitch IS the word-buffer slot
-	// index (36 + slot, 0..15). Monotone carrier from ~voxCarHz (song root,
-	// set by the director). drive/cutoff come from the genre lead params.
+	// leadVox (electro robot vocal): same word-slot-in-octave buffer pick +
+	// tempo. drive/cutoff come from the genre lead params (not the scratch artic).
 	if((def == \leadVox) and: { ~scratchBufs.notNil }) {
-		var bidx = (freq.cpsmidi - 36).round.clip(0, 15).asInteger;
-		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60,
-			\carHz, (~voxCarHz ? 110)];
+		var bidx = ((freq.cpsmidi - 60) / 12).floor.clip(0, 5).asInteger;
+		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60];
 	};
 	a;
 };
@@ -280,27 +278,21 @@ OSCdef(\scratchartic, { |msg|
 	~scratchCutoff = msg[2].asFloat;
 }, '/scratch/artic');
 
-// electro robot vocal: the monotone carrier the words are chanted on (the
-// song root in a low octave, set by the director per section).
-~voxCarHz = 110;
-OSCdef(\voxcarrier, { |msg| ~voxCarHz = msg[1].asFloat.clip(40, 400); }, '/vox/carrier');
-
 OSCdef(\scratchword, { |msg| ~renderWord.(msg[1].asString.asSymbol); }, '/scratch/word');
 ~renderWord.(\ahh);                       // initial buffer content (procedural fallback)
 // SIX scratch buffer slots — one per WORD (2 words x 3 build phases):
 // 0/1 = phase-1 phrase words, 2/3 = phase-2 phrase words, 4/5 = title words.
 // Each word is its own sample so multi-word phrases scratch SEPARATELY.
 // All start on the procedural vowel; /scratch/load swaps slots in per render.
-~scratchBufs = Array.fill(16, { ~scratchBuf });
+~scratchBufs = Array.fill(6, { ~scratchBuf });
 
 // --- /scratch/load  idx path  : load a TTS wav into scratch buffer slot idx
-// (0..15 — scratch uses 0..5, the electro robot refrain up to 16). Frees the
-// previous (non-procedural) buffer after a short delay so an in-flight note
-// finishes reading it first.
+// (0..5). Frees the previous (non-procedural) buffer after a short delay so
+// an in-flight scratch note finishes reading it first.
 OSCdef(\scratchload, { |msg|
 	var idx  = msg[1].asInteger;
 	var path = msg[2].asString;
-	if((idx >= 0) and: { idx < 16 } and: { File.exists(path) }) {
+	if((idx >= 0) and: { idx < 6 } and: { File.exists(path) }) {
 		Buffer.read(Server.default, path, action: { |b|
 			var old = ~scratchBufs[idx];
 			~scratchBufs[idx] = b;

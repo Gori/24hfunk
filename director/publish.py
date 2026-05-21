@@ -22,18 +22,8 @@ _SCRATCH_GENRES = {"eighties_hiphop", "boom_bap"}
 # genres whose lead is the ROBOT VOCAL — render robot_phrase word-by-word so
 # the leadVox synth chants it on the beat (reuses the scratch buffer slots).
 _VOCODE_GENRES = {"electro"}
-_VOX_MAX = 16                     # buffer slots available (a full refrain)
+_VOX_MAX = 6                      # buffer slots available
 _VOX_VOICE = "af_alloy"           # neutral source; robotization happens in SC
-_NOTE_PC = {"c": 0, "c#": 1, "db": 1, "d": 2, "d#": 3, "eb": 3, "e": 4,
-            "f": 5, "f#": 6, "gb": 6, "g": 7, "g#": 8, "ab": 8, "a": 9,
-            "a#": 10, "bb": 10, "b": 11}
-
-
-def _root_carrier_hz(key: str) -> float:
-    """Song root in a low octave (C2..B2) -> Hz, for the robot's monotone."""
-    tok = str(key or "C").strip().split()[0].lower()
-    midi = 36 + _NOTE_PC.get(tok, 0)
-    return 440.0 * (2 ** ((midi - 69) / 12.0))
 _SCRATCH_WAV = "/tmp/str_scratch.wav"
 
 # classic one-word DJ-scratch vocab — the FIRST build phase scratches a
@@ -143,8 +133,6 @@ def publish(section: SectionState) -> None:
     if section.genre in _VOCODE_GENRES:
         words = section.robot_phrase.split()[:_VOX_MAX] or ["machine"]
         vox_n = len(words)
-        # monotone carrier = song root (low octave) so the chant stays in key
-        _sc.send_message("/vox/carrier", [_root_carrier_hz(section.key)])
         threading.Thread(target=_render_vox_set, args=(words,), daemon=True).start()
 
     # 2) MIDI worker: re-prime hints
