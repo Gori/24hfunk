@@ -805,7 +805,7 @@ _DRUM_GLUE = {
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
 # global mix balance (per-channel velocity scale): drums sit back 10%, the
 # melodic/bass instruments come up 10%. Applied centrally in _build's D().
-_CH_GAIN = {CH_DRUMS: 0.9, CH_PERC: 0.9, CH_BASS: 1.1, CH_LEAD: 1.1, CH_KEYS: 1.1}
+_CH_GAIN = {CH_DRUMS: 0.81, CH_PERC: 0.81, CH_BASS: 1.21, CH_LEAD: 1.21, CH_KEYS: 1.21}
 
 # global lead-volume multiplier applied to BOTH levers (level + velocity)
 # so the combined effect is one global trim. 0.84 x 0.84 = 0.706 ~= -30%.
@@ -841,7 +841,7 @@ _KEYS_LEVEL = {
     "dub_garage": 0.64,
     "dub_techno": 0.64,
     "eighties_hiphop": 0.64,
-    "electro": 0.6,
+    "electro": 1.035,
     "electro_funk": 0.64,
     "funk": 0.64,
     "indie_rnb": 0.64,
