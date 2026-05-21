@@ -1364,6 +1364,12 @@ class CannedSource:
         "off2":    [1.5, 2.5, 3.5],                             # syncopated offbeats
         "rest":    [],                                          # silent beat (groove space)
     }
+    # per-genre groove anchors (16th-steps) — the scratch LOCKS to the snare.
+    # (Mirrors the kick/snare positions in each _g_<genre> drum builder.)
+    _SCR_GROOVE = {
+        "uk_garage":       {"kick": [0, 10],    "snare": [4, 12]},
+        "eighties_hiphop": {"kick": [0, 6, 10], "snare": [4, 12]},
+    }
     _SCR_NAMES   = ("16", "8", "8.", "8_16", "16_8", "gallop", "rgallop",
                     "burst", "hburst", "hburst2", "off", "off2", "q", "rest")
     # SPARSE/punchy: quarter + rest dominate (a few well-placed scratches +
@@ -1372,21 +1378,19 @@ class CannedSource:
                     0,      1,        0,         3,     1,      30,   26)
 
     def _scratch_bar(self, rnd, intensity=1.0):
-        # one bar of SPARSE, punchy scratch onsets (0..15). Build a 2-beat
-        # groove UNIT (downbeat + maybe one more hit + an occasional fast
-        # double), repeat it for the 2nd half. `intensity` scales how many
-        # extra hits land (0.1 = just the downbeat .. 1.0 = ~3-4 hits/bar).
-        def unit():
-            out = [0.0]                                   # downbeat hit
-            if rnd.random() < 0.55 * intensity:           # a second placed hit
-                out.append(rnd.choice([1.0, 1.5, 2.0, 3.0]))
-            if rnd.random() < 0.20 * intensity:           # occasional fast double
-                out.append(rnd.choice([0.5, 2.5, 3.5]))
-            return sorted(set(out))
-        u = unit()
-        second = u if rnd.random() < 0.6 else unit()      # repeat (often) or vary
-        return sorted(set([round(o, 3) for o in u]
-                          + [round(o + 8.0, 3) for o in second]))
+        # one bar of scratch onsets (0..15) LOCKED TO THE BACKBEAT: hits land
+        # ON the genre's snare positions and just around them ('e'/'a' grace),
+        # so the scratch sits in the pocket with the drums. `intensity` scales
+        # the grace + downbeat-anchor hits.
+        snares = self._SCR_GROOVE.get(self.genre, {}).get("snare", [4, 12])
+        onsets = []
+        for sn in snares:
+            onsets.append(float(sn))                          # the backbeat hit
+            if rnd.random() < 0.45 * intensity:               # grace just around the snare
+                onsets.append(sn + rnd.choice([-0.5, 0.5, 1.0]))
+        if rnd.random() < 0.30 * intensity:                   # occasional downbeat anchor
+            onsets.append(0.0)
+        return sorted(set(round(o, 3) for o in onsets if 0.0 <= o < 16.0))
 
     def _scr_notes(self, rnd, onsets, end, word_at=None):
         # turn onsets into (code, s, du): du = slot to next onset (fills the
@@ -1462,7 +1466,7 @@ class CannedSource:
                 sr = random.Random(self._sec * 97 + 41)
                 # phase 1: a SINGLE small scratch. phase 2: a full one-bar
                 # scratch. phase 3: 2-bar main + turn. All seeded once per song.
-                self._scr_p1   = self._scr_notes(sr, [0.0], 16.0)
+                self._scr_p1   = self._scr_notes(sr, [4.0], 16.0)   # single hit ON the backbeat
                 self._scr_p2   = self._scr_notes(sr, self._scratch_bar(sr, 0.35), 16.0)
                 self._scr_main = self._scratch_pattern(sr, "main", 0.45)
                 self._scr_turn = self._scratch_pattern(sr, "turn", 0.45)
