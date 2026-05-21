@@ -10,23 +10,21 @@ SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, de
 		wave=0.5, cutoff=4000, decay=0.2, gate=1, t_trig=1, maxSustain=1.0,
 		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0|
 	var v      = amp.clip(0.05, 1.0);
-	// scratch motion: bipolar swoop (forward / reverse) + jagged stepped jitter
-	var sign   = (Rand(0.0, 1.0) - 0.5).sign;
-	var depth  = Rand(1.0, 2.2) * sign;
-	var swoop  = EnvGen.kr(Env([0, 1, -0.85, 0.6, 0], [0.05, 0.06, 0.05, 0.04], \sin),
-		gate);
-	// RELEASE: after ~0.22 s the DJ "lets the record go" -> crossfade from the
-	// scratch motion to clean forward playback (rate 1) so the WORD plays out.
-	// Short chop notes end before this ramp = pure scratch; long notes release.
-	var rel    = EnvGen.kr(Env([0, 0, 1], [0.22, 0.07], \lin), gate);
-	var jitter = LFNoise0.kr(38) * 0.18 * (1 - rel);
-	// ~half the notes are FAST scribble scratches (rapid 13-26 Hz back-and-
-	// forth, the energetic part) intermixed with the slower swoops. Fades on
-	// release so the played-out word is clean.
-	var fast   = (Rand(0.0, 1.0) > 0.45);
-	var wiggle = SinOsc.kr(LFNoise1.kr(7).range(13, 26)) * Rand(0.4, 0.9) * fast * (1 - rel);
-	var scratchMotion = (swoop * depth) + wiggle + jitter;
-	var motion = (scratchMotion * (1 - rel)) + (1.0 * rel);   // -> forward play
+	// scratch motion = a hand moving the record back and forth. The SPEED of
+	// that motion is RANDOMIZED PER NOTE (4 Hz slow drag .. 28 Hz fast
+	// scribble) so successive scratches sound genuinely different speeds —
+	// this is the fix for "all scratches are the same speed".
+	var sign     = (Rand(0.0, 1.0) - 0.5).sign;
+	var gestRate = Rand(4.0, 28.0);                 // per-note scratch SPEED (Hz)
+	var gestDep  = Rand(0.7, 1.7) * sign;           // pitch-swing depth + direction
+	// RELEASE: after ~0.22 s the DJ "lets the record go" -> crossfade to clean
+	// forward playback (rate 1) so the WORD plays out. Short chops end before
+	// the ramp = pure scratch; long notes release into playback.
+	var rel      = EnvGen.kr(Env([0, 0, 1], [0.22, 0.07], \lin), gate);
+	var osc      = LFTri.kr(gestRate, Rand(0.0, 4.0));   // the back-and-forth motion
+	var jitter   = LFNoise0.kr(40) * 0.10 * (1 - rel);
+	var scratchMotion = (osc * gestDep) + jitter;
+	var motion   = (scratchMotion * (1 - rel)) + (1.0 * rel);   // -> forward play
 	// note pitch sets the base playback rate (different notes = different
 	// scratch pitch); motion scales it bipolar for the back-and-forth.
 	var baseRate = (freq / 330).clip(0.35, 1.7);

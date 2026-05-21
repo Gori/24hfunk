@@ -481,7 +481,7 @@ _PHRASE_LEN = {
 
 _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
-    "scratch": (0.0, 0.12),  # mostly present; occasional dropped chop
+    "scratch": (0.0, 0.04),  # keep the fast clusters intact (rarely drop a chop)
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -631,22 +631,28 @@ _LEAD_RHYTHM = {
         [(5,4,1), (1,5,1), (5,6,1), (3,7,1)],                           # 5-1-5-3 mid-bar
         [(1,0,1), (5,2,1), (3,4,1)],                                    # 1-5-3 punch
     ],
-    # scratch (turntablist): 1-bar patterns, VARIED per phrase (not locked).
-    # Short notes (du=1) = pure scratch chops; a LONG note (du=10) = the DJ
-    # "lets the record go" so the word plays out (leadScratch crossfades
-    # scratch->forward after ~0.22s). MOST phrases are pure scratching; the
-    # full-word playout is the occasional payoff. deg only sets the center.
+    # scratch (turntablist): 1-bar patterns, VARIED per phrase. The KEY is
+    # MIXED subdivisions within a pattern — NOT a stiff even grid. s is in
+    # 16th-steps but FRACTIONAL is allowed: gap 2 = 8th, gap 1 = 16th,
+    # gap 0.5 = 32nd. Cluster the 0.5-gaps for fast scratch bursts. A LONG
+    # note (du=10) = the DJ "lets the record go" so the word plays out.
+    # MOST phrases are pure scratching; the played-out word is the payoff.
     "scratch": [
-        # --- pure scratch (NO word) — the majority ---
-        [(1,0,1), (1,2,1), (1,4,1), (1,6,1), (1,8,1), (1,10,1), (1,12,1), (1,14,1)],   # steady chops
-        [(1,0,1), (1,1,1), (1,2,1), (1,3,1), (1,6,1), (1,7,1), (1,10,1), (1,11,1), (1,12,1), (1,13,1)],  # fast scribble
-        [(1,0,1), (1,1,1), (1,4,1), (1,5,1), (1,8,1), (1,9,1), (1,12,1), (1,13,1)],     # wikki pairs
-        [(1,2,1), (1,3,1), (5,6,1), (5,7,1), (1,10,1), (1,11,1), (5,14,1), (5,15,1)],   # syncopated cuts
-        [(1,0,1), (1,2,1), (5,4,1), (1,8,1), (1,10,1), (5,12,1)],                       # sparse cuts
-        [(1,0,1), (1,1,1), (1,2,1), (1,8,1), (1,9,1), (1,10,1)],                        # two scribble bursts
-        # --- scratch THEN let the record play the word (occasional payoff) ---
-        [(1,0,1), (1,1,1), (1,4,1), (1,5,1), (1,8,10)],                                 # wikki -> word
-        [(1,0,1), (1,2,1), (1,4,1), (1,8,10)],                                          # chops -> word
+        # 8th 8th | 16th 16th | 8th | 32nd 32nd 32nd 32nd | 8th
+        [(1,0,1),(1,2,1),(1,4,1),(1,5,1),(1,6,1),(1,8,1),(1,8.5,1),(1,9,1),(1,9.5,1),(1,12,1)],
+        # 16th 16th | 32nd 32nd 32nd | 8th | 32nd 32nd 16th
+        [(1,0,1),(1,1,1),(1,2,1),(1,2.5,1),(1,3,1),(1,6,1),(1,8,1),(1,8.5,1),(1,9,1)],
+        # 32nd cluster | 8th | 8th | 32nd cluster | 8th
+        [(1,0,1),(1,0.5,1),(1,1,1),(1,4,1),(1,6,1),(1,6.5,1),(1,7,1),(1,10,1),(1,12,1),(1,12.5,1),(1,13,1)],
+        # syncopated: 8th | 32nd 32nd | 8th | 32nd cluster | 8th
+        [(1,2,1),(1,3,1),(1,3.5,1),(1,4,1),(1,8,1),(1,10,1),(1,10.5,1),(1,11,1),(1,11.5,1),(1,14,1)],
+        # rapid 32nd bursts on beats 1 & 3
+        [(1,0,1),(1,0.5,1),(1,1,1),(1,1.5,1),(1,8,1),(1,8.5,1),(1,9,1),(1,9.5,1)],
+        # fifth accents + 32nd clusters
+        [(5,0,1),(5,0.5,1),(1,2,1),(1,4,1),(1,4.5,1),(1,5,1),(5,8,1),(1,10,1),(1,10.5,1),(1,11,1)],
+        # --- scratch THEN word (payoff) ---
+        [(1,0,1),(1,0.5,1),(1,1,1),(1,1.5,1),(1,4,1),(1,8,10)],   # 32nd flurry -> word
+        [(1,0,1),(1,2,1),(1,2.5,1),(1,3,1),(1,8,10)],             # mixed -> word
     ],
 }
 
@@ -1339,6 +1345,43 @@ class CannedSource:
         # Default (deg=1) lands at MIDI 60-ish = C4 area = lead register.
         return 36 + (self.root % 12) + scale[i] + 12 * o + base_oct
 
+    # beat-aligned rhythmic CELLS (positions within one beat = 4 16th-steps).
+    # Generating from these keeps every note ON THE GRID -> rhythmical, not a
+    # random gap-walk. Mix of subdivisions incl. fast 32nd bursts.
+    _SCR_CELLS = {
+        "q":       [0.0],                                       # quarter
+        "8":       [0.0, 2.0],                                  # two 8ths
+        "16":      [0.0, 1.0, 2.0, 3.0],                        # four 16ths
+        "8_16":    [0.0, 2.0, 3.0],                             # 8th + two 16ths
+        "16_8":    [0.0, 1.0, 2.0],                             # two 16ths + 8th
+        "burst":   [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5],    # full 32nd scribble
+        "hburst":  [0.0, 0.5, 1.0, 1.5],                        # 32nd burst, 1st half
+        "hburst2": [2.0, 2.5, 3.0, 3.5],                        # 32nd burst, 2nd half
+        "off":     [1.0, 2.0, 3.0],                             # off-start 16ths
+        "rest":    [],                                          # silent beat
+    }
+    _SCR_NAMES   = ("16", "16", "8", "burst", "hburst", "hburst2",
+                    "8_16", "16_8", "off", "q", "rest")
+    _SCR_WEIGHTS = (16,    16,   10,  14,      13,        9,
+                    10,     10,    8,   5,      4)
+
+    def _scratch_pattern(self, rnd):
+        # GENERATE a rhythmically-coherent 1-bar scratch: pick a beat-aligned
+        # CELL for each beat. Every note lands on the grid (0/0.5/1/1.5/...),
+        # so it reads as rhythm. ~1 in 5 phrases scratches 2 beats then lets
+        # the record PLAY the word out (long du=10 note from beat 3).
+        play   = rnd.random() < 0.20
+        nbeats = 2 if play else 4
+        notes  = []
+        for b in range(nbeats):
+            cell = self._SCR_CELLS[rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]]
+            deg  = 5 if rnd.random() < 0.15 else 1
+            for off in cell:
+                notes.append((deg, round(b * 4 + off, 3), 1))
+        if play:
+            notes.append((1, 8.0, 10))               # let the record play the word
+        return notes
+
     def _motif(self, D, rnd, beat, sc, ctones):
         # SCALE-DEGREE MELODIES — one melody locked per section, replayed
         # verbatim across emit-bars. Each motif tuple is (deg, s, du):
@@ -1369,10 +1412,11 @@ class CannedSource:
         # B picks from a dedicated FILL bank (more notes than the A motifs).
         phrase_idx = self.bar // every
         if feel == "scratch":
-            # A DJ doesn't loop ONE pattern — scratch VARIES per phrase.
-            # Pick a fresh motif each phrase (no per-section lock, no AABA).
+            # GENERATE a fresh rhythmic scratch pattern each phrase (beat-
+            # aligned cells -> always rhythmical; randomness only in WHICH
+            # cell per beat). No bank lookup, no per-section lock.
             pr = random.Random(self._sec * 17 + self.bar * 13 + 5)
-            motif = bank[pr.randrange(len(bank))]
+            motif = self._scratch_pattern(pr)
             use_b = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
