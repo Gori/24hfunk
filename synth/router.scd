@@ -150,6 +150,11 @@ OSCdef(\noteon, { |msg|
 					node = Synth(def, ~argsFor.(role, freq, vel)
 						++ [\gate, 1, \t_trig, 1], ~instGrp);
 					~mono[role] = node;
+					// clear the ref when the node frees (e.g. the maxSustain
+					// safety fires during a long rest between solos) so the
+					// NEXT note recreates a live voice instead of .set()'ing a
+					// dead node -> silence.
+					node.onFree({ if(~mono[role] == node) { ~mono[role] = nil } });
 				} {
 					node.set(\freq, freq, \amp, vel, \gate, 1, \t_trig, 1);
 				};
