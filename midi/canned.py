@@ -476,7 +476,7 @@ _PHRASE_LEN = {
     "stab":  1,    # 1-bar stab riff, 1 bar breath
     "hypno": 1,    # 1-bar minimal hit, 3 bars breath
     "hook":  1,    # 1-bar 16th burst, 3 bars breath
-    "scratch": 1,  # 1-bar scratch pattern, 1 bar breath
+    "scratch": 2,  # 2-bar scratch patterns (main repeated + turnaround)
 }
 
 _LEAD_REST = {
@@ -1371,53 +1371,51 @@ class CannedSource:
     _SCR_WEIGHTS = (2,    18,  6,    3,      3,      6,        4,
                     0,      1,        1,         5,     2,      24,   22)
 
-    def _scratch_pattern(self, rnd, play=None):
-        # GENERATE a rhythmically-coherent 1-bar scratch: beat-aligned CELLS so
-        # onsets land on the grid (0/0.5/1/1.5/...). Each note carries a GESTURE
-        # CODE (0..5) = divIdx + dir*3, where divIdx is the scratch SPEED from
-        # the note's rhythmic slot (32nd->fast, 8th->slow) and dir is the swoop
-        # direction (baked here, seeded -> repeats identically). du = the slot
-        # so the note FILLS its rhythmic space (the gesture sweeps the whole
-        # slot). If `play`, scratch 2 beats then let the record PLAY the word.
-        if play is None:
-            play = rnd.random() < 0.20
-        # Intra-bar STRUCTURE: a 2-beat groove UNIT repeated across the bar
-        # (beats 1-2 recur as 3-4) with an occasional turnaround. Coherent,
-        # not 4 random beats. Downbeat always hits.
-        pick     = lambda: rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]
-        nonrest  = [n for n in self._SCR_NAMES if n != "rest"]
-        nrw      = [self._SCR_WEIGHTS[self._SCR_NAMES.index(n)] for n in nonrest]
-        pick_hit = lambda: rnd.choices(nonrest, weights=nrw)[0]
-        # word placement: usually at the END (beat 3); SELDOM in the MIDDLE
-        # (beat 2) with scratching resuming after it.
-        word_at = None
-        if play:
-            if rnd.random() < 0.25:
-                word_at, beat_cells = 4.0, {0: pick_hit(), 3: pick()}   # word in middle
-            else:
-                word_at, beat_cells = 8.0, {0: pick_hit(), 1: pick()}   # word at end
-        else:
-            a, b = pick_hit(), pick()
-            beat_cells = {0: a, 1: b, 2: a, 3: (pick() if rnd.random() < 0.45 else b)}
+    def _scratch_bar(self, rnd):
+        # one bar of structured scratch onsets (0..15): a 2-beat groove unit
+        # repeated with a turnaround; downbeat always hits.
+        pick    = lambda: rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]
+        nonrest = [n for n in self._SCR_NAMES if n != "rest"]
+        nrw     = [self._SCR_WEIGHTS[self._SCR_NAMES.index(n)] for n in nonrest]
+        a, b = rnd.choices(nonrest, weights=nrw)[0], pick()
+        plan = [a, b, a, (pick() if rnd.random() < 0.45 else b)]
         onsets = []
-        for bi, name in beat_cells.items():
+        for bi, name in enumerate(plan):
             for off in self._SCR_CELLS[name]:
                 onsets.append(round(bi * 4 + off, 3))
+        return sorted(set(onsets))
+
+    def _scr_notes(self, rnd, onsets, end, word_at=None):
+        # turn onsets into (code, s, du): du = slot to next onset (fills the
+        # rhythmic space); gesture code = speed(0..3, slow-weighted) + dir*4,
+        # baked here so a REPEATED pattern scratches identically.
         onsets = sorted(set(onsets))
         notes = []
         for i, s in enumerate(onsets):
-            nxt = onsets[i + 1] if i + 1 < len(onsets) else 16.0
+            nxt = onsets[i + 1] if i + 1 < len(onsets) else end
             if word_at is not None and s < word_at <= nxt:
-                nxt = word_at                              # scratch rings up to the word
-            slot = max(0.5, min(4.0, round(nxt - s, 3)))
-            # GESTURE SPEED (baked, seeded): 0..3 = quarter/8th/triplet/16th
-            # wobble, weighted toward SLOW (fast 16th wobble rare).
+                nxt = word_at
+            slot   = max(0.5, min(4.0, round(nxt - s, 3)))
             divIdx = rnd.choices((0, 1, 2, 3), weights=(28, 38, 22, 12))[0]
-            code   = divIdx + rnd.randint(0, 1) * 4      # + direction (seeded)
-            notes.append((code, s, slot))                 # du = slot -> fills the gate
+            code   = divIdx + rnd.randint(0, 1) * 4
+            notes.append((code, s, slot))
         if word_at is not None:
-            notes.append((1, word_at, 10))                # word playout (rel dominates)
+            notes.append((1, word_at, 10))
         return notes
+
+    def _scratch_pattern(self, rnd, kind="main"):
+        # GENERATE a 2-bar scratch pattern (notes s in 0..31). "main" = pure
+        # scratch (bar 2 often echoes bar 1) that gets REPEATED; "turn" =
+        # scratch then the WORD plays out (the answer at the end of the
+        # repeated main). All onsets land on the grid -> rhythmical.
+        bar1 = self._scratch_bar(rnd)
+        if kind == "turn":
+            # word in bar 2: usually beat 3 (s=24), seldom middle (s=20)
+            word_at = 16.0 + rnd.choices([8.0, 4.0], weights=[75, 25])[0]
+            b2 = [16.0 + o for o in self._scratch_bar(rnd) if 16.0 + o < word_at]
+            return self._scr_notes(rnd, bar1 + b2, 32.0, word_at=word_at)
+        bar2 = bar1 if rnd.random() < 0.6 else self._scratch_bar(rnd)
+        return self._scr_notes(rnd, bar1 + [16.0 + o for o in bar2], 32.0)
 
     def _motif(self, D, rnd, beat, sc, ctones):
         # SCALE-DEGREE MELODIES — one melody locked per section, replayed
@@ -1449,24 +1447,25 @@ class CannedSource:
         # B picks from a dedicated FILL bank (more notes than the A motifs).
         phrase_idx = self.bar // every
         if feel == "scratch":
-            # GENERATE a small per-SONG set of rhythmic scratch patterns
-            # (beat-aligned cells), then REPEAT them AABA across phrases so the
-            # scratch routine recurs within the song but differs song-to-song.
-            # A = pure scratch (always); B = often the word-playout.
+            # POOL of up to 6 two-bar patterns per SONG (even idx = "main",
+            # odd idx = "turn"/word). Each SUB-SECTION (8 bars = 4 two-bar
+            # phrases) uses just 2 of them: a main repeated 3x + a turnaround
+            # at the end (AAAB). Consecutive sub-sections rotate through the
+            # pool so the whole song draws on <= 6 distinct patterns.
             if getattr(self, "_scr_sec", None) != self._sec:
                 sr = random.Random(self._sec * 97 + 41)
-                self._scratch_set = [
-                    self._scratch_pattern(sr, play=False),   # A: pure scratch
-                    self._scratch_pattern(sr, play=True),    # B: word playout (always)
+                self._scratch_pool = [
+                    self._scratch_pattern(sr, kind=("turn" if i % 2 else "main"))
+                    for i in range(6)
                 ]
                 self._scr_sec = self._sec
-                self._scr_emit = 0
-            # Cycle tied to ACTUAL emissions (not absolute bars) so the AABA
-            # lands reliably despite arrangement gaps -> word every 4th emit.
-            cyc = (0, 0, 1)                          # AAB -> word every 3rd emit
-            motif = self._scratch_set[cyc[self._scr_emit % 3]]
-            self._scr_emit += 1
-            use_b = False
+            ph_i   = self.bar // every          # 2-bar phrase index
+            sub    = ph_i // 4                  # sub-section (4 phrases = 8 bars)
+            within = ph_i % 4                   # 0..3 within the sub-section
+            main_i = (sub * 2) % 6              # even pool idx (main, repeated)
+            turn_i = (sub * 2 + 1) % 6          # odd pool idx (turnaround/word)
+            motif  = self._scratch_pool[turn_i if within == 3 else main_i]
+            use_b  = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
             # 8 emitted phrases). Pure-locked A on the other 7 -> recurrence.
