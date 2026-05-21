@@ -186,7 +186,7 @@ _GENRE_INSTR = {
     "neon_dub":         {"bass": "bass",       "kick": "kick808",  "snare": "snare",    "lead": "leadSiren"},
     "broken_house":     {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909", "lead": "leadGlitch"},
     "lofi":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadPluck"},
-    "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadGlitch"},
+    "electro":          {"bass": "bassSquare", "kick": "kick808",  "snare": "snare909", "lead": "leadVox", "keys": "keysElectro"},
     "eighties_hiphop":  {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadScratch", "keys": "keysPad"},
     "jazz":             {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadJazz"},
     "funk":             {"bass": "bassFM",     "kick": "kickHard", "snare": "snare",    "lead": "leadMoog"},
@@ -394,6 +394,7 @@ _LEAD_NLEN = {
     "funk":  0.45,   # talkbox sings
     "jazz":  0.30,   # bebop 8ths (also used by _jazz_motif)
     "stab":  0.16,   # true stabs
+    "robotvox": 0.5,  # each word rings ~a beat (electro robot vocal)
     "hypno": 0.20,   # short repetitive
     "lyric": 0.42,   # singable, sustained
     "hook":  0.14,   # tight 16ths (80s hook)
@@ -466,6 +467,7 @@ _LEAD_EVERY = {
     "funk":  4,
     "lyric": 4,
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
+    "robotvox": 2,   # 2-bar robot-vocal phrase (electro)
     "hypno": 4,
     "hook":  4,
     "scratch": 2, # scratch is rhythmic — present every other bar
@@ -481,6 +483,7 @@ _PHRASE_LEN = {
     "funk":  2,    # 2-bar horn riff w/ call-response, then 2 bars breath
     "lyric": 2,    # 2-bar soul-horn line, then 2 bars breath
     "stab":  1,    # 1-bar stab riff, 1 bar breath
+    "robotvox": 2,  # 2-bar robot-vocal phrase (electro)
     "hypno": 1,    # 1-bar minimal hit, 3 bars breath
     "hook":  1,    # 1-bar 16th burst, 3 bars breath
     "scratch": 2,  # 2-bar scratch patterns (main repeated + turnaround)
@@ -489,6 +492,7 @@ _PHRASE_LEN = {
 _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
     "scratch": (0.0, 0.0),   # NO drops -> a repeated pattern is byte-identical
+    "robotvox": (0.0, 0.0),  # mechanical: every word lands, identical repeats
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -543,7 +547,7 @@ _LEAD_FEEL = {
     "jazz": "jazz",
     "broken_house": "stab", "uk_garage": "stab", "dub_garage": "stab",
     "boom_bap": "scratch",
-    "electro": "stab", "synthwave": "stab",
+    "electro": "robotvox", "synthwave": "stab",
     "minimal_techno": "hypno", "detroit_techno": "hypno", "dub_techno": "hypno",
     "rnb": "lyric", "afro_rnb": "lyric", "indie_rnb": "lyric",
     "lofi": "lyric", "eighties_hiphop": "scratch",
@@ -900,6 +904,11 @@ class CannedSource:
             v = instr.get(k)
             self.on[k] = True if v is None else bool(
                 v.get("enabled", True) if isinstance(v, dict) else v)
+        # electro robot vocal: how many word buffers to cycle on the beat
+        try:
+            self._vox_n = max(1, min(6, int(section.get("robot_words") or 4)))
+        except (TypeError, ValueError):
+            self._vox_n = 4
         d = section.get("density")
         r = random.random()
         if r < 0.15:
@@ -1515,6 +1524,28 @@ class CannedSource:
                 motif  = self._scr_turn if within == 3 else self._scr_main
                 scr_slot = 4                    # title word 1 (turn overrides per-note)
             use_b = False
+        elif feel == "robotvox":
+            # ELECTRO robot vocal: chant the phrase word-by-word ON THE BEAT,
+            # repeating across the section. Words cycle through the loaded
+            # buffer slots (0..vox_n-1). Build: silent intro, then half the
+            # phrase, then the full phrase. Mechanical in-key carrier line.
+            vox_n = max(1, min(6, getattr(self, "_vox_n", 4)))
+            phase = self.bar // 12              # ~12-bar phases
+            if phase == 0:
+                return                          # intro: vocal enters after ~12 bars
+            if getattr(self, "_vox_sec", None) != self._sec:
+                degs  = [sc[0], sc[0], sc[min(4, len(sc) - 1)], sc[min(2, len(sc) - 1)],
+                         sc[0], sc[min(4, len(sc) - 1)]]
+                steps = [0, 8, 16, 24, 4, 20]   # one word per half-note over 2 bars
+                self._vox_full = [(degs[i % len(degs)], steps[i], 2.0, i % vox_n)
+                                  for i in range(min(vox_n, 6))]
+                # sparser early phase: first two words, one per bar
+                self._vox_half = [(degs[0], 0, 2.0, 0),
+                                  (degs[1], 16, 2.0, 1 % vox_n)]
+                self._vox_sec  = self._sec
+            motif    = self._vox_half if phase == 1 else self._vox_full
+            scr_slot = 0
+            use_b    = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
             # 8 emitted phrases). Pure-locked A on the other 7 -> recurrence.
@@ -1534,7 +1565,7 @@ class CannedSource:
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
-        kicks = set() if feel in ("hook", "scratch") else _KICK_STRONG.get(self.genre, set())
+        kicks = set() if feel in ("hook", "scratch", "robotvox") else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
         nlen = _LEAD_NLEN.get(feel, 0.20)
         boost = _LEAD_VEL_BOOST.get(feel, 1.0)
@@ -1561,6 +1592,11 @@ class CannedSource:
                 buf_slot = nbuf if nbuf is not None else scr_slot
                 pit = 60 + buf_slot * 12 + int(deg)
                 vel = 0.37 * _LEAD_GLOBAL          # scratch volume (+20%; level lever also up)
+            elif feel == "robotvox":
+                # octave = word buffer slot, pitch-class = sung carrier tone
+                buf_slot = nbuf if nbuf is not None else scr_slot
+                pit = 60 + buf_slot * 12 + int(deg)
+                vel = 0.40 * _LEAD_GLOBAL          # robot vocal volume
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
@@ -1583,6 +1619,8 @@ class CannedSource:
                 scr_vo = ("snare" if local_s in g.get("snare", [])
                           else "kick" if local_s in g.get("kick", []) else "")
                 D(local_s, beat * nlen * du, pit, vel, CH_LEAD, scr_vo)
+            elif feel == "robotvox":
+                D(local_s, beat * nlen * du, pit, vel, CH_LEAD)   # on the grid, mechanical
             else:
                 D(local_s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 

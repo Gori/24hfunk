@@ -19,6 +19,11 @@ from director.schema import SectionState
 # genres whose lead is the DJ scratch — render their title via TTS so the
 # scratch samples the actual song title.
 _SCRATCH_GENRES = {"eighties_hiphop", "boom_bap"}
+# genres whose lead is the ROBOT VOCAL — render robot_phrase word-by-word so
+# the leadVox synth chants it on the beat (reuses the scratch buffer slots).
+_VOCODE_GENRES = {"electro"}
+_VOX_MAX = 6                      # buffer slots available
+_VOX_VOICE = "af_alloy"           # neutral source; robotization happens in SC
 _SCRATCH_WAV = "/tmp/str_scratch.wav"
 
 # classic one-word DJ-scratch vocab — the FIRST build phase scratches a
@@ -68,6 +73,15 @@ def _render_scratch_set(phase_phrases: list[str], voice: str, speed: float) -> N
             if tts.render(word, path, voice=voice, speed=speed):
                 _sc.send_message("/scratch/load", [slot, path])
 
+
+def _render_vox_set(words: list[str]) -> None:
+    """Render each WORD of the electro robot phrase into its own buffer slot
+    (0..N-1), so the robot vocal chants them word-by-word. Daemon thread."""
+    for i, word in enumerate(words[:_VOX_MAX]):
+        path = f"/tmp/str_scratch_{i}.wav"
+        if tts.render(word, path, voice=_VOX_VOICE, speed=1.0):
+            _sc.send_message("/scratch/load", [i, path])
+
 # which numeric params of each instrument map to /synth/param
 _INSTR_PARAMS = {
     "kick": ["amp", "fmRatio", "fmIndex", "decay"],
@@ -113,6 +127,14 @@ def publish(section: SectionState) -> None:
         threading.Thread(target=_render_scratch_set,
                          args=(phrases, section.scratch_voice, speed), daemon=True).start()
 
+    # electro robot vocal: render robot_phrase word-by-word into the buffer
+    # slots; tell the worker how many words to cycle on the beat.
+    vox_n = 0
+    if section.genre in _VOCODE_GENRES:
+        words = section.robot_phrase.split()[:_VOX_MAX] or ["machine"]
+        vox_n = len(words)
+        threading.Thread(target=_render_vox_set, args=(words,), daemon=True).start()
+
     # 2) MIDI worker: re-prime hints
     enabled = {k: getattr(instr, k).enabled for k in _INSTR_PARAMS}
     _midi.send_message(
@@ -126,6 +148,7 @@ def publish(section: SectionState) -> None:
             "harmony": section.harmony,      # LLM's chord-progression choice
             "structure": section.structure,  # LLM's arrangement archetype
             "name": section.name,
+            "robot_words": vox_n,            # electro: # of robot words to cycle
             "instruments": enabled,
         })],
     )

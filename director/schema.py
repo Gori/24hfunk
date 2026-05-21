@@ -201,6 +201,10 @@ class SectionState(_Clamped):
     # (soft / neutral / aggressive -> TTS speed + scratch drive/brightness)
     scratch_voice: str = "af_heart"
     scratch_articulation: str = "neutral"
+    # electro robot vocal: a short evocative phrase the LLM writes; it's
+    # rendered word-by-word via TTS, robotized in SC, and punched on the beat
+    # (repeating across the section). Kraftwerk/Cybotron themes work well.
+    robot_phrase: str = "we are the machines"
 
     @field_validator("genre", mode="before")
     @classmethod
@@ -244,6 +248,12 @@ class SectionState(_Clamped):
     def _scratch_artic_ok(cls, v):
         v = str(v or "").strip().lower()
         return v if v in SCRATCH_ARTIC else "neutral"
+
+    @field_validator("robot_phrase", mode="before")
+    @classmethod
+    def _robot_phrase_ok(cls, v):
+        v = " ".join(str(v or "").split())[:48]
+        return v if v else "we are the machines"
     instruments: Instruments = Instruments()
     fx: Fx = Fx()
     palette: Palette = Palette()

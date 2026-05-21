@@ -106,8 +106,9 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	// before. (Was: params \amp appended last -> clobbered \amp=vel for
 	// everything, so per-note lead volume changes had NO effect.)
 	var hasAmp = (p.notNil and: { p[\amp].notNil });
-	var amp = (def == \leadScratch).if(
-		{ vel * (hasAmp.if({ p[\amp] }, { 1.0 })) },   // scratch: per-note velocity controls volume
+	var perNoteVol = (def == \leadScratch) or: { def == \leadVox };  // buffer-vocal leads
+	var amp = perNoteVol.if(
+		{ vel * (hasAmp.if({ p[\amp] }, { 1.0 })) },   // per-note velocity controls volume
 		{ hasAmp.if({ p[\amp] }, { vel }) }            // everything else: UNCHANGED
 	);
 	var a = [\freq, freq, \amp, amp, \out, ~fxBuses[grp].index];
@@ -120,6 +121,12 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 		var bidx = ((freq.cpsmidi - 60) / 12).floor.clip(0, 5).asInteger;
 		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60,
 			\drive, (~scratchDrive ? 1.0), \cutoff, (~scratchCutoff ? 3600)];
+	};
+	// leadVox (electro robot vocal): same word-slot-in-octave buffer pick +
+	// tempo. drive/cutoff come from the genre lead params (not the scratch artic).
+	if((def == \leadVox) and: { ~scratchBufs.notNil }) {
+		var bidx = ((freq.cpsmidi - 60) / 12).floor.clip(0, 5).asInteger;
+		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60];
 	};
 	a;
 };
