@@ -76,6 +76,16 @@ scratch_title : (uk_garage + eighties_hiphop only) a punchy TWO-WORD
                 version of the song title — the "reveal" the scratch builds
                 to in the final phase (e.g. title "Chrome Alley Nights" ->
                 "Chrome Alley"). Catchy + scratchable.
+scratch_voice : (scratch genres) which voice speaks the scratched words.
+                US female: af_alloy/af_bella/af_heart/af_nicole/af_nova/
+                af_sky/af_sarah ... US male: am_adam/am_echo/am_fenrir/
+                am_onyx/am_michael/am_liam ... UK: bf_emma/bf_isabella/
+                bm_george/bm_lewis. Pick one fitting the mood (deep am_onyx/
+                am_fenrir = harder; bright af_* = lighter). Vary it.
+scratch_articulation : (scratch genres) one of soft / neutral / aggressive
+                — how the scratched voice is delivered (soft = slower +
+                darker + gentle; aggressive = faster + bright + distorted).
+                Fit the section's energy.
 
 instruments.kick  : {enabled, amp 0..1, fmRatio 0.5..3, fmIndex 0..8, decay 0.1..0.8}
 instruments.snare : {enabled, amp 0..1, tone 0..1, decay 0.05..0.5}

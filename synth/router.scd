@@ -118,7 +118,8 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	// needs the tempo for rhythmic-division hand motion.
 	if((def == \leadScratch) and: { ~scratchBufs.notNil }) {
 		var bidx = ((freq.cpsmidi - 60) / 12).floor.clip(0, 5).asInteger;
-		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60];
+		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60,
+			\drive, (~scratchDrive ? 1.0), \cutoff, (~scratchCutoff ? 3600)];
 	};
 	a;
 };
@@ -261,6 +262,15 @@ OSCdef(\synthmap, { |msg|
 			\head, r[\head], \tail, r[\tail]]);
 	};
 };
+// scratch articulation: drive (aggression) + cutoff (brightness), set per
+// section by the director from the LLM's articulation choice.
+~scratchDrive = 1.0;
+~scratchCutoff = 3600;
+OSCdef(\scratchartic, { |msg|
+	~scratchDrive  = msg[1].asFloat;
+	~scratchCutoff = msg[2].asFloat;
+}, '/scratch/artic');
+
 OSCdef(\scratchword, { |msg| ~renderWord.(msg[1].asString.asSymbol); }, '/scratch/word');
 ~renderWord.(\ahh);                       // initial buffer content (procedural fallback)
 // SIX scratch buffer slots — one per WORD (2 words x 3 build phases):

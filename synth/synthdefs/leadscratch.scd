@@ -55,7 +55,7 @@ SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, de
 		1, doneAction: 2);
 	var sig    = (scr * 1.5) + (friction * 0.4) + click;
 	sig = (sig * (1 + drive * 0.8)).tanh * 0.7;
-	sig = LPF.ar(sig, 3600);
+	sig = LPF.ar(sig, cutoff.clip(800, 8000));   // brightness = articulation
 	Out.ar(out, Balance2.ar(sig, DelayC.ar(sig, 0.02, 0.004),
 		pan.clip(-1, 1) * 0.4) * env * safety * amp * 2.3 * level);
 }).add;

@@ -31,8 +31,9 @@ def _get():
     return _kokoro
 
 
-def render(text: str, path: str) -> bool:
-    """Render `text` to a wav at `path`. Returns True on success."""
+def render(text: str, path: str, voice: str = None, speed: float = 1.0) -> bool:
+    """Render `text` to a wav at `path` with the given voice + speed.
+    Returns True on success."""
     text = (text or "").strip()
     if not text or not available():
         return False
@@ -40,7 +41,8 @@ def render(text: str, path: str) -> bool:
         import soundfile as sf
         with _lock:
             k = _get()
-            samples, sr = k.create(text, voice=_VOICE, speed=1.0, lang="en-us")
+            samples, sr = k.create(text, voice=(voice or _VOICE),
+                                   speed=float(speed), lang="en-us")
         sf.write(path, samples, sr)
         return True
     except Exception as e:                       # noqa: BLE001 — never crash the director

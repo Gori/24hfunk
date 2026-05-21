@@ -21,6 +21,15 @@ SCENES = ("raycaster", "glyphfield")
 # (fresh/go/funk) are more synthetic but add DJ vocabulary.
 SCRATCH_WORDS = ("ahh", "ohh", "eee", "uh", "yeah", "wow", "hey",
                  "fresh", "go", "funk")
+# English Kokoro voices the scratch can use (af/am = US f/m, bf/bm = UK f/m)
+SCRATCH_VOICES = (
+    "af_alloy", "af_aoede", "af_bella", "af_heart", "af_jessica", "af_kore",
+    "af_nicole", "af_nova", "af_river", "af_sarah", "af_sky",
+    "am_adam", "am_echo", "am_eric", "am_fenrir", "am_liam", "am_michael",
+    "am_onyx", "am_puck",
+    "bf_alice", "bf_emma", "bf_isabella", "bf_lily",
+    "bm_daniel", "bm_fable", "bm_george", "bm_lewis")
+SCRATCH_ARTIC = ("soft", "neutral", "aggressive")
 
 
 def _clamp(v, lo, hi):
@@ -188,6 +197,10 @@ class SectionState(_Clamped):
     # final phase. The LLM should pick words that are fun/punchy to scratch.
     scratch_words: List[str] = Field(default_factory=lambda: ["fresh", "go"])
     scratch_title: str = "the cut"
+    # which Kokoro voice speaks the scratch words, + how it's articulated
+    # (soft / neutral / aggressive -> TTS speed + scratch drive/brightness)
+    scratch_voice: str = "af_heart"
+    scratch_articulation: str = "neutral"
 
     @field_validator("genre", mode="before")
     @classmethod
@@ -219,6 +232,18 @@ class SectionState(_Clamped):
     def _scratch_title_ok(cls, v):
         v = str(v or "").strip()
         return v[:24] if v else "the cut"
+
+    @field_validator("scratch_voice", mode="before")
+    @classmethod
+    def _scratch_voice_ok(cls, v):
+        v = str(v or "").strip().lower()
+        return v if v in SCRATCH_VOICES else "af_heart"
+
+    @field_validator("scratch_articulation", mode="before")
+    @classmethod
+    def _scratch_artic_ok(cls, v):
+        v = str(v or "").strip().lower()
+        return v if v in SCRATCH_ARTIC else "neutral"
     instruments: Instruments = Instruments()
     fx: Fx = Fx()
     palette: Palette = Palette()

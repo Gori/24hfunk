@@ -31,6 +31,14 @@ _sc = SimpleUDPClient(SC_HOST, SC_PORT)
 _midi = SimpleUDPClient(MIDI_HOST, MIDI_PORT)
 
 
+# articulation -> (TTS speed, scratch-synth drive, scratch-synth cutoff Hz)
+_ARTIC = {
+    "soft":       (0.92, 0.5, 2400),
+    "neutral":    (1.00, 1.0, 3600),
+    "aggressive": (1.12, 2.2, 5500),
+}
+
+
 def _phrase_words(phrase: str) -> list[str]:
     """A phrase -> exactly TWO word tokens (so each gets its own buffer; a
     1-word phrase fills both slots with the same word)."""
@@ -42,7 +50,7 @@ def _phrase_words(phrase: str) -> list[str]:
     return words
 
 
-def _render_scratch_set(phase_phrases: list[str]) -> None:
+def _render_scratch_set(phase_phrases: list[str], voice: str, speed: float) -> None:
     """Render each WORD of the 3 phase phrases into its own buffer slot, so
     multi-word phrases scratch word-by-word. Slots: phase1 words -> 0,1;
     phase2 -> 2,3; title -> 4,5. Daemon thread; silent no-op on failure."""
@@ -50,7 +58,7 @@ def _render_scratch_set(phase_phrases: list[str]) -> None:
         for w, word in enumerate(_phrase_words(phrase)):
             slot = p * 2 + w
             path = f"/tmp/str_scratch_{slot}.wav"
-            if tts.render(word, path):
+            if tts.render(word, path, voice=voice, speed=speed):
                 _sc.send_message("/scratch/load", [slot, path])
 
 # which numeric params of each instrument map to /synth/param
@@ -87,7 +95,11 @@ def publish(section: SectionState) -> None:
             words.append("go")
         # phases 1 & 2 = the two teaser phrases; phase 3 = the two-word title
         phrases = [words[0], words[1], section.scratch_title]
-        threading.Thread(target=_render_scratch_set, args=(phrases,), daemon=True).start()
+        speed, drive, cutoff = _ARTIC.get(section.scratch_articulation, _ARTIC["neutral"])
+        # articulation -> scratch-synth drive + brightness (router applies to leadScratch)
+        _sc.send_message("/scratch/artic", [float(drive), float(cutoff)])
+        threading.Thread(target=_render_scratch_set,
+                         args=(phrases, section.scratch_voice, speed), daemon=True).start()
 
     # 2) MIDI worker: re-prime hints
     enabled = {k: getattr(instr, k).enabled for k in _INSTR_PARAMS}
