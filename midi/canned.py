@@ -390,7 +390,7 @@ _LEAD_NLEN = {
     "hypno": 0.20,   # short repetitive
     "lyric": 0.42,   # singable, sustained
     "hook":  0.14,   # tight 16ths (80s hook)
-    "scratch": 0.12, # tight scratch chops
+    "scratch": 0.25, # du = rhythmic slot, so gate fills the slot exactly
     "space": 0.40,   # n/a (dub family uses skanks)
 }
 
@@ -1366,21 +1366,33 @@ class CannedSource:
                     10,     10,    8,   5,      4)
 
     def _scratch_pattern(self, rnd, play=None):
-        # GENERATE a rhythmically-coherent 1-bar scratch: pick a beat-aligned
-        # CELL for each beat. Every note lands on the grid (0/0.5/1/1.5/...),
-        # so it reads as rhythm. If `play`, scratch 2 beats then let the
-        # record PLAY the word out (long du=10 note from beat 3).
+        # GENERATE a rhythmically-coherent 1-bar scratch: beat-aligned CELLS so
+        # onsets land on the grid (0/0.5/1/1.5/...). Each note carries a GESTURE
+        # CODE (0..5) = divIdx + dir*3, where divIdx is the scratch SPEED from
+        # the note's rhythmic slot (32nd->fast, 8th->slow) and dir is the swoop
+        # direction (baked here, seeded -> repeats identically). du = the slot
+        # so the note FILLS its rhythmic space (the gesture sweeps the whole
+        # slot). If `play`, scratch 2 beats then let the record PLAY the word.
         if play is None:
             play = rnd.random() < 0.20
         nbeats = 2 if play else 4
-        notes  = []
+        onsets = []
         for b in range(nbeats):
             cell = self._SCR_CELLS[rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]]
-            deg  = 5 if rnd.random() < 0.15 else 1
             for off in cell:
-                notes.append((deg, round(b * 4 + off, 3), 1))
+                onsets.append(round(b * 4 + off, 3))
+        onsets = sorted(set(onsets))
+        end = 8.0 if play else 16.0
+        notes = []
+        for i, s in enumerate(onsets):
+            nxt  = onsets[i + 1] if i + 1 < len(onsets) else end
+            slot = max(0.5, min(4.0, round(nxt - s, 3)))
+            # speed from slot: 0.5 = 32nd (fast), 1 = 16th, >=2 = 8th (slow)
+            divIdx = 2 if slot <= 0.5 else (1 if slot <= 1.0 else 0)
+            code   = divIdx + rnd.randint(0, 1) * 3      # + direction (seeded)
+            notes.append((code, s, slot))                 # du = slot -> fills the gate
         if play:
-            notes.append((1, 8.0, 10))               # let the record play the word
+            notes.append((1, 8.0, 10))                    # word playout (rel dominates)
         return notes
 
     def _motif(self, D, rnd, beat, sc, ctones):
@@ -1424,9 +1436,12 @@ class CannedSource:
                     self._scratch_pattern(sr, play=True),    # B: word playout (always)
                 ]
                 self._scr_sec = self._sec
-            phrase_idx = self.bar // every
+                self._scr_emit = 0
+            # Cycle tied to ACTUAL emissions (not absolute bars) so the AABA
+            # lands reliably despite arrangement gaps -> word every 4th emit.
             cyc = (0, 0, 1, 0)                       # AABA
-            motif = self._scratch_set[cyc[phrase_idx % 4]]
+            motif = self._scratch_set[cyc[self._scr_emit % 4]]
+            self._scr_emit += 1
             use_b = False
         else:
             # Repetition: 7 A-phrases then 1 B variant (AAAAAAAB cycle = every
@@ -1447,7 +1462,7 @@ class CannedSource:
         if not motif:
             return
         bar_p, note_p = _LEAD_REST.get(feel, (0.10, 0.18))
-        kicks = set() if feel == "hook" else _KICK_STRONG.get(self.genre, set())
+        kicks = set() if feel in ("hook", "scratch") else _KICK_STRONG.get(self.genre, set())
         lpush = _LEAD_PUSH.get(self.genre, 0.0)
         nlen = _LEAD_NLEN.get(feel, 0.20)
         boost = _LEAD_VEL_BOOST.get(feel, 1.0)
@@ -1464,18 +1479,25 @@ class CannedSource:
                 continue
             if rrr.random() < note_p:
                 continue
-            d = deg
-            if use_b and i == nN - 1:                         # B-phrase resolves to root
-                d = 1
-            # KEY-ANCHORED pitch — same MIDI note for same deg every emit
-            pit = self._scale_deg_pit_in_key(d, sc, 36) + 12 * _LEAD_OCT.get(self.genre, 0)
-            mid = nN / 2.0
-            d2p = 1.0 - abs(i - mid) / max(1.0, nN - 1)
-            vel = 0.46 + 0.18 * d2p + (0.05 if local_s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
-            if use_b and i >= nN - 2:
-                vel -= 0.05
-            vel *= boost * _LEAD_GLOBAL
-            vel = max(0.22 * _LEAD_GLOBAL, min(0.95, vel))
+            if feel == "scratch":
+                # `deg` is a GESTURE CODE 0..5 (divIdx + dir*3) — encoded as a
+                # pitch so the synth decodes the scratch speed+direction. Since
+                # the pattern repeats, repeats scratch identically.
+                pit = 60 + int(deg)
+                vel = 0.62 * _LEAD_GLOBAL
+            else:
+                d = deg
+                if use_b and i == nN - 1:                     # B-phrase resolves to root
+                    d = 1
+                # KEY-ANCHORED pitch — same MIDI note for same deg every emit
+                pit = self._scale_deg_pit_in_key(d, sc, 36) + 12 * _LEAD_OCT.get(self.genre, 0)
+                mid = nN / 2.0
+                d2p = 1.0 - abs(i - mid) / max(1.0, nN - 1)
+                vel = 0.46 + 0.18 * d2p + (0.05 if local_s % 4 == 0 else 0.0) + rnd.uniform(-0.03, 0.04)
+                if use_b and i >= nN - 2:
+                    vel -= 0.05
+                vel *= boost * _LEAD_GLOBAL
+                vel = max(0.22 * _LEAD_GLOBAL, min(0.95, vel))
             D(local_s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 
     # ---- genre builders (drums = funk research; harmony via helpers) ----

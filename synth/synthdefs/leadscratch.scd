@@ -10,27 +10,26 @@ SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, de
 		wave=0.5, cutoff=4000, decay=0.2, gate=1, t_trig=1, maxSustain=1.0,
 		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0, beatHz=2|
 	var v      = amp.clip(0.05, 1.0);
-	// scratch motion = a hand moving the record back and forth, IN TIME. The
-	// rate is a RHYTHMIC DIVISION of the beat chosen per note (one back-and-
-	// forth per 8th / 16th / 32nd), so it locks to tempo instead of an
-	// arbitrary Hz. beatHz = bpm/60, passed by the router.
-	var sign     = (Rand(0.0, 1.0) - 0.5).sign;
-	// divisions (cycles per beat): 2=8th, 4=16th, 8=32nd — fast-leaning
-	var div      = Select.kr(Rand(0, 6).floor, [2, 4, 4, 4, 8, 8]);
-	var gestRate = (beatHz * div).clip(1.0, 22.0);  // per-note scratch SPEED, tempo-locked
-	var gestDep  = Rand(0.7, 1.7) * sign;           // pitch-swing depth + direction
+	// The scratch GESTURE is ENCODED in the incoming pitch by the pattern
+	// (code 0..5 = MIDI 60..65), so a repeating phrase scratches IDENTICALLY
+	// (deterministic, NOT re-randomized per note). Decode:
+	//   divIdx = code % 3  -> speed: 0=8th, 1=16th, 2=32nd back-and-forth
+	//   dir    = code >= 3 -> swoop direction
+	var code     = (freq.cpsmidi - 60).round.clip(0, 5);
+	var divIdx   = code % 3;
+	var div      = Select.kr(divIdx, [2, 4, 8]);    // cycles per beat (tempo-locked)
+	var gestRate = (beatHz * div).clip(1.0, 24.0);
+	var sign     = ((code >= 3) * 2) - 1;           // -1 / +1, baked per note
+	var gestDep  = 1.2 * sign;
 	// RELEASE: after ~0.22 s the DJ "lets the record go" -> crossfade to clean
 	// forward playback (rate 1) so the WORD plays out. Short chops end before
 	// the ramp = pure scratch; long notes release into playback.
 	var rel      = EnvGen.kr(Env([0, 0, 1], [0.22, 0.07], \lin), gate);
-	var osc      = LFTri.kr(gestRate, Rand(0.0, 4.0));   // the back-and-forth motion
-	var jitter   = LFNoise0.kr(40) * 0.10 * (1 - rel);
-	var scratchMotion = (osc * gestDep) + jitter;
+	var osc      = LFTri.kr(gestRate, 0);           // fixed phase -> identical repeats
+	var scratchMotion = osc * gestDep;
 	var motion   = (scratchMotion * (1 - rel)) + (1.0 * rel);   // -> forward play
-	// note pitch sets the base playback rate (different notes = different
-	// scratch pitch); motion scales it bipolar for the back-and-forth.
-	var baseRate = (freq / 330).clip(0.35, 1.7);
-	var rate   = motion * baseRate * BufRateScale.kr(buf);
+	// pitch only encodes the gesture; the sample plays at its recorded rate
+	var rate   = motion * BufRateScale.kr(buf);
 	// read the vocal buffer; reset into the vowel body on each note
 	var scr    = PlayBuf.ar(1, buf, rate, trigger: gate,
 		startPos: BufFrames.kr(buf) * 0.20, loop: 1);
