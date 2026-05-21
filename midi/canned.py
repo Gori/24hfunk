@@ -880,7 +880,7 @@ _KEYS_LEVEL = {
     "indie_rnb": 0.64,
     "jazz": 0.64,
     "lofi": 0.64,
-    "minneapolis_funk": 0.64,
+    "minneapolis_funk": 0.48,
     "neon_dub": 0.64,
     "steppers_dub": 0.64,
     "synthwave": 0.64,
