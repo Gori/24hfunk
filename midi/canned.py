@@ -200,7 +200,7 @@ _GENRE_INSTR = {
     "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
     "boom_bap":         {"bass": "bass",       "kick": "kickHard", "snare": "snare",    "lead": "leadScratch", "keys": "keysJazz"},
     "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
-    "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadPluck"},
+    "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadSoftBell"},
     "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadPluck"},
     "indie_rnb":        {"bass": "bass",       "kick": "kick808",  "snare": "snareBrush", "lead": "leadPluck"},
 }
@@ -558,7 +558,7 @@ _LEAD_FEEL = {
     "boom_bap": "scratch",
     "electro": "robotvox", "synthwave": "stab",
     "minimal_techno": "hypno", "detroit_techno": "hypno", "dub_techno": "hypno",
-    "rnb": "lyric", "afro_rnb": "lyric", "indie_rnb": "lyric",
+    "rnb": "bellarp", "afro_rnb": "lyric", "indie_rnb": "lyric",
     "lofi": "lyric", "eighties_hiphop": "scratch",
     "dub": "space", "neon_dub": "space", "steppers_dub": "space",
     "roots_reggae": "space",
@@ -941,6 +941,13 @@ class CannedSource:
             v = instr.get(k)
             self.on[k] = True if v is None else bool(
                 v.get("enabled", True) if isinstance(v, dict) else v)
+        # rnb bell arp enters after HALF the song: halfway bar from the section
+        # duration (bars = duration_sec * bpm / 240). Default ~16 if unknown.
+        try:
+            _bars = float(section.get("duration_sec") or 0) * self.bpm / 240.0
+            self._half_bar = int(_bars / 2) if _bars > 8 else 16
+        except (TypeError, ValueError):
+            self._half_bar = 16
         # electro robot vocal: how many word buffers to cycle on the beat
         try:
             self._vox_n = max(1, min(6, int(section.get("robot_words") or 4)))
@@ -1302,6 +1309,25 @@ class CannedSource:
                 for p in stab:
                     D(s, beat * 0.18, p, vel + rnd.uniform(-0.03, 0.03), CH_KEYS)
 
+    def _bell_arp(self, D, rnd, beat, ctones):
+        # rnb LEAD: soft MID bells arpeggiating the chord tones, ENTERING after
+        # HALF the song. Voice-leads the chord into a mid register; gentle
+        # 8th-note arp up. leadSoftBell is percussive (rings out + frees), so
+        # the notes overlap into a soft shimmer despite the mono lead channel.
+        if not self.on.get("lead", True):
+            return
+        if self.bar < getattr(self, "_half_bar", 9999):
+            return                                           # comes in after half the song
+        vc = self._voicelead(ctones[:4], 64)                 # MID-register chord tones
+        if not vc:
+            return
+        n = len(vc)
+        for k, s in enumerate(range(0, 16, 2)):              # gentle 8th-note arp up
+            if rnd.random() < 0.88:
+                p = vc[k % n]
+                vel = (0.42 + (0.05 if s % 8 == 0 else 0.0)) * _LEAD_GLOBAL
+                D(s, beat * 1.4, p, vel, CH_LEAD)            # rings (perc bell)
+
     def _perc(self, D, rnd, beat, e):
         # Dedicated percussion layer, dropped into the groove's GAPS (its
         # steps are off-beats, chosen per genre vs the kick/snare pattern).
@@ -1550,6 +1576,9 @@ class CannedSource:
         # AABA across 4 emit-bars (A-A-A-B). Strict mono — no harmony
         # stacks, no overlapping note slots. Per-feel note length.
         if not ctones:
+            return
+        if _LEAD_FEEL.get(self.genre, "lyric") == "bellarp":
+            self._bell_arp(D, rnd, beat, ctones)
             return
         if self.genre == "jazz":
             self._jazz_motif(D, rnd, beat, sc, ctones)

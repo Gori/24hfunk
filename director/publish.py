@@ -149,6 +149,7 @@ def publish(section: SectionState) -> None:
             "structure": section.structure,  # LLM's arrangement archetype
             "name": section.name,
             "robot_words": vox_n,            # electro: # of robot words to cycle
+            "duration_sec": section.duration_sec,  # rnb bell arp enters at halfway
             "instruments": enabled,
         })],
     )
