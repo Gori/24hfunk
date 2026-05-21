@@ -1366,8 +1366,10 @@ class CannedSource:
     }
     _SCR_NAMES   = ("16", "8", "8.", "8_16", "16_8", "gallop", "rgallop",
                     "burst", "hburst", "hburst2", "off", "off2", "q", "rest")
-    _SCR_WEIGHTS = (12,   12,  9,    10,     10,     11,       9,
-                    7,      9,        7,         9,     9,      6,    7)
+    # CALM/groovy: quarter + 8th + rest dominate; 16ths rare; the 8-note 32nd
+    # "burst" removed (weight 0) — it was the hectic part. ~5-6 notes/bar.
+    _SCR_WEIGHTS = (2,    18,  6,    3,      3,      6,        4,
+                    0,      1,        1,         5,     2,      24,   22)
 
     def _scratch_pattern(self, rnd, play=None):
         # GENERATE a rhythmically-coherent 1-bar scratch: beat-aligned CELLS so
@@ -1379,37 +1381,42 @@ class CannedSource:
         # slot). If `play`, scratch 2 beats then let the record PLAY the word.
         if play is None:
             play = rnd.random() < 0.20
-        # Build with intra-bar STRUCTURE: a 2-beat groove UNIT repeated across
-        # the bar (beats 1-2 recur as beats 3-4) with an occasional turnaround
-        # on the last beat. This makes the pattern coherent/recognisable
-        # instead of 4 unrelated random beats. Downbeat always hits.
+        # Intra-bar STRUCTURE: a 2-beat groove UNIT repeated across the bar
+        # (beats 1-2 recur as 3-4) with an occasional turnaround. Coherent,
+        # not 4 random beats. Downbeat always hits.
         pick     = lambda: rnd.choices(self._SCR_NAMES, weights=self._SCR_WEIGHTS)[0]
         nonrest  = [n for n in self._SCR_NAMES if n != "rest"]
-        pick_hit = lambda: rnd.choices(nonrest,
-                       weights=[self._SCR_WEIGHTS[self._SCR_NAMES.index(n)] for n in nonrest])[0]
+        nrw      = [self._SCR_WEIGHTS[self._SCR_NAMES.index(n)] for n in nonrest]
+        pick_hit = lambda: rnd.choices(nonrest, weights=nrw)[0]
+        # word placement: usually at the END (beat 3); SELDOM in the MIDDLE
+        # (beat 2) with scratching resuming after it.
+        word_at = None
         if play:
-            plan = [pick_hit(), pick()]                 # 2 beats, then the word
+            if rnd.random() < 0.25:
+                word_at, beat_cells = 4.0, {0: pick_hit(), 3: pick()}   # word in middle
+            else:
+                word_at, beat_cells = 8.0, {0: pick_hit(), 1: pick()}   # word at end
         else:
-            a, b = pick_hit(), pick()                   # the 2-beat unit
-            plan = [a, b, a, (pick() if rnd.random() < 0.45 else b)]  # repeat + turnaround
+            a, b = pick_hit(), pick()
+            beat_cells = {0: a, 1: b, 2: a, 3: (pick() if rnd.random() < 0.45 else b)}
         onsets = []
-        for bi, name in enumerate(plan):
+        for bi, name in beat_cells.items():
             for off in self._SCR_CELLS[name]:
                 onsets.append(round(bi * 4 + off, 3))
         onsets = sorted(set(onsets))
-        end = 8.0 if play else 16.0
         notes = []
         for i, s in enumerate(onsets):
-            nxt  = onsets[i + 1] if i + 1 < len(onsets) else end
+            nxt = onsets[i + 1] if i + 1 < len(onsets) else 16.0
+            if word_at is not None and s < word_at <= nxt:
+                nxt = word_at                              # scratch rings up to the word
             slot = max(0.5, min(4.0, round(nxt - s, 3)))
-            # GESTURE SPEED (baked, seeded): divIdx 0..3 = quarter/8th/triplet/
-            # 16th wobble. Weighted toward SLOW — the fast (16th) wobble is
-            # rare. Mostly quarter/8th drags.
+            # GESTURE SPEED (baked, seeded): 0..3 = quarter/8th/triplet/16th
+            # wobble, weighted toward SLOW (fast 16th wobble rare).
             divIdx = rnd.choices((0, 1, 2, 3), weights=(28, 38, 22, 12))[0]
             code   = divIdx + rnd.randint(0, 1) * 4      # + direction (seeded)
             notes.append((code, s, slot))                 # du = slot -> fills the gate
-        if play:
-            notes.append((1, 8.0, 10))                    # word playout (rel dominates)
+        if word_at is not None:
+            notes.append((1, word_at, 10))                # word playout (rel dominates)
         return notes
 
     def _motif(self, D, rnd, beat, sc, ctones):
