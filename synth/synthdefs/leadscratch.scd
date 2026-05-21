@@ -11,15 +11,16 @@ SynthDef(\leadScratch, { |out=0, amp=0.5, freq=440, fmRatio=2.0, fmIndex=1.0, de
 		drive=1.0, glide=0.02, level=1.0, pan=0, buf=0, beatHz=2|
 	var v      = amp.clip(0.05, 1.0);
 	// The scratch GESTURE is ENCODED in the incoming pitch by the pattern
-	// (code 0..5 = MIDI 60..65), so a repeating phrase scratches IDENTICALLY
+	// (code 0..7 = MIDI 60..67), so a repeating phrase scratches IDENTICALLY
 	// (deterministic, NOT re-randomized per note). Decode:
-	//   divIdx = code % 3  -> speed: 0=8th, 1=16th, 2=32nd back-and-forth
-	//   dir    = code >= 3 -> swoop direction
-	var code     = (freq.cpsmidi - 60).round.clip(0, 5);
-	var divIdx   = code % 3;
-	var div      = Select.kr(divIdx, [2, 4, 8]);    // cycles per beat (tempo-locked)
-	var gestRate = (beatHz * div).clip(1.0, 24.0);
-	var sign     = ((code >= 3) * 2) - 1;           // -1 / +1, baked per note
+	//   divIdx = code % 4  -> speed: 0=quarter,1=8th,2=triplet,3=16th wobble
+	//   dir    = code >= 4 -> swoop direction
+	// Slower set than before (quarter/8th/16th, not 8th/16th/32nd).
+	var code     = (freq.cpsmidi - 60).round.clip(0, 7);
+	var divIdx   = code % 4;
+	var div      = Select.kr(divIdx, [1, 2, 3, 4]); // cycles per beat (tempo-locked)
+	var gestRate = (beatHz * div).clip(0.8, 16.0);
+	var sign     = ((code >= 4) * 2) - 1;           // -1 / +1, baked per note
 	var gestDep  = 1.2 * sign;
 	// RELEASE: after ~0.22 s the DJ "lets the record go" -> crossfade to clean
 	// forward playback (rate 1) so the WORD plays out. Short chops end before

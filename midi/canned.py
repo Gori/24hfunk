@@ -1351,19 +1351,23 @@ class CannedSource:
     _SCR_CELLS = {
         "q":       [0.0],                                       # quarter
         "8":       [0.0, 2.0],                                  # two 8ths
+        "8.":      [0.0, 1.5],                                  # dotted-8th + 16th
         "16":      [0.0, 1.0, 2.0, 3.0],                        # four 16ths
         "8_16":    [0.0, 2.0, 3.0],                             # 8th + two 16ths
         "16_8":    [0.0, 1.0, 2.0],                             # two 16ths + 8th
+        "gallop":  [0.0, 1.5, 2.0],                             # gallop (long-short-)
+        "rgallop": [0.0, 0.5, 2.0],                             # reverse gallop
         "burst":   [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5],    # full 32nd scribble
         "hburst":  [0.0, 0.5, 1.0, 1.5],                        # 32nd burst, 1st half
         "hburst2": [2.0, 2.5, 3.0, 3.5],                        # 32nd burst, 2nd half
         "off":     [1.0, 2.0, 3.0],                             # off-start 16ths
-        "rest":    [],                                          # silent beat
+        "off2":    [1.5, 2.5, 3.5],                             # syncopated offbeats
+        "rest":    [],                                          # silent beat (groove space)
     }
-    _SCR_NAMES   = ("16", "16", "8", "burst", "hburst", "hburst2",
-                    "8_16", "16_8", "off", "q", "rest")
-    _SCR_WEIGHTS = (16,    16,   10,  14,      13,        9,
-                    10,     10,    8,   5,      4)
+    _SCR_NAMES   = ("16", "8", "8.", "8_16", "16_8", "gallop", "rgallop",
+                    "burst", "hburst", "hburst2", "off", "off2", "q", "rest")
+    _SCR_WEIGHTS = (12,   12,  9,    10,     10,     11,       9,
+                    7,      9,        7,         9,     9,      6,    7)
 
     def _scratch_pattern(self, rnd, play=None):
         # GENERATE a rhythmically-coherent 1-bar scratch: beat-aligned CELLS so
@@ -1387,9 +1391,13 @@ class CannedSource:
         for i, s in enumerate(onsets):
             nxt  = onsets[i + 1] if i + 1 < len(onsets) else end
             slot = max(0.5, min(4.0, round(nxt - s, 3)))
-            # speed from slot: 0.5 = 32nd (fast), 1 = 16th, >=2 = 8th (slow)
-            divIdx = 2 if slot <= 0.5 else (1 if slot <= 1.0 else 0)
-            code   = divIdx + rnd.randint(0, 1) * 3      # + direction (seeded)
+            # GESTURE SPEED is its own per-note choice (baked, seeded) for
+            # VARIETY — not strictly tied to the slot. divIdx 0..3 ->
+            # quarter/8th/triplet/16th wobble (the slower set). Bias by slot
+            # (fast slots lean faster) but allow spread.
+            base   = 3 if slot <= 0.5 else (2 if slot <= 1.0 else 1)
+            divIdx = max(0, min(3, base + rnd.choice([-1, 0, 0, 1])))
+            code   = divIdx + rnd.randint(0, 1) * 4      # + direction (seeded)
             notes.append((code, s, slot))                 # du = slot -> fills the gate
         if play:
             notes.append((1, 8.0, 10))                    # word playout (rel dominates)
