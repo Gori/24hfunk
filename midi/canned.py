@@ -481,7 +481,7 @@ _PHRASE_LEN = {
 
 _LEAD_REST = {
     "hook":  (0.0,  0.05),   # silence handled deterministically by the hook branch
-    "scratch": (0.0, 0.04),  # keep the fast clusters intact (rarely drop a chop)
+    "scratch": (0.0, 0.0),   # NO drops -> a repeated pattern is byte-identical
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -1459,11 +1459,14 @@ class CannedSource:
                     for i in range(6)
                 ]
                 self._scr_sec = self._sec
+            # One ROUTINE = a main + a turn. The 8-bar AAAB unit (main x3 +
+            # turn) repeats for a LONG stretch (32 bars) before the routine
+            # changes -> strong recurrence, not a new main every 8 bars.
             ph_i   = self.bar // every          # 2-bar phrase index
-            sub    = ph_i // 4                  # sub-section (4 phrases = 8 bars)
-            within = ph_i % 4                   # 0..3 within the sub-section
-            main_i = (sub * 2) % 6              # even pool idx (main, repeated)
-            turn_i = (sub * 2 + 1) % 6          # odd pool idx (turnaround/word)
+            within = ph_i % 4                   # 0..3 -> AAAB (main main main turn)
+            routine = (ph_i // 16) % 3          # new routine every 16 phrases (32 bars)
+            main_i = (routine * 2) % 6          # even pool idx (main, repeated)
+            turn_i = (routine * 2 + 1) % 6      # odd pool idx (turnaround/word)
             motif  = self._scratch_pool[turn_i if within == 3 else main_i]
             use_b  = False
         else:
