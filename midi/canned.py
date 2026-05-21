@@ -1420,8 +1420,8 @@ class CannedSource:
             if getattr(self, "_scr_sec", None) != self._sec:
                 sr = random.Random(self._sec * 97 + 41)
                 self._scratch_set = [
-                    self._scratch_pattern(sr, play=False),                 # A
-                    self._scratch_pattern(sr, play=(sr.random() < 0.6)),   # B
+                    self._scratch_pattern(sr, play=False),   # A: pure scratch
+                    self._scratch_pattern(sr, play=True),    # B: word playout (always)
                 ]
                 self._scr_sec = self._sec
             phrase_idx = self.bar // every
