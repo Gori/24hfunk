@@ -198,7 +198,7 @@ _GENRE_INSTR = {
     "dub_techno":       {"bass": "bass",       "kick": "kick808",  "snare": "snare909", "lead": "leadSiren"},
     "roots_reggae":     {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadSiren"},
     "uk_garage":        {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
-    "boom_bap":         {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadScratch"},
+    "boom_bap":         {"bass": "bass",       "kick": "kickHard", "snare": "snare",    "lead": "leadScratch"},
     "dub_garage":       {"bass": "bassFM",     "kick": "kickHard", "snare": "snare909", "lead": "leadBell"},
     "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadPluck"},
     "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadPluck"},
@@ -759,6 +759,7 @@ _DRUM_CHAR = {
     "broken_house":     {"kick": {"punch": 0.62}, "snare": {"body": 0.40, "buzz": 0.30}, "hat": {"loose": 0.05}},
     "lofi":             {"kick": {"punch": 0.30}, "snare": {"body": 0.60, "buzz": 0.52}, "hat": {"loose": 0.22}, "ohat": {"loose": 0.26}},
     "eighties_hiphop":  {"kick": {"punch": 0.40}, "snare": {"body": 0.55, "buzz": 0.40}, "hat": {"loose": 0.10}},
+    "boom_bap":         {"kick": {"punch": 0.70}, "snare": {"body": 0.66, "buzz": 0.30}, "hat": {"loose": 0.16}},
     "jazz":             {"kick": {"punch": 0.28}, "snare": {"body": 0.70, "buzz": 0.62}, "hat": {"loose": 0.24}, "ohat": {"loose": 0.30}},
     "minimal_techno":   {"kick": {"punch": 0.56}, "snare": {"body": 0.40, "buzz": 0.24}},
     "detroit_techno":   {"kick": {"punch": 0.54}, "snare": {"body": 0.42, "buzz": 0.26}, "hat": {"loose": 0.04}},
@@ -787,6 +788,7 @@ _DRUM_GLUE = {
     "dub": (0.18, 0.10), "steppers_dub": (0.20, 0.12),
     "dub_techno": (0.24, 0.16), "roots_reggae": (0.20, 0.12),
     "uk_garage": (0.32, 0.32), "dub_garage": (0.26, 0.22),
+    "boom_bap": (0.36, 0.38),
     "rnb": (0.24, 0.18), "afro_rnb": (0.28, 0.24),
     "indie_rnb": (0.22, 0.14),
 }
@@ -1558,7 +1560,7 @@ class CannedSource:
                 # phase's current word slot. Repeats -> scratches identically.
                 buf_slot = nbuf if nbuf is not None else scr_slot
                 pit = 60 + buf_slot * 12 + int(deg)
-                vel = 0.26 * _LEAD_GLOBAL          # scratch volume (+30%)
+                vel = 0.34 * _LEAD_GLOBAL          # scratch volume (+30% x2)
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
@@ -2096,34 +2098,37 @@ class CannedSource:
             self._motif(D, rnd, beat, sc, ct)              # scratch (always)
 
     def _g_boom_bap(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
-        # golden-age boom-bap (1992 Illmatic): dusty boom kick, fat laid-back
-        # snare on the backbeat, swung 8th hats, sampled-soul bass, DJ-scratch
-        # lead. Heavy MPC swing comes from PROFILE; warmth from the kit choice.
+        # golden-age boom-bap (1992 Illmatic): HEAVY hard kick "boom" + fat
+        # cracking snare "bap". The FOUNDATION lands every bar (the head-nod
+        # doesn't thin out with density) — only the ghosts/extras are
+        # probabilistic. Swung dusty 8ths, sampled-soul walking bass, scratch.
         if self.on["kick"]:
-            D(0, 0.30, KICK, self._acc(rnd), CH_DRUMS, "kick", True)        # the boom
-            if rnd.random() < 0.55 + 0.3 * e:
-                D(10, 0.26, KICK, self._main(rnd), CH_DRUMS, "kick", True)  # & of 3
-            if rnd.random() < 0.25 + 0.3 * e:
-                D(6, 0.24, KICK, self._main(rnd) * 0.85, CH_DRUMS, "kick")  # ghost push
+            D(0,  0.36, KICK, 1.0, CH_DRUMS, "kick", True)                 # the BOOM (downbeat)
+            D(10, 0.32, KICK, self._acc(rnd), CH_DRUMS, "kick", True)      # boom-bap signature (& of 3)
+            if rnd.random() < 0.5 + 0.3 * e:
+                D(6, 0.28, KICK, self._main(rnd), CH_DRUMS, "kick")        # & of 2 push
+            if rnd.random() < 0.22:
+                D(11, 0.26, KICK, self._main(rnd) * 0.8, CH_DRUMS, "kick")
         if self.on["snare"]:
-            for s in (4, 12):                                              # fat backbeat
-                D(s, 0.22, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
-            if rnd.random() < 0.35:                                        # dusty ghost
+            for s in (4, 12):                                              # the BAP — fat + layered
+                D(s, 0.26, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+                D(s, 0.24, CLAP, 0.78, CH_DRUMS, "snare")                  # layer = crack + body
+            if rnd.random() < 0.4:                                         # dusty ghost
                 D(rnd.choice([7, 11, 15]), 0.12, SNARE, self._ghost(rnd), CH_DRUMS, "snare")
             if fill:
                 for s in (13, 14, 15):
-                    D(s, 0.07, SNARE, 0.5 + 0.06 * s, CH_DRUMS, "snare")
+                    D(s, 0.08, SNARE, 0.6 + 0.06 * s, CH_DRUMS, "snare")
         if self.on["hat"]:
-            for s in range(0, 16, 2):                                      # swung 8ths
-                if rnd.random() < 0.6 + 0.3 * e:
+            for s in range(0, 16, 2):                                      # swung dusty 8ths
+                if rnd.random() < 0.78:
                     D(s, 0.05, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd),
                       CH_DRUMS, "hat")
-            if rnd.random() < 0.35:
+            if rnd.random() < 0.3:
                 D(rnd.choice([6, 14]), 0.2, OHAT, 0.42, CH_DRUMS, "hat")
         if self.on["bass"]:                                                # sampled-soul, walks
             D(0, beat * 0.9, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
             for s in (6, 10, 14):
-                if rnd.random() < 0.4 + 0.3 * e:
+                if rnd.random() < 0.45 + 0.3 * e:
                     D(s, beat * 0.45, cr + rnd.choice([0, 0, 7, 12, -5]),
                       self._main(rnd), CH_BASS)
         if self.on["lead"]:
