@@ -2098,32 +2098,50 @@ class CannedSource:
             self._motif(D, rnd, beat, sc, ct)              # scratch (always)
 
     def _g_boom_bap(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
-        # golden-age boom-bap (1992 Illmatic): HEAVY hard kick "boom" + fat
-        # cracking snare "bap". The FOUNDATION lands every bar (the head-nod
-        # doesn't thin out with density) — only the ghosts/extras are
-        # probabilistic. Swung dusty 8ths, sampled-soul walking bass, scratch.
-        if self.on["kick"]:
-            D(0,  0.36, KICK, 1.0, CH_DRUMS, "kick", True)                 # the BOOM (downbeat)
-            D(10, 0.32, KICK, self._acc(rnd), CH_DRUMS, "kick", True)      # boom-bap signature (& of 3)
-            if rnd.random() < 0.5 + 0.3 * e:
-                D(6, 0.28, KICK, self._main(rnd), CH_DRUMS, "kick")        # & of 2 push
-            if rnd.random() < 0.22:
-                D(11, 0.26, KICK, self._main(rnd) * 0.8, CH_DRUMS, "kick")
+        # golden-age boom-bap (Premier / Pete Rock / Large Pro). NOT a 1-bar
+        # loop — it breathes over a 2-BAR phrase: bar A states the groove,
+        # bar B answers with a shifted syncopation + a 16th DOUBLE-kick (the
+        # "b-boom") and a pickup into the turnaround. The backbeat snare on
+        # 2 & 4 is the only fixed anchor; the kick dances around it. Dusty
+        # ghost snares + a 4-bar turnaround give the human, sampled feel.
+        # Heavy MPC swing + snare drag come from PROFILE.
+        barB = (self.bar % 2 == 1)            # answer bar
+        turn = (self.bar % 4 == 3) or fill    # 4-bar turnaround
         if self.on["snare"]:
-            for s in (4, 12):                                              # the BAP — fat + layered
+            for s in (4, 12):                                              # the BAP — fat, layered (anchor)
                 D(s, 0.26, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
-                D(s, 0.24, CLAP, 0.78, CH_DRUMS, "snare")                  # layer = crack + body
-            if rnd.random() < 0.4:                                         # dusty ghost
-                D(rnd.choice([7, 11, 15]), 0.12, SNARE, self._ghost(rnd), CH_DRUMS, "snare")
-            if fill:
+                D(s, 0.24, CLAP, 0.78, CH_DRUMS, "snare")
+            # dusty ghost snares — the texture between the backbeats
+            for s, p in ((3, 0.3), (10, 0.25), (15, 0.45 if barB else 0.2)):
+                if rnd.random() < p:
+                    D(s, 0.10, SNARE, self._ghost(rnd), CH_DRUMS, "snare")
+            if turn:                                                       # snare-roll turnaround
                 for s in (13, 14, 15):
-                    D(s, 0.08, SNARE, 0.6 + 0.06 * s, CH_DRUMS, "snare")
+                    D(s, 0.08, SNARE, 0.55 + 0.07 * s, CH_DRUMS, "snare")
+        if self.on["kick"]:
+            D(0, 0.36, KICK, 1.0, CH_DRUMS, "kick", True)                  # the BOOM (1)
+            if not barB:
+                # CALL bar — classic "boom ... boom" with an & of 2 push
+                D(10, 0.32, KICK, self._acc(rnd), CH_DRUMS, "kick", True)  # & of 3
+                if rnd.random() < 0.6:
+                    D(6, 0.28, KICK, self._main(rnd), CH_DRUMS, "kick")    # a of 2
+            else:
+                # ANSWER bar — shifted, syncopated, with the 16th double-kick
+                D(7, 0.28, KICK, self._main(rnd), CH_DRUMS, "kick")        # a of 2
+                D(10, 0.30, KICK, self._acc(rnd), CH_DRUMS, "kick", True)  # & of 3
+                D(11, 0.24, KICK, self._main(rnd) * 0.85, CH_DRUMS, "kick")  # the b-BOOM (double)
+                if not turn and rnd.random() < 0.55:
+                    D(14, 0.26, KICK, self._main(rnd) * 0.8, CH_DRUMS, "kick")  # pickup into next bar
         if self.on["hat"]:
-            for s in range(0, 16, 2):                                      # swung dusty 8ths
-                if rnd.random() < 0.78:
+            for s in range(0, 16, 2):                                      # swung dusty 8ths, dynamic
+                if rnd.random() < 0.82:
                     D(s, 0.05, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd),
                       CH_DRUMS, "hat")
-            if rnd.random() < 0.3:
+            if rnd.random() < 0.3:                                         # 16th roll lick
+                r = rnd.choice([6, 7, 14])
+                D(r, 0.04, HAT, self._ghost(rnd), CH_DRUMS, "hat")
+                D(r + 1, 0.04, HAT, self._ghost(rnd), CH_DRUMS, "hat")
+            if rnd.random() < 0.28:
                 D(rnd.choice([6, 14]), 0.2, OHAT, 0.42, CH_DRUMS, "hat")
         if self.on["bass"]:                                                # sampled-soul, walks
             D(0, beat * 0.9, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
