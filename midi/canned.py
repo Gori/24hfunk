@@ -806,8 +806,8 @@ _LEAD_GLOBAL = 0.84
 _LEAD_LEVEL = {
     # leadPulse genres tend bright/loud -> trim
     "electro": 0.4788, "uk_garage": 0.55, "minneapolis_funk": 0.6231,
-    "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.55,
-    "boom_bap": 0.55,
+    "broken_house": 0.5267, "minimal_techno": 0.567, "eighties_hiphop": 0.60,
+    "boom_bap": 0.60,
     # \lead genres
     "funk": 0.5941, "electro_funk": 0.8332, "synthwave": 0.5925, "jazz": 0.5292,
     # leadFM genres tend dark/quiet -> lift
@@ -1560,7 +1560,7 @@ class CannedSource:
                 # phase's current word slot. Repeats -> scratches identically.
                 buf_slot = nbuf if nbuf is not None else scr_slot
                 pit = 60 + buf_slot * 12 + int(deg)
-                vel = 0.34 * _LEAD_GLOBAL          # scratch volume (+30% x2)
+                vel = 0.37 * _LEAD_GLOBAL          # scratch volume (+20%; level lever also up)
             else:
                 d = deg
                 if use_b and i == nN - 1:                     # B-phrase resolves to root
