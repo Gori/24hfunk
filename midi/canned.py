@@ -217,8 +217,8 @@ SYNTH_PARAMS = {
     "bounce": {"kick": {"drive": 2.0, "click": 0.4, "decay": 0.5}, "snare": {"snap": 0.75, "tone": 0.55, "crush": 0.06}, "hat": {"metal": 0.5, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 9500, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 440, "res": 0.12, "fenv": 0.3, "sub": 0.98, "glide": 0.02, "level": 1.85}, "lead": {"detune": 0.1, "wave": 0.4, "cutoff": 5200, "drive": 0.9, "decay": 0.3}, "fx": {"reverb": 0.24, "delay": 0.18, "delayTime": 0.33, "width": 0.7}},
     "tropical_house": {"kick": {"drive": 1.8, "click": 0.32, "decay": 0.3}, "snare": {"snap": 0.55, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.42, "cutoff": 9200, "decay": 0.04}, "ohat": {"metal": 0.42, "cutoff": 8400, "decay": 0.26}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.045}, "perc": {"decay": 0.12}, "bass": {"drive": 1.0, "cutoff": 560, "res": 0.14, "fenv": 0.4, "sub": 0.85, "glide": 0.0, "level": 1.7}, "lead": {"detune": 0.06, "wave": 0.3, "cutoff": 5200, "drive": 0.9, "decay": 0.3}, "fx": {"reverb": 0.4, "delay": 0.26, "delayTime": 0.375, "width": 0.8}},
     "uk_jungle": {"kick": {"drive": 2.0, "click": 0.35, "decay": 0.34}, "snare": {"snap": 0.7, "tone": 0.5, "crush": 0.12}, "hat": {"metal": 0.5, "cutoff": 10000, "decay": 0.025}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 0.95}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.1, "cutoff": 320, "res": 0.1, "fenv": 0.25, "sub": 0.99, "glide": 0.04, "level": 1.78}, "lead": {"detune": 0.1, "wave": 0.25, "cutoff": 3800, "drive": 1.0, "decay": 0.4}, "fx": {"reverb": 0.5, "delay": 0.44, "delayTime": 0.5, "width": 0.88}},
-    "dancefloor_dnb": {"kick": {"drive": 2.2, "click": 0.45, "decay": 0.3}, "snare": {"snap": 0.7, "tone": 0.55, "crush": 0.04}, "hat": {"metal": 0.48, "cutoff": 10500, "decay": 0.025}, "ohat": {"metal": 0.48, "cutoff": 9200, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.0, "cutoff": 480, "res": 0.16, "fenv": 0.4, "sub": 0.92, "glide": 0.04, "level": 1.78}, "lead": {"detune": 0.14, "wave": 0.3, "cutoff": 5600, "drive": 1.1, "decay": 0.3}, "fx": {"reverb": 0.42, "delay": 0.3, "delayTime": 0.375, "width": 0.82}},
-    "neurofunk": {"kick": {"drive": 2.6, "click": 0.5, "decay": 0.28}, "snare": {"snap": 0.85, "tone": 0.45, "crush": 0.1}, "hat": {"metal": 0.6, "cutoff": 11000, "decay": 0.022}, "ohat": {"metal": 0.6, "cutoff": 9600, "decay": 0.16}, "clap": {"decay": 0.16, "tone": 1.05}, "rim": {"decay": 0.035}, "perc": {"decay": 0.08}, "bass": {"drive": 2.2, "cutoff": 900, "res": 0.42, "fenv": 0.7, "sub": 0.8, "glide": 0.03, "level": 1.92}, "lead": {"detune": 0.12, "wave": 0.55, "cutoff": 5200, "drive": 1.6, "decay": 0.16}, "fx": {"reverb": 0.3, "delay": 0.24, "delayTime": 0.375, "width": 0.8}},
+    "dancefloor_dnb": {"kick": {"drive": 2.2, "click": 0.45, "decay": 0.3}, "snare": {"snap": 0.7, "tone": 0.55, "crush": 0.04}, "hat": {"metal": 0.48, "cutoff": 10500, "decay": 0.025}, "ohat": {"metal": 0.48, "cutoff": 9200, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 0.5, "cutoff": 560, "res": 0.1, "fenv": 0.35, "sub": 0.95, "glide": 0.05, "level": 1.78}, "lead": {"detune": 0.14, "wave": 0.3, "cutoff": 5600, "drive": 1.1, "decay": 0.3}, "fx": {"reverb": 0.5, "delay": 0.34, "delayTime": 0.375, "width": 0.85}},
+    "neurofunk": {"kick": {"drive": 2.6, "click": 0.5, "decay": 0.28}, "snare": {"snap": 0.85, "tone": 0.45, "crush": 0.1}, "hat": {"metal": 0.6, "cutoff": 11000, "decay": 0.022}, "ohat": {"metal": 0.6, "cutoff": 9600, "decay": 0.16}, "clap": {"decay": 0.16, "tone": 1.05}, "rim": {"decay": 0.035}, "perc": {"decay": 0.08}, "bass": {"drive": 1.0, "cutoff": 600, "res": 0.15, "fenv": 0.45, "sub": 0.85, "glide": 0.07, "level": 1.92}, "lead": {"detune": 0.12, "wave": 0.55, "cutoff": 5200, "drive": 1.6, "decay": 0.16}, "fx": {"reverb": 0.3, "delay": 0.24, "delayTime": 0.375, "width": 0.8}},
     "ska": {"kick": {"drive": 1.5, "click": 0.28, "decay": 0.34}, "snare": {"snap": 0.6, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.4, "cutoff": 8800, "decay": 0.045}, "ohat": {"metal": 0.4, "cutoff": 8200, "decay": 0.28}, "clap": {"decay": 0.2, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 0.85, "cutoff": 520, "res": 0.1, "fenv": 0.3, "sub": 0.82, "glide": 0.02, "level": 1.7}, "lead": {"detune": 0.06, "wave": 0.4, "cutoff": 4400, "drive": 1.0, "decay": 0.22}, "fx": {"reverb": 0.3, "delay": 0.2, "delayTime": 0.375, "width": 0.7}},
     "eighties_dancehall": {"kick": {"drive": 1.8, "click": 0.32, "decay": 0.4}, "snare": {"snap": 0.6, "tone": 0.45, "crush": 0.1}, "hat": {"metal": 0.5, "cutoff": 9600, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 8600, "decay": 0.22}, "clap": {"decay": 0.18, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 700, "res": 0.2, "fenv": 0.45, "sub": 0.78, "glide": 0.0, "level": 1.78}, "lead": {"detune": 0.05, "wave": 0.55, "cutoff": 4800, "drive": 1.1, "decay": 0.2}, "fx": {"reverb": 0.3, "delay": 0.22, "delayTime": 0.42, "width": 0.7}},
     "nineties_dancehall": {"kick": {"drive": 2.0, "click": 0.4, "decay": 0.34}, "snare": {"snap": 0.7, "tone": 0.5, "crush": 0.06}, "hat": {"metal": 0.5, "cutoff": 10000, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.22}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.4, "cutoff": 780, "res": 0.24, "fenv": 0.5, "sub": 0.8, "glide": 0.0, "level": 1.85}, "lead": {"detune": 0.08, "wave": 0.45, "cutoff": 5200, "drive": 1.1, "decay": 0.24}, "fx": {"reverb": 0.32, "delay": 0.24, "delayTime": 0.353, "width": 0.75}},
@@ -290,9 +290,9 @@ _GENRE_INSTR = {
     "neo_soul":         {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadRhodes", "keys": "keys"},
     "bounce":           {"bass": "bassFM",     "kick": "kick808",  "snare": "snare",      "rim": "rim808", "lead": "leadChant", "keys": "leadChant"},
     "tropical_house":   {"bass": "bass",       "kick": "kick",     "snare": "snare",      "lead": "leadMarimba", "keys": "keysPad"},
-    "uk_jungle":        {"bass": "bass",       "kick": "kick808",  "snare": "snare",      "lead": "leadSiren", "keys": "keys"},
-    "dancefloor_dnb":   {"bass": "bassReese",  "kick": "kickHard", "snare": "snare909",   "lead": "leadHyper", "keys": "keysPad"},
-    "neurofunk":        {"bass": "bassReese",  "kick": "kickHard", "snare": "snare909",   "lead": "leadGlitch"},
+    "uk_jungle":        {"bass": "bass",       "kick": "kick808",  "snare": "snare",      "lead": "leadSiren", "keys": "keysOrgan"},
+    "dancefloor_dnb":   {"bass": "bassSub",    "kick": "kickHard", "snare": "snare909",   "lead": "leadHyper", "keys": "keysPad"},
+    "neurofunk":        {"bass": "bassNeuro",  "kick": "kickHard", "snare": "snare909",   "lead": "leadGlitch"},
     "ska":              {"bass": "bass",       "kick": "kick",     "snare": "snare",      "lead": "leadBrass", "keys": "keys"},
     "eighties_dancehall": {"bass": "bassSquare", "kick": "kick808", "snare": "snare909",  "lead": "leadBell", "keys": "keysElectro"},
     "nineties_dancehall": {"bass": "bassFM",   "kick": "kickHard", "snare": "snare909",   "lead": "leadBell", "keys": "keysElectro"},
@@ -1132,7 +1132,7 @@ _LEAD_LEVEL = {
     "detroit_techno": 0.63, "afro_rnb": 0.315, "dub_garage": 0.6344,
     "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
     "lofi": 0.7245, "rnb": 0.9198, "roots_reggae": 0.9261, "dub": 0.9416,
-    "indie_rnb": 0.7686,
+    "indie_rnb": 0.3843,   # leadPluck -50%
     # ---- 2026-05 expansion (start from analogous-synthdef genres; tune by ear) ----
     "jerk_rap": 0.60,        # leadPluck (chopped-R&B-ish hook)
     "cloud_rap": 0.42,       # leadSoftBell, ethereal (trimmed again per request)
@@ -1185,7 +1185,7 @@ _KEYS_LEVEL = {
     "neo_soul": 0.7,
     "tropical_house": 0.66,
     "uk_jungle": 0.6,
-    "dancefloor_dnb": 0.64,
+    "dancefloor_dnb": 0.82,   # liquid: lush jazzy chords up front
     "ska": 0.7,
     "eighties_dancehall": 0.6,
     "nineties_dancehall": 0.6,
@@ -3263,12 +3263,13 @@ class CannedSource:
         # randomized per section. Smooth rolling reese/sub, lush pad, melodic
         # liquid topline.
         self._dnb_drums(D, rnd, beat, e, fill, _DNB_POOL["dancefloor_dnb"])
-        if self.on["bass"]:                                                  # smooth rolling sub
-            for i in range(8):
+        if self.on["bass"]:                                                  # clean sub anchor + bassline an OCTAVE UP
+            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)   # sub on the one
+            bb = cr + 12                                                      # roll up an octave (warm, not a sub-rumble)
+            for i in range(1, 8):
                 if i % 2 == 0 or rnd.random() < 0.5 + 0.3 * e:
-                    D(i * 2, beat * 0.42, cr + (12 if i % 4 == 3 else 0),
-                      self._acc(rnd) if i == 0 else self._main(rnd), CH_BASS,
-                      "kick" if i == 0 else "", structural=(i == 0))
+                    D(i * 2, beat * 0.42, bb + (12 if i % 4 == 3 else 0),
+                      self._main(rnd), CH_BASS)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # melodic topline (feel lyric)
 
@@ -3278,11 +3279,12 @@ class CannedSource:
         # section. The modulated reese bass (bassReese, high drive/res) is the
         # centerpiece and rolls; sparse sci-fi glitch stabs sit on top. Dark.
         self._dnb_drums(D, rnd, beat, e, fill, _DNB_POOL["neurofunk"])
-        if self.on["bass"]:                                                  # rolling neuro reese
-            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+        if self.on["bass"]:                                                  # neuro reese — bassline an OCTAVE UP
+            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)   # sub anchor on the one
+            bb = cr + 12
             for s in (2, 4, 6, 8, 10, 12, 14):
                 if rnd.random() < 0.4 + 0.4 * e:
-                    D(s, beat * 0.3, cr + rnd.choice([0, 0, 12, 7]),
+                    D(s, beat * 0.3, bb + rnd.choice([0, 0, 12, 7]),
                       self._main(rnd), CH_BASS)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # sci-fi stabs (feel hypno)
