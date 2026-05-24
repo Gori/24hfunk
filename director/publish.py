@@ -22,6 +22,13 @@ _SCRATCH_GENRES = {"eighties_hiphop", "boom_bap"}
 # genres whose lead is the ROBOT VOCAL — render robot_phrase word-by-word so
 # the leadVox synth chants it on the beat (reuses the scratch buffer slots).
 _VOCODE_GENRES = {"electro"}
+# genres whose lead is a TTS VOCAL CHANT — render each phrase as its own
+# sample (NOT robotized) so leadChant plays them call-and-response.
+_CHANT_GENRES = {"bounce"}
+# distinct CALL (lead MC) vs RESPONSE (crowd) voices so the alternation reads
+# as bounce call-and-response. Even-index phrases = calls, odd = responses.
+_CHANT_VOICE_CALL = "af_bella"    # bright, hyped lead MC
+_CHANT_VOICE_RESP = "am_adam"     # contrasting crowd "answer"
 _VOX_MAX = 6                      # buffer slots available
 _VOX_VOICE = "af_alloy"           # neutral source; robotization happens in SC
 _SCRATCH_WAV = "/tmp/str_scratch.wav"
@@ -82,6 +89,34 @@ def _render_vox_set(words: list[str]) -> None:
         if tts.render(word, path, voice=_VOX_VOICE, speed=1.0):
             _sc.send_message("/scratch/load", [i, path])
 
+
+def _chant_layout(phrases: list[str]) -> tuple[list[str], list[str]]:
+    """The bounce chant is built from SINGLE WORDS so the dance command can be
+    chanted word-by-word. Slots 0..k-1 = the words of the COMMAND (phrase 0,
+    e.g. "do the bayou wobble"); the rest = answer/hype single words from the
+    other phrases. Returns (command_words, extra_words)."""
+    cmd_words = (phrases[0].split() if phrases else ["do", "the", "dance"])[:4]
+    low = {w.lower() for w in cmd_words}
+    extras: list[str] = []
+    for ph in phrases[1:]:
+        for w in ph.split():
+            wl = w.strip().lower()
+            if wl and wl not in low and wl not in (e.lower() for e in extras):
+                extras.append(w.strip())
+    return cmd_words, extras[:max(0, _VOX_MAX - len(cmd_words))]
+
+
+def _render_chant_set(phrases: list[str]) -> None:
+    """Render each chant WORD into its own buffer slot (command words first,
+    then answer/hype words), so the builder can chant the dance command word-by-
+    word and shout single-word answers. Even slots = MC voice, odd = crowd."""
+    cmd_words, extras = _chant_layout(phrases)
+    for slot, w in enumerate((cmd_words + extras)[:_VOX_MAX]):
+        voice = _CHANT_VOICE_CALL if (slot % 2 == 0) else _CHANT_VOICE_RESP
+        path = f"/tmp/str_scratch_{slot}.wav"
+        if tts.render(w, path, voice=voice, speed=1.05):
+            _sc.send_message("/scratch/load", [slot, path])
+
 # which numeric params of each instrument map to /synth/param
 _INSTR_PARAMS = {
     "kick": ["amp", "fmRatio", "fmIndex", "decay"],
@@ -135,6 +170,18 @@ def publish(section: SectionState) -> None:
         vox_n = len(words)
         threading.Thread(target=_render_vox_set, args=(words,), daemon=True).start()
 
+    # bounce chant: render the call-and-response phrases into buffer slots;
+    # tell the worker how many to cycle.
+    chant_cmd = 0
+    chant_n = 0
+    if section.genre in _CHANT_GENRES:
+        phrases = list(section.chant_phrases) or ["do the dance"]
+        cmd_words, extras = _chant_layout(phrases)
+        chant_cmd = len(cmd_words)                       # # of command words (chanted in order)
+        chant_n = min(_VOX_MAX, chant_cmd + len(extras))  # total word slots used
+        print(f"[publish] bounce dance: command={cmd_words}  answers={extras}")
+        threading.Thread(target=_render_chant_set, args=(phrases,), daemon=True).start()
+
     # 2) MIDI worker: re-prime hints
     enabled = {k: getattr(instr, k).enabled for k in _INSTR_PARAMS}
     _midi.send_message(
@@ -149,6 +196,8 @@ def publish(section: SectionState) -> None:
             "structure": section.structure,  # LLM's arrangement archetype
             "name": section.name,
             "robot_words": vox_n,            # electro: # of robot words to cycle
+            "chant_cmd": chant_cmd,          # bounce: # of command words (chanted in order)
+            "chant_n": chant_n,              # bounce: total chant word slots
             "duration_sec": section.duration_sec,  # rnb bell arp enters at halfway
             "instruments": enabled,
         })],

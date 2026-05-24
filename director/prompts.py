@@ -1,6 +1,20 @@
 """System + user prompts for the local director. Terse and explicit — a 7-8B
 model follows tight instructions with hard ranges far better than open prose.
 """
+import random
+
+# Each bounce song INVENTS a dance. The small model can't reliably invent a
+# fresh name, but it WILL echo a name handed to it — so we generate a novel
+# dance name combinatorially in Python ("the <vibe> <move>", hundreds of combos)
+# and inject it into the prompt; the LLM writes the chant phrases around it.
+_DANCE_VIBE = ("gator", "bayou", "swamp", "voodoo", "magnolia", "creole",
+               "cajun", "zulu", "river", "delta", "crescent", "uptown", "gumbo",
+               "brass", "neon", "midnight", "humid", "pelican", "crawfish",
+               "mardi", "jambalaya", "levee", "praline", "dirty")
+_DANCE_MOVE = ("wobble", "crawl", "shake", "stomp", "lean", "dip", "snap",
+               "twist", "strut", "shuffle", "slide", "rock", "creep", "glide",
+               "switch", "drop", "grind", "swing", "march", "bop", "sway",
+               "scoot", "kick", "roll", "shimmy", "duck")
 
 SYSTEM = """You are the DIRECTOR of an endless generative audiovisual stream.
 Every few minutes you choose the next musical+visual SECTION.
@@ -34,21 +48,52 @@ rotate the genre, move the key, change energy. The stream should surprise.
   rnb           : neo-soul, laid-back pocket, lush Rhodes chords, spacious
   afro_rnb      : afrobeats-tinged R&B, syncopated kick, log-drum perc
   indie_rnb     : slow, sparse, dreamy/melancholic, washy reverb
+  jerk_rap      : 2024 NY sexy-drill / Jersey bounce — galloping triplet 808
+                  kicks, claps on beats 3 & 4, chopped-R&B bell hook
+  cloud_rap     : hazy, drifting, reverb-soaked — soft 808, lazy backbeat,
+                  ethereal pitched bell/pad fragments (sparse)
+  experimental_rap : abrasive/glitchy — blown-out drums, distorted bass,
+                  harsh glitch stabs, off-grid (Death Grips / JPEGMAFIA)
+  experimental_electronic : IDM/leftfield — irregular kicks, intricate glitch
+                  percussion, designed FM sub, abstract (Aphex/Autechre)
+  future_garage : half-time 2-step shuffle, deep sub, foggy chopped-vocal
+                  atmosphere, nocturnal (Burial / SBTRKT)
+  neo_soul      : D'Angelo/Dilla drunk swing, lush extended jazz chords,
+                  Rhodes comp, behind-the-beat pocket
+  bounce        : New Orleans Triggerman — syncopated 808, snare 2 & 4,
+                  rapid hats, repeating bell riff, dance-first
+  tropical_house : bright MAJOR — four-on-floor, off-beat plucks, marimba/
+                  steel-pan lead, hand perc, summery (Kygo)
+  uk_jungle     : ragga jungle — chopped amen breakbeat, snare on beat 3,
+                  deep dub sub, ragga organ stabs + siren (~168)
+  dancefloor_dnb : liquid DnB — clean two-step, snare on beat 3, rolling
+                  break, smooth reese sub, melodic topline (~174)
+  neurofunk     : dark technical DnB — surgical two-step, modulated reese
+                  bass centerpiece, sci-fi stabs (~172, Noisia)
+  eighties_dancehall : digital dancehall riddim — machine kick, dembow/dance-
+                  hall grooves, Casio synth-bass riff, thin stabs
+  nineties_dancehall : bashment — punchier digital riddim, dembow grooves,
+                  brass-stab chords (Bogle)
 
 Schema and HARD ranges (out-of-range values are clamped; stay inside):
 
 id            : short string
 duration_sec  : int 300..480
 mood          : 2-3 word lowercase phrase
-genre         : one of the 20 above
-bpm           : int 68..160 (lofi 70-90, funk 96-112, house 120-128,
+genre         : one of the 33 above
+bpm           : int 68..176 (lofi 70-90, funk 96-112, house 120-128,
                 synthwave 100-118, neon_dub 70-100,
-                electro 110-130, eighties_hiphop 95-112, jazz 110-160,
+                electro 110-130, eighties_hiphop 95-112, jazz 110-150,
                 minneapolis_funk 108-120, minimal_techno 124-130,
                 detroit_techno 122-132, dub 68-82, steppers_dub 74-86,
                 dub_techno 118-126, roots_reggae 70-84,
                 uk_garage 128-135, boom_bap 86-94,
-                rnb 68-92, afro_rnb 100-114, indie_rnb 70-88)
+                rnb 68-92, afro_rnb 100-114, indie_rnb 70-88,
+                jerk_rap 140-152, cloud_rap 70-85, experimental_rap 130-150,
+                experimental_electronic 90-150, future_garage 128-135,
+                neo_soul 82-96, bounce 98-106, tropical_house 100-115,
+                uk_jungle 160-172, dancefloor_dnb 172-176, neurofunk 170-174,
+                eighties_dancehall 80-105, nineties_dancehall 90-110)
 key           : musical key string (e.g. "F# minor")
 density       : float 0..1  (idm/funk 0.6-0.9, dub/lofi 0.3-0.55)
 harmony       : int 0..3 — which of the genre's 4 chord-progression
@@ -93,6 +138,14 @@ robot_phrase  : (electro ONLY) a SHORT punchy phrase, 2-5 words, that a
                 machines, circuits, control, the future, the body, the city
                 (e.g. "we are the machines", "control the signal", "enter the
                 grid", "metal heart"). Punchy, chantable, fits the mood.
+chant_phrases : (bounce ONLY, REQUIRED for bounce) INVENT A NEW DANCE for this
+                song. A list of 4 SHORT shouted phrases, 1-3 words each, crowd-
+                repeatable: [0] = the COMMAND to do the dance ("do the gator",
+                "hit the wobble"); [1] = the DANCE NAME alone, the answer
+                ("gator", "wobble"); [2] = a move/theme word for that dance
+                ("lean back", "snap it", "dip low"); [3] = a general bounce hype
+                term ("ayy", "work", "go", "bounce"). Invent a FRESH dance name
+                per song — do not reuse these examples.
 
 instruments.kick  : {enabled, amp 0..1, fmRatio 0.5..3, fmIndex 0..8, decay 0.1..0.8}
 instruments.snare : {enabled, amp 0..1, tone 0..1, decay 0.05..0.5}
@@ -187,6 +240,19 @@ def build_user_prompt(
                 "key/energy. Do not repeat the most recent genre.")
     else:
         ctx += "First section. Pick a punchy genre (not lofi). Make it groove."
+    # genre-specific REQUIRED fields the small model tends to omit
+    if forced_genre == "bounce":
+        vibe = random.choice(_DANCE_VIBE)
+        move = random.choice(_DANCE_MOVE)
+        ctx += (
+            f"\n\nThis is a BOUNCE section. The DANCE for this song is 'THE "
+            f"{vibe.upper()} {move.upper()}'. You MUST include `chant_phrases` = "
+            f"4 short shouted phrases about doing it, 1-3 words each, crowd-"
+            f"repeatable: [0] the command 'do the {vibe} {move}'; [1] the answer "
+            f"'{move}'; [2] a move/theme word that fits it (lean/dip/drop/twist/"
+            f"snap/back it up); [3] a bounce hype term (ayy/work/go/bounce). Use "
+            f"THIS dance — '{vibe} {move}'."
+        )
     return (
         f"{ctx}\n\nExact JSON shape to mirror:\n{EXAMPLE}\n\n"
         "Now output the next section as ONE JSON object only."

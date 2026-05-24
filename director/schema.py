@@ -14,7 +14,11 @@ GENRES = ("electro_funk", "synthwave", "neon_dub",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
           "uk_garage", "boom_bap",
-          "rnb", "afro_rnb", "indie_rnb")
+          "rnb", "afro_rnb", "indie_rnb",
+          "jerk_rap", "cloud_rap", "experimental_rap",
+          "experimental_electronic", "future_garage", "neo_soul",
+          "bounce", "tropical_house", "uk_jungle", "dancefloor_dnb",
+          "neurofunk", "eighties_dancehall", "nineties_dancehall")
 SCENES = ("raycaster", "glyphfield")
 # vocal words the scratch lead can sample (synthesized formant recipes in
 # router.scd ~scratchWords). Vowels/glides sound cleanest; consonant words
@@ -177,8 +181,13 @@ class SectionState(_Clamped):
                    "minneapolis_funk", "minimal_techno", "detroit_techno",
                    "dub", "steppers_dub", "dub_techno", "roots_reggae",
                    "uk_garage", "boom_bap",
-                   "rnb", "afro_rnb", "indie_rnb"] = "funk"
-    bpm: int = Field(96, ge=70, le=150)
+                   "rnb", "afro_rnb", "indie_rnb",
+                   "jerk_rap", "cloud_rap", "experimental_rap",
+                   "experimental_electronic", "future_garage", "neo_soul",
+                   "bounce", "tropical_house", "uk_jungle", "dancefloor_dnb",
+                   "neurofunk", "eighties_dancehall",
+                   "nineties_dancehall"] = "funk"
+    bpm: int = Field(96, ge=70, le=178)
     key: str = "C minor"
     density: float = Field(0.6, ge=0.0, le=1.0)
     # composition choice: which of the genre's 4 researched chord
@@ -205,6 +214,10 @@ class SectionState(_Clamped):
     # rendered word-by-word via TTS, robotized in SC, and punched on the beat
     # (repeating across the section). Kraftwerk/Cybotron themes work well.
     robot_phrase: str = "we are the machines"
+    # bounce TTS chant: 2-4 short call-and-response / roll-call phrases a hype
+    # MC shouts; each is rendered to its own buffer and played as a sample,
+    # cycled call (beat 1) / response (beat 3) across the section.
+    chant_phrases: List[str] = Field(default_factory=lambda: ["where they at", "drop it down"])
 
     @field_validator("genre", mode="before")
     @classmethod
@@ -255,6 +268,12 @@ class SectionState(_Clamped):
         # short punchy phrase (cap generously at 16 words for safety)
         v = " ".join(str(v or "").split()[:16])
         return v if v else "we are the machines"
+
+    @field_validator("chant_phrases", mode="before")
+    @classmethod
+    def _chant_phrases_ok(cls, v):
+        v = [str(s).strip()[:32] for s in (v or []) if str(s).strip()]
+        return v[:6] or ["where they at", "drop it down"]
     instruments: Instruments = Instruments()
     fx: Fx = Fx()
     palette: Palette = Palette()

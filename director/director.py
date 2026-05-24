@@ -18,6 +18,10 @@ from director.schema import GENRES, SectionState
 
 _running = True
 
+# hard per-genre tempo caps (lo, hi) — the small director model sometimes
+# ignores the prompt's bpm range, so clamp the genres where it matters.
+_BPM_CAP = {"bounce": (95, 108)}
+
 
 def _shuffled_genres() -> list[str]:
     # STR_GENRES (comma-separated) temporarily restricts the playable pool
@@ -68,6 +72,9 @@ def main() -> None:
         target_genre = bag.pop(0)
         section, lat = d.next_section(history, target_genre)
         section.genre = target_genre
+        _lo, _hi = _BPM_CAP.get(target_genre, (None, None))
+        if _lo is not None:
+            section.bpm = max(_lo, min(_hi, section.bpm))    # enforce tempo pocket
         last_genre = target_genre
         section.id = f"sec_{int(time.time())}_{n:03d}"
         dur = override_sec if override_sec else section.duration_sec

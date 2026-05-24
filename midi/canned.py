@@ -43,7 +43,12 @@ GENRES = ("electro_funk", "synthwave", "neon_dub",
           "minneapolis_funk", "minimal_techno", "detroit_techno",
           "dub", "steppers_dub", "dub_techno", "roots_reggae",
           "uk_garage", "boom_bap",
-          "rnb", "afro_rnb", "indie_rnb")
+          "rnb", "afro_rnb", "indie_rnb",
+          # --- 2026-05 expansion: rap, club, dnb, jamaican, soul ---
+          "jerk_rap", "cloud_rap", "experimental_rap",
+          "experimental_electronic", "future_garage", "neo_soul",
+          "bounce", "tropical_house", "uk_jungle", "dancefloor_dnb",
+          "neurofunk", "eighties_dancehall", "nineties_dancehall")
 
 # scale (for melody/passing) + chord progression as (scale_degree, quality)
 # pairs + swing(0..0.5 of 16th) + snare_drag_s + kick_push_s + hat_jit_s +
@@ -121,6 +126,63 @@ PROFILE = {
     "indie_rnb": (NAT_MINOR,
         [(0, "min9"), (5, "maj7"), (3, "maj9"), (4, "min7")],
         0.44, 0.034, 0.006, 0.008, 0.0, 34),
+    # ---- 2026-05 expansion ----
+    # jerk/sexy-drill: Jersey triplet bounce, smooth chopped-R&B harmony
+    "jerk_rap": (DORIAN,
+        [(0, "min9"), (3, "dom9"), (5, "min7"), (0, "min9")],
+        0.16, 0.010, -0.004, 0.006, 0.0, 50),
+    # cloud rap: hazy, drifting, reverb-soaked, sparse
+    "cloud_rap": (NAT_MINOR,
+        [(0, "min9"), (5, "maj7"), (3, "maj9"), (0, "min9")],
+        0.30, 0.040, 0.012, 0.010, 0.0, 26),
+    # experimental rap: abrasive, glitchy, dissonant, unstable timing (chaos)
+    "experimental_rap": (PHRYGIAN,
+        [(0, "min7"), (1, "maj7"), (0, "min7"), (0, "min7")],
+        0.05, 0.0, 0.0, 0.012, 0.010, 60),
+    # IDM / leftfield: intricate glitch percussion, designed bass, abstract
+    "experimental_electronic": (PHRYGIAN,
+        [(0, "min9"), (1, "maj7"), (5, "maj7"), (0, "min9")],
+        0.0, 0.0, -0.002, 0.014, 0.012, 48),
+    # future garage: half-time 2-step shuffle, sub bass, atmospheric
+    "future_garage": (NAT_MINOR,
+        [(0, "min9"), (5, "maj7"), (3, "min7"), (0, "min9")],
+        0.42, 0.030, 0.006, 0.008, 0.0, 40),
+    # neo-soul: Dilla drunk swing, lush extended jazz chords, Rhodes
+    "neo_soul": (DORIAN,
+        [(1, "min9"), (4, "dom9"), (0, "min9"), (5, "min7")],
+        0.40, 0.045, 0.006, 0.010, 0.004, 46),
+    # NO bounce (Triggerman): syncopated 808, snare 2&4, bell riff, repetitive
+    "bounce": (NAT_MINOR,
+        [(0, "min9"), (0, "min9"), (0, "min7"), (0, "min9")],
+        0.10, 0.0, 0.0, 0.005, 0.0, 56),
+    # tropical house: bright MAJOR, off-beat plucks, marimba lead, hand perc
+    "tropical_house": (MAJOR,
+        [(0, "maj9"), (4, "dom9"), (5, "min9"), (3, "maj9")],
+        0.06, 0.0, -0.003, 0.004, 0.0, 60),
+    # ragga jungle: chopped amen breakbeat, deep dub sub, ragga stabs (~168)
+    "uk_jungle": (NAT_MINOR,
+        [(0, "min7"), (0, "min7"), (3, "min7"), (0, "min7")],
+        0.08, 0.0, 0.0, 0.010, 0.004, 64),
+    # liquid / dancefloor DnB: clean two-step, melodic, lush (~174)
+    "dancefloor_dnb": (NAT_MINOR,
+        [(0, "min9"), (5, "maj7"), (2, "maj9"), (4, "min7")],
+        0.04, 0.0, -0.002, 0.006, 0.0, 60),
+    # neurofunk: dark, technical, modulated reese bass, precise drums (~172)
+    "neurofunk": (NAT_MINOR,
+        [(0, "min9"), (0, "min9"), (0, "min7"), (0, "min9")],
+        0.0, 0.0, -0.002, 0.004, 0.0, 56),
+    # ska: MAJOR, offbeat skank, walking bass, horns (~150, shuffle feel)
+    "ska": (MAJOR,
+        [(0, "maj"), (3, "maj"), (4, "dom7"), (0, "maj")],
+        0.30, 0.0, 0.0, 0.006, 0.0, 64),
+    # 80s digital dancehall (Sleng Teng): stark digital riddim, Casio bass
+    "eighties_dancehall": (NAT_MINOR,
+        [(0, "min7"), (0, "min7"), (5, "maj7"), (0, "min7")],
+        0.12, 0.0, 0.0, 0.004, 0.0, 40),
+    # 90s ragga dancehall (bashment): fuller punchy digital riddim
+    "nineties_dancehall": (NAT_MINOR,
+        [(0, "min9"), (5, "maj7"), (0, "min9"), (5, "maj7")],
+        0.16, 0.004, 0.0, 0.006, 0.0, 48),
 }
 
 SYNTH_PARAMS = {
@@ -145,6 +207,21 @@ SYNTH_PARAMS = {
     "rnb": {"kick": {"drive": 1.4, "click": 0.25, "decay": 0.36}, "snare": {"snap": 0.5, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.4, "cutoff": 8200, "decay": 0.045}, "ohat": {"metal": 0.4, "cutoff": 7600, "decay": 0.26}, "clap": {"decay": 0.22, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 1.0, "cutoff": 520, "res": 0.12, "fenv": 0.35, "sub": 0.9, "glide": 0.03, "level": 1.6764}, "lead": {"detune": 0.08, "wave": 0.28, "cutoff": 3000, "drive": 0.4, "decay": 0.62}, "fx": {"reverb": 0.4, "delay": 0.2, "delayTime": 0.375, "width": 0.7}},
     "afro_rnb": {"kick": {"drive": 1.8, "click": 0.35, "decay": 0.32}, "snare": {"snap": 0.6, "tone": 0.5, "crush": 0.04}, "hat": {"metal": 0.42, "cutoff": 9200, "decay": 0.035}, "ohat": {"metal": 0.42, "cutoff": 8400, "decay": 0.24}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.045}, "perc": {"decay": 0.1}, "bass": {"drive": 1.3, "cutoff": 760, "res": 0.2, "fenv": 0.5, "sub": 0.75, "glide": 0.02, "level": 1.782}, "lead": {"detune": 0.12, "wave": 0.35, "cutoff": 5600, "drive": 1.1, "decay": 0.22}, "fx": {"reverb": 0.34, "delay": 0.22, "delayTime": 0.353, "width": 0.78}},
     "indie_rnb": {"kick": {"drive": 1.3, "click": 0.22, "decay": 0.4}, "snare": {"snap": 0.45, "tone": 0.5, "crush": 0.12}, "hat": {"metal": 0.35, "cutoff": 7400, "decay": 0.05}, "ohat": {"metal": 0.35, "cutoff": 6800, "decay": 0.34}, "clap": {"decay": 0.26, "tone": 0.85}, "rim": {"decay": 0.06}, "perc": {"decay": 0.16}, "bass": {"drive": 0.9, "cutoff": 420, "res": 0.1, "fenv": 0.3, "sub": 0.92, "glide": 0.05, "level": 1.65}, "lead": {"detune": 0.08, "wave": 0.2, "cutoff": 3600, "drive": 0.75, "decay": 0.5}, "fx": {"reverb": 0.55, "delay": 0.34, "delayTime": 0.5, "width": 0.85}},
+    # ---- 2026-05 expansion ----
+    "jerk_rap": {"kick": {"drive": 1.8, "click": 0.3, "decay": 0.5}, "snare": {"snap": 0.7, "tone": 0.5, "crush": 0.06}, "hat": {"metal": 0.5, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 9500, "decay": 0.18}, "clap": {"decay": 0.2, "tone": 1.05}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 420, "res": 0.12, "fenv": 0.3, "sub": 0.98, "glide": 0.07, "level": 1.85}, "lead": {"detune": 0.08, "wave": 0.3, "cutoff": 3200, "drive": 0.5, "decay": 0.5}, "fx": {"reverb": 0.34, "delay": 0.22, "delayTime": 0.33, "width": 0.7}},
+    "cloud_rap": {"kick": {"drive": 1.2, "click": 0.18, "decay": 0.5}, "snare": {"snap": 0.35, "tone": 0.45, "crush": 0.14}, "hat": {"metal": 0.3, "cutoff": 6800, "decay": 0.05}, "ohat": {"metal": 0.3, "cutoff": 6400, "decay": 0.34}, "clap": {"decay": 0.3, "tone": 0.8}, "rim": {"decay": 0.06}, "perc": {"decay": 0.16}, "bass": {"drive": 0.9, "cutoff": 360, "res": 0.08, "fenv": 0.25, "sub": 0.98, "glide": 0.06, "level": 1.7}, "lead": {"detune": 0.1, "wave": 0.2, "cutoff": 2800, "drive": 0.4, "decay": 0.7}, "fx": {"reverb": 0.7, "delay": 0.45, "delayTime": 0.5, "width": 0.9}},
+    "experimental_rap": {"kick": {"drive": 2.8, "click": 0.6, "decay": 0.3}, "snare": {"snap": 0.9, "tone": 0.4, "crush": 0.35}, "hat": {"metal": 0.7, "cutoff": 11000, "decay": 0.025}, "ohat": {"metal": 0.7, "cutoff": 9800, "decay": 0.18}, "clap": {"decay": 0.16, "tone": 1.15}, "rim": {"decay": 0.035}, "perc": {"decay": 0.08}, "bass": {"drive": 1.8, "cutoff": 900, "res": 0.3, "fenv": 0.5, "sub": 0.7, "glide": 0.0, "level": 1.85}, "lead": {"detune": 0.1, "wave": 0.6, "cutoff": 5200, "drive": 1.8, "decay": 0.14}, "fx": {"reverb": 0.18, "delay": 0.14, "delayTime": 0.1875, "width": 0.8}},
+    "experimental_electronic": {"kick": {"drive": 2.0, "click": 0.4, "decay": 0.34}, "snare": {"snap": 0.6, "tone": 0.4, "crush": 0.25}, "hat": {"metal": 0.6, "cutoff": 11500, "decay": 0.02}, "ohat": {"metal": 0.6, "cutoff": 9800, "decay": 0.16}, "clap": {"decay": 0.16, "tone": 1.1}, "rim": {"decay": 0.03}, "perc": {"decay": 0.07}, "bass": {"drive": 1.3, "cutoff": 620, "res": 0.2, "fenv": 0.45, "sub": 0.85, "glide": 0.02, "level": 1.78}, "lead": {"detune": 0.12, "wave": 0.5, "cutoff": 5000, "drive": 1.4, "decay": 0.16}, "fx": {"reverb": 0.4, "delay": 0.4, "delayTime": 0.5, "width": 0.85}},
+    "future_garage": {"kick": {"drive": 1.6, "click": 0.26, "decay": 0.34}, "snare": {"snap": 0.45, "tone": 0.5, "crush": 0.08}, "hat": {"metal": 0.4, "cutoff": 8000, "decay": 0.04}, "ohat": {"metal": 0.4, "cutoff": 7400, "decay": 0.28}, "clap": {"decay": 0.24, "tone": 0.9}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 1.0, "cutoff": 360, "res": 0.1, "fenv": 0.3, "sub": 0.97, "glide": 0.04, "level": 1.7}, "lead": {"detune": 0.1, "wave": 0.2, "cutoff": 3000, "drive": 0.5, "decay": 0.6}, "fx": {"reverb": 0.6, "delay": 0.42, "delayTime": 0.5, "width": 0.9}},
+    "neo_soul": {"kick": {"drive": 1.4, "click": 0.24, "decay": 0.36}, "snare": {"snap": 0.45, "tone": 0.52, "crush": 0.06}, "hat": {"metal": 0.4, "cutoff": 8400, "decay": 0.05}, "ohat": {"metal": 0.4, "cutoff": 7800, "decay": 0.3}, "clap": {"decay": 0.22, "tone": 0.92}, "rim": {"decay": 0.05}, "perc": {"decay": 0.14}, "bass": {"drive": 0.9, "cutoff": 500, "res": 0.1, "fenv": 0.3, "sub": 0.9, "glide": 0.03, "level": 1.7}, "lead": {"detune": 0.07, "wave": 0.25, "cutoff": 3000, "drive": 0.4, "decay": 0.6}, "fx": {"reverb": 0.44, "delay": 0.22, "delayTime": 0.375, "width": 0.7}},
+    "bounce": {"kick": {"drive": 2.0, "click": 0.4, "decay": 0.5}, "snare": {"snap": 0.75, "tone": 0.55, "crush": 0.06}, "hat": {"metal": 0.5, "cutoff": 10500, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 9500, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 440, "res": 0.12, "fenv": 0.3, "sub": 0.98, "glide": 0.02, "level": 1.85}, "lead": {"detune": 0.1, "wave": 0.4, "cutoff": 5200, "drive": 0.9, "decay": 0.3}, "fx": {"reverb": 0.24, "delay": 0.18, "delayTime": 0.33, "width": 0.7}},
+    "tropical_house": {"kick": {"drive": 1.8, "click": 0.32, "decay": 0.3}, "snare": {"snap": 0.55, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.42, "cutoff": 9200, "decay": 0.04}, "ohat": {"metal": 0.42, "cutoff": 8400, "decay": 0.26}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.045}, "perc": {"decay": 0.12}, "bass": {"drive": 1.0, "cutoff": 560, "res": 0.14, "fenv": 0.4, "sub": 0.85, "glide": 0.0, "level": 1.7}, "lead": {"detune": 0.06, "wave": 0.3, "cutoff": 5200, "drive": 0.9, "decay": 0.3}, "fx": {"reverb": 0.4, "delay": 0.26, "delayTime": 0.375, "width": 0.8}},
+    "uk_jungle": {"kick": {"drive": 2.0, "click": 0.35, "decay": 0.34}, "snare": {"snap": 0.7, "tone": 0.5, "crush": 0.12}, "hat": {"metal": 0.5, "cutoff": 10000, "decay": 0.025}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 0.95}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.1, "cutoff": 320, "res": 0.1, "fenv": 0.25, "sub": 0.99, "glide": 0.04, "level": 1.78}, "lead": {"detune": 0.1, "wave": 0.25, "cutoff": 3800, "drive": 1.0, "decay": 0.4}, "fx": {"reverb": 0.5, "delay": 0.44, "delayTime": 0.5, "width": 0.88}},
+    "dancefloor_dnb": {"kick": {"drive": 2.2, "click": 0.45, "decay": 0.3}, "snare": {"snap": 0.7, "tone": 0.55, "crush": 0.04}, "hat": {"metal": 0.48, "cutoff": 10500, "decay": 0.025}, "ohat": {"metal": 0.48, "cutoff": 9200, "decay": 0.2}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.0, "cutoff": 480, "res": 0.16, "fenv": 0.4, "sub": 0.92, "glide": 0.04, "level": 1.78}, "lead": {"detune": 0.14, "wave": 0.3, "cutoff": 5600, "drive": 1.1, "decay": 0.3}, "fx": {"reverb": 0.42, "delay": 0.3, "delayTime": 0.375, "width": 0.82}},
+    "neurofunk": {"kick": {"drive": 2.6, "click": 0.5, "decay": 0.28}, "snare": {"snap": 0.85, "tone": 0.45, "crush": 0.1}, "hat": {"metal": 0.6, "cutoff": 11000, "decay": 0.022}, "ohat": {"metal": 0.6, "cutoff": 9600, "decay": 0.16}, "clap": {"decay": 0.16, "tone": 1.05}, "rim": {"decay": 0.035}, "perc": {"decay": 0.08}, "bass": {"drive": 2.2, "cutoff": 900, "res": 0.42, "fenv": 0.7, "sub": 0.8, "glide": 0.03, "level": 1.92}, "lead": {"detune": 0.12, "wave": 0.55, "cutoff": 5200, "drive": 1.6, "decay": 0.16}, "fx": {"reverb": 0.3, "delay": 0.24, "delayTime": 0.375, "width": 0.8}},
+    "ska": {"kick": {"drive": 1.5, "click": 0.28, "decay": 0.34}, "snare": {"snap": 0.6, "tone": 0.55, "crush": 0.0}, "hat": {"metal": 0.4, "cutoff": 8800, "decay": 0.045}, "ohat": {"metal": 0.4, "cutoff": 8200, "decay": 0.28}, "clap": {"decay": 0.2, "tone": 0.95}, "rim": {"decay": 0.05}, "perc": {"decay": 0.13}, "bass": {"drive": 0.85, "cutoff": 520, "res": 0.1, "fenv": 0.3, "sub": 0.82, "glide": 0.02, "level": 1.7}, "lead": {"detune": 0.06, "wave": 0.4, "cutoff": 4400, "drive": 1.0, "decay": 0.22}, "fx": {"reverb": 0.3, "delay": 0.2, "delayTime": 0.375, "width": 0.7}},
+    "eighties_dancehall": {"kick": {"drive": 1.8, "click": 0.32, "decay": 0.4}, "snare": {"snap": 0.6, "tone": 0.45, "crush": 0.1}, "hat": {"metal": 0.5, "cutoff": 9600, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 8600, "decay": 0.22}, "clap": {"decay": 0.18, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.2, "cutoff": 700, "res": 0.2, "fenv": 0.45, "sub": 0.78, "glide": 0.0, "level": 1.78}, "lead": {"detune": 0.05, "wave": 0.55, "cutoff": 4800, "drive": 1.1, "decay": 0.2}, "fx": {"reverb": 0.3, "delay": 0.22, "delayTime": 0.42, "width": 0.7}},
+    "nineties_dancehall": {"kick": {"drive": 2.0, "click": 0.4, "decay": 0.34}, "snare": {"snap": 0.7, "tone": 0.5, "crush": 0.06}, "hat": {"metal": 0.5, "cutoff": 10000, "decay": 0.03}, "ohat": {"metal": 0.5, "cutoff": 9000, "decay": 0.22}, "clap": {"decay": 0.2, "tone": 1.0}, "rim": {"decay": 0.04}, "perc": {"decay": 0.1}, "bass": {"drive": 1.4, "cutoff": 780, "res": 0.24, "fenv": 0.5, "sub": 0.8, "glide": 0.0, "level": 1.85}, "lead": {"detune": 0.08, "wave": 0.45, "cutoff": 5200, "drive": 1.1, "decay": 0.24}, "fx": {"reverb": 0.32, "delay": 0.24, "delayTime": 0.353, "width": 0.75}},
 }
 
 
@@ -172,6 +249,7 @@ _FX_SIG = {
                    "fxDrums": {"delay": 0.28, "delayTime": 0.375}},
     "uk_garage": {"fxMel": {"reverb": 0.2, "delay": 0.18, "delayTime": 0.353}},  # organ stabs
     "boom_bap": {"fxMel": {"reverb": 0.1, "delay": 0.08}},      # dry — scratch needs to hit
+    "bounce": {"fxMel": {"reverb": 0.05, "delay": 0.04}},        # dry — vocal chops must hit, no wash
     "eighties_hiphop": {"fxMel": {"reverb": 0.1, "delay": 0.06}},  # dry scratch
     "rnb": {"fxMel": {"reverb": 0.42, "delay": 0.2}, "fxBass": {"reverb": 0.04}},
     "afro_rnb": {"fxMel": {"reverb": 0.32, "delay": 0.22}},
@@ -203,6 +281,21 @@ _GENRE_INSTR = {
     "rnb":              {"bass": "bass",       "kick": "kick",     "snare": "snare",    "lead": "leadSoftBell"},
     "afro_rnb":         {"bass": "bassFM",     "kick": "kick",     "snare": "snare909", "lead": "leadMallet"},
     "indie_rnb":        {"bass": "bass",       "kick": "kick808",  "snare": "snareBrush", "lead": "leadPluck"},
+    # ---- 2026-05 expansion ----
+    "jerk_rap":         {"bass": "bass",       "kick": "kick808",  "snare": "snare909",   "lead": "leadRhodes", "keys": "keysPad"},
+    "cloud_rap":        {"bass": "bass",       "kick": "kick808",  "snare": "snareBrush", "lead": "leadSoftBell", "keys": "keysEthereal"},
+    "experimental_rap": {"bass": "bassSquare", "kick": "kickHard", "snare": "snare909",   "lead": "leadGlitch"},
+    "experimental_electronic": {"bass": "bassFM", "kick": "kick",  "snare": "snare909",   "lead": "leadStutter", "keys": "keysPad"},
+    "future_garage":    {"bass": "bass",       "kick": "kick808",  "snare": "snareBrush", "lead": "leadSoftBell", "keys": "keysPad"},
+    "neo_soul":         {"bass": "bass",       "kick": "kick",     "snare": "snareBrush", "lead": "leadRhodes", "keys": "keys"},
+    "bounce":           {"bass": "bassFM",     "kick": "kick808",  "snare": "snare",      "rim": "rim808", "lead": "leadChant", "keys": "leadChant"},
+    "tropical_house":   {"bass": "bass",       "kick": "kick",     "snare": "snare",      "lead": "leadMarimba", "keys": "keysPad"},
+    "uk_jungle":        {"bass": "bass",       "kick": "kick808",  "snare": "snare",      "lead": "leadSiren", "keys": "keys"},
+    "dancefloor_dnb":   {"bass": "bassReese",  "kick": "kickHard", "snare": "snare909",   "lead": "leadHyper", "keys": "keysPad"},
+    "neurofunk":        {"bass": "bassReese",  "kick": "kickHard", "snare": "snare909",   "lead": "leadGlitch"},
+    "ska":              {"bass": "bass",       "kick": "kick",     "snare": "snare",      "lead": "leadBrass", "keys": "keys"},
+    "eighties_dancehall": {"bass": "bassSquare", "kick": "kick808", "snare": "snare909",  "lead": "leadBell", "keys": "keysElectro"},
+    "nineties_dancehall": {"bass": "bassFM",   "kick": "kickHard", "snare": "snare909",   "lead": "leadBell", "keys": "keysElectro"},
 }
 
 
@@ -349,6 +442,91 @@ _PROGRESSIONS = {
         [(0, "min7"), (6, "min7"), (5, "maj7"), (0, "min7")],
         [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
     ],
+    # ---- 2026-05 expansion ----
+    "jerk_rap": [
+        [(0, "min9"), (3, "dom9"), (5, "min7"), (0, "min9")],
+        [(0, "min9"), (6, "maj9"), (2, "maj9"), (0, "min9")],
+        [(1, "min7"), (3, "dom9"), (0, "min9"), (0, "min9")],
+        [(0, "min9"), (2, "maj9"), (3, "dom9"), (5, "min7")],
+    ],
+    "cloud_rap": [
+        [(0, "min9"), (5, "maj7"), (3, "maj9"), (0, "min9")],
+        [(0, "min9"), (0, "min9"), (5, "maj7"), (5, "maj7")],
+        [(0, "min7"), (6, "dom7"), (5, "maj7"), (0, "min7")],
+        [(0, "min9"), (2, "maj9"), (0, "min9"), (2, "maj9")],
+    ],
+    "experimental_rap": [
+        [(0, "min7"), (1, "maj7"), (0, "min7"), (0, "min7")],
+        [(0, "min7"), (0, "min7"), (5, "maj7"), (1, "maj7")],
+        [(0, "min9"), (1, "maj9"), (0, "min9"), (6, "min7")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+    ],
+    "experimental_electronic": [
+        [(0, "min9"), (1, "maj7"), (5, "maj7"), (0, "min9")],
+        [(0, "min7"), (0, "min7"), (2, "maj9"), (1, "maj7")],
+        [(0, "min9"), (6, "min7"), (1, "maj9"), (0, "min9")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+    ],
+    "future_garage": [
+        [(0, "min9"), (5, "maj7"), (3, "min7"), (0, "min9")],
+        [(0, "min9"), (2, "maj9"), (5, "maj7"), (0, "min9")],
+        [(0, "min7"), (6, "dom7"), (5, "maj7"), (4, "min7")],
+        [(0, "min9"), (3, "min7"), (2, "maj9"), (0, "min9")],
+    ],
+    "neo_soul": [
+        [(1, "min9"), (4, "dom9"), (0, "min9"), (5, "min7")],
+        [(0, "min9"), (3, "maj9"), (5, "min7"), (2, "maj9")],
+        [(1, "min11"), (0, "min9"), (6, "maj9"), (3, "maj9")],
+        [(0, "min9"), (2, "maj9"), (3, "dom9"), (0, "min9")],
+    ],
+    "bounce": [
+        [(0, "min9"), (0, "min9"), (0, "min7"), (0, "min9")],
+        [(0, "min7"), (0, "min7"), (5, "maj7"), (0, "min7")],
+        [(0, "min9"), (3, "min7"), (0, "min9"), (3, "min7")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+    ],
+    "tropical_house": [
+        [(0, "maj9"), (4, "dom9"), (5, "min9"), (3, "maj9")],
+        [(5, "min9"), (3, "maj9"), (0, "maj9"), (4, "dom9")],
+        [(0, "maj9"), (3, "maj9"), (5, "min7"), (4, "dom9")],
+        [(0, "maj7"), (1, "min7"), (3, "maj7"), (4, "dom9")],
+    ],
+    "uk_jungle": [
+        [(0, "min7"), (0, "min7"), (3, "min7"), (0, "min7")],
+        [(0, "min9"), (5, "maj7"), (0, "min9"), (5, "maj7")],
+        [(0, "min7"), (6, "dom7"), (0, "min7"), (6, "dom7")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+    ],
+    "dancefloor_dnb": [
+        [(0, "min9"), (5, "maj7"), (2, "maj9"), (4, "min7")],
+        [(0, "min9"), (2, "maj9"), (5, "maj7"), (3, "min7")],
+        [(0, "min7"), (6, "dom7"), (5, "maj7"), (0, "min7")],
+        [(0, "min9"), (3, "min7"), (2, "maj9"), (0, "min9")],
+    ],
+    "neurofunk": [
+        [(0, "min9"), (0, "min9"), (5, "maj7"), (0, "min9")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+        [(0, "min9"), (3, "min7"), (0, "min9"), (3, "min7")],
+        [(0, "min7"), (6, "dom7"), (0, "min7"), (0, "min7")],
+    ],
+    "ska": [
+        [(0, "maj"), (3, "maj"), (4, "dom7"), (0, "maj")],
+        [(0, "maj7"), (5, "min7"), (3, "maj7"), (4, "dom7")],
+        [(0, "maj"), (4, "dom7"), (5, "min7"), (3, "maj")],
+        [(1, "min7"), (4, "dom7"), (0, "maj7"), (0, "maj7")],
+    ],
+    "eighties_dancehall": [
+        [(0, "min7"), (0, "min7"), (5, "maj7"), (0, "min7")],
+        [(0, "min9"), (0, "min9"), (3, "min7"), (0, "min9")],
+        [(0, "min7"), (6, "dom7"), (0, "min7"), (6, "dom7")],
+        [(0, "min7"), (0, "min7"), (0, "min7"), (0, "min7")],
+    ],
+    "nineties_dancehall": [
+        [(0, "min9"), (5, "maj7"), (0, "min9"), (5, "maj7")],
+        [(0, "min7"), (3, "min7"), (4, "min7"), (0, "min7")],
+        [(0, "min9"), (0, "min9"), (6, "dom7"), (0, "min9")],
+        [(0, "min7"), (6, "dom7"), (5, "maj7"), (0, "min7")],
+    ],
 }
 
 
@@ -384,6 +562,12 @@ _KICK_STRONG = {
     "dub_techno": {0, 4, 8, 12}, "neon_dub": {0, 8},
     "dub": {0, 8}, "steppers_dub": {4, 12}, "roots_reggae": {8},
     "uk_garage": {0, 8}, "dub_garage": {0, 8},
+    # ---- 2026-05 expansion ----
+    "jerk_rap": {0}, "cloud_rap": {0, 8}, "experimental_rap": {0},
+    "experimental_electronic": {0}, "future_garage": {0}, "neo_soul": {0, 8},
+    "bounce": {0}, "tropical_house": {0, 4, 8, 12}, "uk_jungle": {0},
+    "dancefloor_dnb": {0}, "neurofunk": {0, 8}, "ska": {0, 8},
+    "eighties_dancehall": {0}, "nineties_dancehall": {0, 8},
 }
 
 # Per-feel rest probabilities: bar_p = whole-bar silence chance,
@@ -395,6 +579,7 @@ _LEAD_NLEN = {
     "solo":  0.5,    # expressive Moog solo notes ring/sing
     "mplslead": 0.4,  # mix of short stabs + long held notes (via du in the licks)
     "afromel": 0.5,   # mallet rings (percussive synth decides length anyway)
+    "tropluck": 0.5,  # tropical marimba/steel pluck (percussive synth)
     "jazz":  0.30,   # bebop 8ths (also used by _jazz_motif)
     "stab":  0.16,   # true stabs
     "robotvox": 0.5,  # each word rings ~a beat (electro robot vocal)
@@ -421,6 +606,7 @@ _LEAD_OCT = {
     "funk":    -1,
     "minneapolis_funk": -1,
     "afro_rnb": -1,
+    "bounce": 1,        # Triggerman bells sit high + bright
 }
 
 # B-phrase FILL banks per feel — when use_b is True (1 in every 8 emitted
@@ -473,6 +659,7 @@ _LEAD_EVERY = {
     "solo":  8,    # a featured Moog solo every 8 bars (funk only)
     "mplslead": 2,  # mpls Moog hook comes often (every 2 bars)
     "afromel": 2,   # afro mallet melody is cyclic/present (every 2 bars)
+    "tropluck": 2,  # tropical riff recurs (a syncopated 2-bar hook)
     "lyric": 4,
     "stab":  2,   # stab feel emits twice as often (electro/synthwave/etc)
     "robotvox": 2,   # 2-bar robot-vocal phrase (electro)
@@ -492,6 +679,7 @@ _PHRASE_LEN = {
     "solo":  2,    # 2-bar Moog solo statement
     "mplslead": 1,  # 1-bar hook + 1 bar breath (repeats often)
     "afromel": 2,   # 2-bar cyclic afro mallet phrase
+    "tropluck": 2,  # 2-bar syncopated tropical riff
     "lyric": 2,    # 2-bar soul-horn line, then 2 bars breath
     "stab":  1,    # 1-bar stab riff, 1 bar breath
     "robotvox": 2,  # 2-bar robot-vocal phrase (electro)
@@ -507,6 +695,7 @@ _LEAD_REST = {
     "solo": (0.0, 0.05),     # the solo statement lands fully (it's featured)
     "mplslead": (0.05, 0.1),  # mostly lands; a little space
     "afromel": (0.05, 0.12),  # cyclic, mostly lands
+    "tropluck": (0.05, 0.10),  # bouncy, mostly lands
     "funk":  (0.06, 0.14),
     "jazz":  (0.04, 0.06),
     "stab":  (0.06, 0.10),
@@ -526,6 +715,12 @@ _LEAD_PUSH = {
     "roots_reggae": 0.22, "dub_garage": 0.08,
     "synthwave": 0.0, "electro": -0.05, "broken_house": -0.05,
     "minimal_techno": -0.04, "detroit_techno": -0.04, "uk_garage": -0.02,
+    # ---- 2026-05 expansion ----
+    "jerk_rap": -0.02, "cloud_rap": 0.20, "experimental_rap": 0.0,
+    "experimental_electronic": 0.0, "future_garage": 0.16, "neo_soul": 0.22,
+    "bounce": 0.0, "tropical_house": -0.02, "uk_jungle": 0.0,
+    "dancefloor_dnb": -0.02, "neurofunk": -0.02, "ska": 0.0,
+    "eighties_dancehall": 0.05, "nineties_dancehall": 0.06,
 }
 
 _LEAD_STYLE = {
@@ -567,6 +762,12 @@ _LEAD_FEEL = {
     "lofi": "lyric", "eighties_hiphop": "scratch",
     "dub": "space", "neon_dub": "space", "steppers_dub": "space",
     "roots_reggae": "space",
+    # ---- 2026-05 expansion (all reuse existing feels) ----
+    "jerk_rap": "afromel", "cloud_rap": "space", "experimental_rap": "stab",
+    "experimental_electronic": "hypno", "future_garage": "space",
+    "neo_soul": "lyric", "bounce": "hook", "tropical_house": "tropluck",
+    "uk_jungle": "space", "dancefloor_dnb": "lyric", "neurofunk": "hypno",
+    "eighties_dancehall": "hook", "nineties_dancehall": "hook",
 }
 # Per-section melodies. Each tuple is (deg, s, du):
 #   deg : scale degree relative to the CURRENT CHORD ROOT, mapped through
@@ -601,6 +802,17 @@ _LEAD_RHYTHM = {
         [(1,0,1),(3,2,1),(5,5,1),(3,8,1),(6,10,1),(5,13,1),(1,16,1),(3,18,1),(5,21,1),(6,24,1),(8,27,1),(5,30,1)],
         [(5,0,1),(8,3,1),(6,6,1),(5,8,1),(3,11,1),(1,14,1),(5,16,1),(6,19,1),(8,22,1),(6,24,1),(5,27,1),(3,30,1)],
         [(1,0,1),(5,4,1),(3,6,1),(6,10,1),(5,12,1),(1,16,1),(5,20,1),(8,22,1),(6,26,1),(5,29,1)],
+    ],
+    # tropical house — SYNCOPATED major-pentatonic marimba/steel-pluck riffs:
+    # the dotted-8th "lope" (gaps of 3 and 2 16ths), off the downbeats, with an
+    # octave leap for lift. degrees 1/2/3/5/6/8 = major pentatonic + octave.
+    "tropluck": [
+        [(1,0,2),(3,3,1),(5,6,2),(6,8,1),(5,11,1),(3,14,2),
+         (5,16,2),(6,19,1),(8,22,2),(6,24,1),(5,27,1),(3,30,1)],
+        [(5,0,1),(6,3,1),(8,6,2),(6,8,1),(5,11,1),(3,14,1),
+         (1,16,2),(3,19,1),(5,22,1),(6,24,2),(5,27,1),(3,30,1)],
+        [(1,0,2),(3,6,1),(5,8,2),(6,11,1),(8,14,2),
+         (6,16,1),(5,19,2),(3,22,1),(2,24,1),(1,27,2)],
     ],
     "solo": [
         # ascending run -> wail at the top -> descend home
@@ -738,6 +950,21 @@ _PERC = {
     "uk_garage":    {"mode": "lots", "tone": 0.5,  "prob": 0.75,
                      "steps": [2, 7, 10, 11, 14], "pitch": [60],
                      "syn": {"decay": 0.11, "drive": 0.9, "crush": 0.25}},
+    "tropical_house": {"mode": "lots", "tone": 0.85, "prob": 0.85,
+                       "steps": [3, 6, 7, 10, 14], "pitch": [55, 60, 50, 57],
+                       "syn": {"decay": 0.14, "drive": 1.1, "crush": 0.2}},
+    "nineties_dancehall": {"mode": "lots", "tone": 0.75, "prob": 0.8,
+                           "steps": [2, 6, 7, 11, 14], "pitch": [55, 50, 60],
+                           "syn": {"decay": 0.13, "drive": 1.1, "crush": 0.3}},
+    "neo_soul":     {"mode": "spice", "tone": 0.62, "prob": 0.4,
+                     "steps": [6, 10, 14], "pitch": [55, 50, 57],
+                     "syn": {"decay": 0.14, "drive": 0.85, "crush": 0.25}},
+    "bounce":       {"mode": "lots", "tone": 0.7,  "prob": 0.92,
+                     "steps": [1, 4, 5, 8, 9, 12, 13], "pitch": [60, 55, 67, 50],
+                     "syn": {"decay": 0.11, "drive": 1.1, "crush": 0.25}},
+    "uk_jungle":    {"mode": "spice", "tone": 0.5,  "prob": 0.35,
+                     "steps": [6, 11, 14], "pitch": [55, 48],
+                     "syn": {"decay": 0.12, "drive": 1.0, "crush": 0.3}},
     "broken_house": {"mode": "lots", "tone": 0.46, "prob": 0.72,
                      "steps": [2, 3, 6, 11, 14], "pitch": [60],
                      "syn": {"decay": 0.12, "drive": 0.9, "crush": 0.25}},
@@ -822,6 +1049,21 @@ _DRUM_CHAR = {
     "rnb":              {"kick": {"punch": 0.42}, "snare": {"body": 0.55, "buzz": 0.40}, "hat": {"loose": 0.12}, "ohat": {"loose": 0.18}},
     "afro_rnb":         {"kick": {"punch": 0.48}, "snare": {"body": 0.50, "buzz": 0.36}, "hat": {"loose": 0.10}},
     "indie_rnb":        {"kick": {"punch": 0.36}, "snare": {"body": 0.58, "buzz": 0.46}, "hat": {"loose": 0.16}, "ohat": {"loose": 0.22}},
+    # ---- 2026-05 expansion ----
+    "jerk_rap":         {"kick": {"punch": 0.34}, "snare": {"body": 0.40, "buzz": 0.30}, "hat": {"loose": 0.06}},
+    "cloud_rap":        {"kick": {"punch": 0.22}, "snare": {"body": 0.60, "buzz": 0.52}, "hat": {"loose": 0.24}, "ohat": {"loose": 0.30}},
+    "experimental_rap": {"kick": {"punch": 0.80}, "snare": {"body": 0.28, "buzz": 0.20}, "hat": {"loose": 0.05}},
+    "experimental_electronic": {"kick": {"punch": 0.60}, "snare": {"body": 0.36, "buzz": 0.26}, "hat": {"loose": 0.06}},
+    "future_garage":    {"kick": {"punch": 0.34}, "snare": {"body": 0.56, "buzz": 0.46}, "hat": {"loose": 0.20}, "ohat": {"loose": 0.26}},
+    "neo_soul":         {"kick": {"punch": 0.32}, "snare": {"body": 0.64, "buzz": 0.50}, "hat": {"loose": 0.22}, "ohat": {"loose": 0.28}},
+    "bounce":           {"kick": {"punch": 0.40}, "snare": {"body": 0.48, "buzz": 0.34}, "hat": {"loose": 0.08}},
+    "tropical_house":   {"kick": {"punch": 0.50}, "snare": {"body": 0.50, "buzz": 0.36}, "hat": {"loose": 0.10}, "ohat": {"loose": 0.16}},
+    "uk_jungle":        {"kick": {"punch": 0.50}, "snare": {"body": 0.46, "buzz": 0.42}, "hat": {"loose": 0.10}},
+    "dancefloor_dnb":   {"kick": {"punch": 0.66}, "snare": {"body": 0.44, "buzz": 0.34}, "hat": {"loose": 0.06}},
+    "neurofunk":        {"kick": {"punch": 0.74}, "snare": {"body": 0.36, "buzz": 0.26}, "hat": {"loose": 0.04}},
+    "ska":              {"kick": {"punch": 0.46}, "snare": {"body": 0.56, "buzz": 0.44}, "hat": {"loose": 0.14}, "ohat": {"loose": 0.20}},
+    "eighties_dancehall": {"kick": {"punch": 0.48}, "snare": {"body": 0.40, "buzz": 0.30}, "hat": {"loose": 0.08}},
+    "nineties_dancehall": {"kick": {"punch": 0.56}, "snare": {"body": 0.44, "buzz": 0.32}, "hat": {"loose": 0.08}},
 }
 
 # Drums-bus glue (\fxdrum): (glue, punch). Punchy styles get more transient
@@ -840,6 +1082,29 @@ _DRUM_GLUE = {
     "boom_bap": (0.36, 0.38),
     "rnb": (0.24, 0.18), "afro_rnb": (0.28, 0.24),
     "indie_rnb": (0.22, 0.14),
+    # ---- 2026-05 expansion (drum glue) ----
+    "jerk_rap": (0.30, 0.30), "cloud_rap": (0.18, 0.10),
+    "experimental_rap": (0.36, 0.40), "experimental_electronic": (0.30, 0.26),
+    "future_garage": (0.20, 0.14), "neo_soul": (0.20, 0.14),
+    "bounce": (0.30, 0.30), "tropical_house": (0.26, 0.22),
+    "uk_jungle": (0.28, 0.26), "dancefloor_dnb": (0.32, 0.34),
+    "neurofunk": (0.34, 0.38), "ska": (0.24, 0.18),
+    "eighties_dancehall": (0.24, 0.18), "nineties_dancehall": (0.28, 0.26),
+}
+
+# Kick -> bass SIDECHAIN depth (0 = none). Applied to the bass FX bus `duck`
+# param; the router fires a duck envelope on every kick. PUMP genres (4-on-
+# floor dance) get an audible pump; 808/sub genres get a tight clash-duck so
+# the kick punches through the shared low end. Organic/live genres = none.
+_SIDECHAIN = {
+    # audible pump — four-on-the-floor dance
+    "tropical_house": 0.7, "minimal_techno": 0.7, "detroit_techno": 0.65,
+    "dub_techno": 0.6, "synthwave": 0.6, "future_garage": 0.6,
+    # tight clash-duck — 808 / sub-bass genres + DnB (separation, not pump)
+    "jerk_rap": 0.35, "bounce": 0.35, "cloud_rap": 0.3, "experimental_rap": 0.35,
+    "electro": 0.35, "eighties_dancehall": 0.35, "nineties_dancehall": 0.35,
+    "dancefloor_dnb": 0.4, "neurofunk": 0.45, "uk_jungle": 0.35,
+    # everything else: no sidechain (funk/jazz/neo_soul/rnb/boom_bap/lofi/dub/…)
 }
 
 # Per-genre LEAD output level (pure post-gain `level`, 1.0 = unchanged).
@@ -850,7 +1115,7 @@ _DRUM_GLUE = {
 # velocity-driven glyph brightness are unaffected. Tune by ear here.
 # global mix balance (per-channel velocity scale): drums sit back 10%, the
 # melodic/bass instruments come up 10%. Applied centrally in _build's D().
-_CH_GAIN = {CH_DRUMS: 0.69, CH_PERC: 0.69, CH_BASS: 1.21, CH_LEAD: 1.21, CH_KEYS: 1.21}
+_CH_GAIN = {CH_DRUMS: 0.69, CH_PERC: 0.897, CH_BASS: 1.21, CH_LEAD: 1.21, CH_KEYS: 1.21}
 
 # global lead-volume multiplier applied to BOTH levers (level + velocity)
 # so the combined effect is one global trim. 0.84 x 0.84 = 0.706 ~= -30%.
@@ -868,6 +1133,21 @@ _LEAD_LEVEL = {
     "dub_techno": 0.8489, "neon_dub": 0.8644, "steppers_dub": 0.8644,
     "lofi": 0.7245, "rnb": 0.9198, "roots_reggae": 0.9261, "dub": 0.9416,
     "indie_rnb": 0.7686,
+    # ---- 2026-05 expansion (start from analogous-synthdef genres; tune by ear) ----
+    "jerk_rap": 0.60,        # leadPluck (chopped-R&B-ish hook)
+    "cloud_rap": 0.42,       # leadSoftBell, ethereal (trimmed again per request)
+    "experimental_rap": 0.55,  # leadGlitch
+    "experimental_electronic": 0.3575,  # leadStutter (-35%: 0.55 -> 0.3575)
+    "future_garage": 0.85,   # leadSoftBell
+    "neo_soul": 0.70,        # leadRhodes (sparse behind-the-beat fills)
+    "bounce": 0.39,          # leadChant TTS vocal phrases (-30% again: 0.56 -> 0.39)
+    "tropical_house": 0.18,  # leadMarimba (woody marimba; trimmed further per request)
+    "uk_jungle": 0.86,       # leadSiren
+    "dancefloor_dnb": 0.62,  # leadHyper
+    "neurofunk": 0.52,       # leadGlitch
+    "ska": 0.60,             # leadBrass (unused elsewhere — by-ear start)
+    "eighties_dancehall": 0.40,  # leadBell, sparse clean chord-tone stabs (hook)
+    "nineties_dancehall": 0.40,  # leadBell, sparse clean chord-tone stabs (hook)
 }
 
 # Per-genre CHORD (CH_KEYS) loudness multiplier. keys is not in the
@@ -897,6 +1177,18 @@ _KEYS_LEVEL = {
     "steppers_dub": 0.64,
     "synthwave": 0.64,
     "uk_garage": 0.64,
+    # ---- 2026-05 expansion ----
+    "jerk_rap": 0.55,
+    "cloud_rap": 0.55,
+    "experimental_electronic": 0.5,
+    "future_garage": 0.6,
+    "neo_soul": 0.7,
+    "tropical_house": 0.66,
+    "uk_jungle": 0.6,
+    "dancefloor_dnb": 0.64,
+    "ska": 0.7,
+    "eighties_dancehall": 0.6,
+    "nineties_dancehall": 0.6,
 }
 
 
@@ -919,7 +1211,102 @@ _STRUCT = [
      "brk": {"every": 4, "len": 2, "drop": ["drums"]}},
 ]
 _SPACIOUS = {"dub", "steppers_dub", "dub_techno", "neon_dub", "roots_reggae",
-             "minimal_techno", "lofi", "indie_rnb"}
+             "minimal_techno", "lofi", "indie_rnb",
+             "cloud_rap", "future_garage"}
+
+# The 10 Stranjah DnB drum patterns, as 0-indexed positions on a 2-BAR / 32-
+# step grid (bar A = 0..15, bar B = 16..31). The per-bar slice is taken by
+# parity in _dnb_drums. "hat": 8th = hits on even steps; 16th = every step;
+# foot = irregular fast. Used (randomized per section) across the DnB genres;
+# each genre draws from a POOL so all 10 patterns are heard across the rotation.
+_DNB_PATTERNS = [
+    # 1 Classic 2-step
+    {"kick": (0, 10), "snare": (4, 12, 20, 28), "hat": "8th"},
+    # 2 Stepper (liquid / neuro)
+    {"kick": (0, 8, 16), "snare": (4, 12, 20, 28), "hat": "8th"},
+    # 3 Breakbeat / Jungle (Amen): double kicks + ghost snares
+    {"kick": (0, 3, 10, 16, 23), "snare": (4, 12, 14, 20, 28), "hat": "8th"},
+    # 4 Halftime
+    {"kick": (0, 16), "snare": (8, 24), "hat": "16th"},
+    # 5 Jump-up (boink): kick on every quarter
+    {"kick": (0, 8, 16, 24), "snare": (4, 12, 20, 28), "hat": "8th"},
+    # 6 Dancehall / Dem Bow DnB hybrid: early snares on 3 & 19
+    {"kick": (0, 10, 16, 26), "snare": (3, 12, 19, 28), "hat": "8th"},
+    # 7 Footwork / juke
+    {"kick": (0, 3, 6, 9, 12, 16, 21, 27), "snare": (4, 12, 20, 28), "hat": "foot"},
+    # 8 Funky Drummer: scattered ghost snares
+    {"kick": (0, 10, 18, 26), "snare": (4, 12, 20, 28),
+     "ghost": (6, 7, 14, 22, 23, 30), "hat": "8th"},
+    # 9 Neurofunk "slick": kicks drop out in bar B, open hats
+    {"kick": (0, 10, 18), "snare": (4, 12, 20, 28), "hat": "8th",
+     "open": (2, 10, 18, 26)},
+    # 10 Rollers: delayed 2nd kick rolls out of the snare + shaker bed
+    {"kick": (0, 6, 10, 16, 22), "snare": (4, 12, 20, 28), "hat": "8th",
+     "shaker": True},
+]
+# per-genre pool of pattern indices (0-based). Together they use all 10; a
+# pattern may appear in more than one genre's pool (per the request).
+_DNB_POOL = {
+    "uk_jungle":      [0, 2, 3, 5, 9],     # classic, jungle/amen, halftime, dembow, rollers
+    "dancefloor_dnb": [0, 1, 4, 5, 7, 9],  # classic, stepper, jump-up, dembow, funky, rollers
+    "neurofunk":      [1, 3, 6, 7, 8],     # stepper, halftime, footwork, funky, neuro-slick
+}
+
+# Neo-soul drum grooves (1-bar / 16-step). The Dilla "lazy pocket" comes from
+# PROFILE's snare-drag (the snare voice lands a touch late). Randomized per
+# section. hat8 = straight 8th notes (0,2,..14); custom "hat" tuple otherwise.
+_NEO_PATTERNS = [
+    # 1 D'Angelo / Questlove pocket (kick on time, snare laid back)
+    {"kick": (0, 8, 10), "snare": (4, 12), "hat8": True},
+    # 2 Dilla swing / Slum Village (limping, micro-skips)
+    {"kick": (0, 7, 8), "snare": (4, 12), "hat": (0, 2, 4, 6, 9, 10, 12, 15)},
+    # 3 Erykah Badu slow-burn (spacious; open-hat before the snare)
+    {"kick": (0, 9, 14), "snare": (4, 12), "hat8": True, "open": (3, 11)},
+    # 4 Syncopated neo-funk (Musiq) — busier, ghost snares
+    {"kick": (0, 2, 8, 10, 13), "snare": (4, 12), "ghost": (6, 7, 15), "hat8": True},
+    # 5 Modern R&B blend (H.E.R. / Daniel Caesar) — rolling hat doubles
+    {"kick": (0, 5, 8), "snare": (4, 12), "hat": (0, 1, 2, 4, 6, 8, 9, 10, 12, 14)},
+]
+
+# Minneapolis-funk / Prince drum grooves (the user's 10 Ableton patterns),
+# randomized per section. Positions are 0-indexed on the FULL multi-bar grid
+# (bar B = +16, etc.); _mpls_drums slices by bar. Notes: 36 kick, 38 snare,
+# 42/44 closed hat, 46 open hat, 39 clap, 37 rim, 51 ride, 54 tambourine/
+# timekeeper (-> perc). Only the patterns that specify hats get hats; the rest
+# ride a clap/ride/perc timekeeper, per the source.
+_MPLS_PATTERNS = [
+    # "Blouses" — bouncy kick, open on downbeats / closed on upbeats
+    {"bars": 1, "kick": (0, 4, 6, 10, 12, 14), "snare": (4, 12),
+     "ohat": (0, 4, 8, 12), "hat": (2, 6, 10, 14)},
+    # "Do U Compute?" — 4-on-floor, machine-gun 16th hats
+    {"bars": 1, "kick": (0, 4, 8, 12), "snare": (4, 12), "hat": tuple(range(16))},
+    # "Paisley Syncopate" — off-kilter kick, continuous 16th hats, bar-2 snare skip
+    {"bars": 2, "kick": (0, 10, 16, 22, 26), "snare": (4, 12, 20),
+     "hat": tuple(range(32))},
+    # "Violet Maserati" — 4-on-floor kick, snare on the upbeats, aux perc/rim
+    {"bars": 2, "kick": (0, 4, 8, 12, 16, 20, 24, 28),
+     "snare": (2, 6, 10, 14, 18, 22, 26, 30), "perc": (2, 18), "rim": (19, 21)},
+    # "Pancakes" — kick to the "e" of 4, 16th closed hats dropping for open rings
+    {"bars": 2, "kick": (0, 4, 8, 13, 16, 20, 24, 29), "snare": (4, 12, 20, 28),
+     "hat": tuple(s for s in range(32) if s not in (11, 14, 27, 30)),
+     "ohat": (11, 14, 27, 30)},
+    # "Slow Groove 4 U" — half-time, snare on beat 3, ride quarters + perc weave
+    {"bars": 2, "kick": (0, 14, 16, 30), "snare": (8, 24),
+     "ride": (0, 4, 8, 12, 16, 20, 24, 28), "perc": (6, 10, 22, 26)},
+    # "Camille" — kick on 1 & 3, syncopated clap, bar-4 snare turnaround
+    {"bars": 4, "kick": (0, 8, 16, 24, 32, 40, 48, 56),
+     "snare": (4, 12, 20, 28, 36, 44, 52, 61),
+     "clap": (10, 14, 26, 30, 42, 46, 58, 62)},
+    # "Ur Limosine" — busy pumping kick, aux perc before the downbeats
+    {"bars": 2, "kick": (0, 4, 6, 10, 12, 14, 16, 20, 22, 26, 28, 30),
+     "snare": (4, 12, 20, 28), "perc": (10, 14, 26, 30)},
+    # "2 The Funky 1" — spacious kick, clap layered on beat 4 only
+    {"bars": 2, "kick": (0, 3, 8, 10, 16, 19, 24, 26), "snare": (4, 12, 20, 28),
+     "clap": (12, 28)},
+    # "7 Years" — heavily syncopated kick, snare only on 2, perc keeps time
+    {"bars": 2, "kick": (0, 2, 6, 14, 18, 22, 24), "snare": (4, 20),
+     "perc": (0, 4, 8, 12, 16, 20, 24, 28)},
+]
 
 
 class CannedSource:
@@ -965,6 +1352,16 @@ class CannedSource:
             self._vox_n = max(1, min(6, int(section.get("robot_words") or 4)))
         except (TypeError, ValueError):
             self._vox_n = 4
+        # bounce: chant word buffers — _chant_cmd command words (chanted in
+        # order) + the rest as single-word answers/hype (total _chant_n).
+        try:
+            self._chant_cmd = max(1, min(4, int(section.get("chant_cmd") or 4)))
+        except (TypeError, ValueError):
+            self._chant_cmd = 4
+        try:
+            self._chant_n = max(self._chant_cmd, min(6, int(section.get("chant_n") or 4)))
+        except (TypeError, ValueError):
+            self._chant_n = 4
         d = section.get("density")
         r = random.random()
         if r < 0.15:
@@ -1063,6 +1460,7 @@ class CannedSource:
         gl, pu = _DRUM_GLUE.get(self.genre, _DRUM_GLUE_DEF)
         out["fxDrums"]["glue"] = gl
         out["fxDrums"]["punch"] = pu
+        out["fxBass"]["duck"] = _SIDECHAIN.get(self.genre, 0.0)   # kick->bass sidechain depth
         ov = _FX_SIG.get(self.genre)
         if ov:
             for bus, d in ov.items():
@@ -1170,7 +1568,10 @@ class CannedSource:
 
         # soft sustained harmonic pad on the keys voice (energy-gated, not on
         # the spikier genres) — body without density, keeps the space.
-        if self.on.get("keys", True) and self.genre not in ("neon_dub", "electro", "funk", "minneapolis_funk"):
+        if self.on.get("keys", True) and self.genre not in (
+                "neon_dub", "electro", "funk", "minneapolis_funk",
+                "bounce", "experimental_rap", "neurofunk", "uk_jungle",
+                "ska", "eighties_dancehall", "nineties_dancehall"):
             self._pad(D, rnd, beat, ctones)
 
         # dedicated percussion layer (per-genre: none / rare spice / lots)
@@ -1298,28 +1699,25 @@ class CannedSource:
                 D(s, beat * 0.2, p, (0.42 + rnd.uniform(-0.04, 0.04)) * kl, CH_KEYS)
 
     def _mpls_comp(self, D, rnd, beat, ctones):
-        # Oberheim stabs with MIXED lengths: an occasional HELD chord (loud ->
-        # rings long on keysOberheim) + the loved short off-beat STABS (quieter
-        # -> short). Simple triad only.
+        # Prince / Minneapolis: SIMPLE bright triad STABS on the Oberheim, in a
+        # punchy SYNCOPATED pattern (the "1999"/"Kiss" stab) — all stabs the
+        # SAME mid-register triad, no jazzy extensions. An occasional low root-5
+        # power dyad adds body in a DIFFERENT register (so it never shares a
+        # (ch,pitch) with a stab -> the gated keysOberheim voices never hang).
         if not self.on.get("keys", True):
             return
         kl = self._keys_lvl
-        # SAME velocity (= same volume) for all; LENGTH is set by note duration
-        # (keysOberheim is gated). So a held chord + short stabs sit equal-loud.
-        vel = 0.62 * kl
-        # Voice the HELD chord LOW and the STABS an octave UP, so no two
-        # simultaneous keys notes share a (ch,pitch) -> the gated voices each
-        # get their own note-off and release cleanly (no hung notes).
-        vc   = self._voicelead(ctones[:3], 48)
-        held = vc
-        stab = [p + 12 for p in vc]
-        if rnd.random() < 0.6:                               # a HELD chord (long du)
-            for p in held:
-                D(0, beat * 1.5, p, vel + rnd.uniform(-0.03, 0.03), CH_KEYS)
-        for s in (2, 6, 10, 14):                             # off-beat STABS (short du)
-            if rnd.random() < 0.5 + (0.25 * self.energy):
-                for p in stab:
-                    D(s, beat * 0.18, p, vel + rnd.uniform(-0.03, 0.03), CH_KEYS)
+        tri = self._voicelead(ctones[:3], 60)                # bright MID triad (simple, punchy)
+        # syncopated Prince stab pattern: the "one", pushes + off-beats
+        for s in (0, 3, 6, 10, 11, 14):
+            if rnd.random() < 0.5 + (0.3 * self.energy):
+                for p in tri:
+                    D(s, beat * 0.2, p, (0.62 + rnd.uniform(-0.03, 0.04)) * kl, CH_KEYS)
+        # occasional low root-5 dyad for body (different register -> no collision)
+        if rnd.random() < 0.35:
+            root = tri[0] - 12
+            for p in (root, root + 7):
+                D(0, beat * 1.4, p, (0.5 + rnd.uniform(-0.03, 0.03)) * kl, CH_KEYS)
 
     def _bell_arp(self, D, rnd, beat, ctones):
         # rnb LEAD: soft MID bells arpeggiating the chord tones, ENTERING after
@@ -1755,6 +2153,276 @@ class CannedSource:
             else:
                 D(local_s + lpush, beat * nlen * du, pit, vel, CH_LEAD)
 
+    def _dnb_drums(self, D, rnd, beat, e, fill, pool):
+        # One of the 10 Stranjah DnB patterns (chosen per section from the
+        # genre's pool, stable within the section), laid on the 2-bar / 32-step
+        # grid. self.bar parity selects bar A (0..15) or bar B (16..31). The
+        # bass/lead/keys stay each genre's own; only the kit comes from here.
+        pat = _DNB_PATTERNS[pool[random.Random(self._sec * 17 + 3).randrange(len(pool))]]
+        off = (self.bar % 2) * 16
+        loc = lambda key: [s - off for s in pat.get(key, ()) if off <= s < off + 16]
+        if self.on["kick"]:
+            for s in loc("kick"):
+                D(s, 0.18, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in loc("snare"):
+                D(s, 0.16, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            for s in loc("ghost"):
+                D(s, 0.06, SNARE, self._ghost(rnd), CH_DRUMS, "snare")
+        if self.on["hat"]:
+            style = pat.get("hat", "8th")
+            if style == "16th":
+                steps = range(16)
+            elif style == "foot":                       # irregular fast (juke)
+                steps = [s for s in range(16)
+                         if rnd.random() < (0.9 if s % 2 == 0 else 0.45)]
+            else:                                        # 8th notes
+                steps = range(0, 16, 2)
+            for s in steps:
+                D(s, 0.025, HAT,
+                  self._main(rnd) * 0.7 if s % 4 == 0 else self._ghost(rnd) + 0.05,
+                  CH_DRUMS, "hat")
+            for s in loc("open"):
+                D(s, 0.16, OHAT, self._main(rnd) * 0.6, CH_DRUMS, "hat")
+            if pat.get("shaker"):                        # rollers: continuous shaker bed
+                for s in range(1, 16, 2):
+                    if rnd.random() < 0.6:
+                        D(s, 0.02, HAT, self._ghost(rnd), CH_DRUMS, "hat")
+
+    def _dancehall_drums(self, D, rnd, beat, e, fill):
+        # One of THREE dancehall grooves, randomized per section (stable within
+        # it), built only from kick / snare(rim) / hi-hat:
+        #   0 Dem Bow      : kick on 1 & 3 (0,8), snare "boom-ch-boom-CHICK" on
+        #                    the & of 2 & 4 (6,14), steady hats over the top.
+        #   1 Modern/Pop   : driving kick on every quarter (0,4,8,12), snare
+        #                    mostly dropped (sparse, atmospheric, sleek).
+        #   2 Fast/One-Drop: urgent — syncopated kick, DOUBLED snare, rolling
+        #                    continuous 16th hats.
+        pat = random.Random(self._sec * 13 + 5).randrange(3)
+        if pat == 0:                                     # Dem Bow
+            if self.on["kick"]:
+                D(0, 0.24, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+                D(8, 0.22, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            if self.on["snare"]:
+                for s in (6, 14):
+                    D(s, 0.16, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+                    D(s, 0.16, RIM, self._main(rnd) * 0.6, CH_DRUMS, "snare")
+            if self.on["hat"]:
+                for s in range(0, 16, 2):
+                    D(s, 0.03, HAT, self._main(rnd) * 0.7 if s % 4 == 0
+                      else self._ghost(rnd) + 0.06, CH_DRUMS, "hat")
+        elif pat == 1:                                   # Modern / Pop
+            if self.on["kick"]:
+                for s in (0, 4, 8, 12):
+                    D(s, 0.22, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                      CH_DRUMS, "kick", True)
+            if self.on["snare"]:                          # sparse — leave space
+                D(14, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+                if rnd.random() < 0.4:
+                    D(6, 0.1, RIM, self._ghost(rnd) + 0.1, CH_DRUMS, "snare")
+            if self.on["hat"]:                            # light, atmospheric offbeats
+                for s in (2, 6, 10, 14):
+                    D(s, 0.05, HAT, self._ghost(rnd) + 0.06, CH_DRUMS, "hat")
+        else:                                            # Fast / One-Drop
+            if self.on["kick"]:
+                D(0, 0.22, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+                if rnd.random() < 0.7:
+                    D(6, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+                D(11, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick")
+            if self.on["snare"]:                          # doubled snares = urgency
+                for s in (6, 14):
+                    D(s, 0.15, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+                for s in (7, 15):
+                    if rnd.random() < 0.7:
+                        D(s, 0.1, SNARE, self._main(rnd) * 0.8, CH_DRUMS, "snare")
+            if self.on["hat"]:                            # rolling continuous 16ths
+                for s in range(16):
+                    D(s, 0.025, HAT, self._main(rnd) * 0.7 if s % 4 == 0
+                      else self._ghost(rnd) + 0.05, CH_DRUMS, "hat")
+
+    def _neo_soul_drums(self, D, rnd, beat, e, fill):
+        # One of the 5 neo-soul grooves, randomized per section. The "lazy /
+        # drunk" pocket comes from the snare voice (PROFILE snare-drag lays it
+        # behind the grid). Open hats / ghost snares per pattern.
+        pat = _NEO_PATTERNS[random.Random(self._sec * 23 + 7).randrange(len(_NEO_PATTERNS))]
+        if self.on["kick"]:
+            for s in pat["kick"]:
+                D(s, 0.22, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in pat["snare"]:                       # "snare" voice -> sdrag = laid back
+                D(s, 0.2, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            for s in pat.get("ghost", ()):
+                D(s, 0.06, SNARE, self._ghost(rnd), CH_DRUMS, "snare")
+        if self.on["hat"]:
+            hats = range(0, 16, 2) if pat.get("hat8") else pat.get("hat", range(0, 16, 2))
+            for s in hats:
+                D(s, 0.04, HAT, self._main(rnd) * 0.6 if s % 4 == 0
+                  else self._ghost(rnd) + 0.06, CH_DRUMS, "hat")
+            for s in pat.get("open", ()):
+                D(s, 0.12, OHAT, self._main(rnd) * 0.5, CH_DRUMS, "hat")
+
+    def _mpls_drums(self, D, rnd, beat, e, fill):
+        # One of the 10 Prince/Minneapolis grooves, randomized per section.
+        # Multi-bar loops slice by bar. See _MPLS_PATTERNS for the note map.
+        pat = _MPLS_PATTERNS[random.Random(self._sec * 19 + 11).randrange(len(_MPLS_PATTERNS))]
+        bars = pat.get("bars", 1)
+        off = (self.bar % bars) * 16
+        loc = lambda key: [s - off for s in pat.get(key, ()) if off <= s < off + 16]
+        if self.on["kick"]:
+            for s in loc("kick"):
+                D(s, 0.2, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in loc("snare"):
+                D(s, 0.2, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            for s in loc("clap"):
+                D(s, 0.2, CLAP, 0.8, CH_DRUMS, "snare")
+        if self.on["hat"]:
+            for s in loc("hat"):
+                D(s, 0.035, HAT, self._main(rnd) * 0.7 if s % 4 == 0
+                  else self._ghost(rnd) + 0.08, CH_DRUMS, "hat")
+            for s in loc("ohat"):
+                D(s, 0.16, OHAT, self._main(rnd) * 0.6, CH_DRUMS, "hat")
+            for s in loc("ride"):
+                D(s, 0.3, RIDE, self._main(rnd) * 0.55, CH_DRUMS, "hat")
+            for s in loc("perc"):
+                D(s, 0.08, PERC, self._main(rnd) * 0.7, CH_DRUMS)
+            for s in loc("rim"):
+                D(s, 0.06, RIM, self._main(rnd) * 0.7, CH_DRUMS)
+
+    def _soul_motif(self, D, rnd, beat, ct, cr):
+        # Neo-soul melodic fills: SPARSE, behind the beat, targeting the 3rd /
+        # 7th / 9th / 5th of the CURRENT chord (NEVER the root), with bluesy
+        # grace-note slides into the target. Lots of space (call & response).
+        # Mono lead (leadRhodes) — a sustained, singing single line.
+        if not self.on.get("lead", True) or not ct:
+            return
+        base = 60
+        def mid(p):
+            while p < base - 2:
+                p += 12
+            while p > base + 14:
+                p -= 12
+            return p
+        third   = ct[1] if len(ct) > 1 else ct[0] + 3
+        fifth   = ct[2] if len(ct) > 2 else ct[0] + 7
+        seventh = ct[3] if len(ct) > 3 else ct[0] + 10
+        ninth   = ct[0] + 14
+        targets = [mid(third), mid(seventh), mid(ninth), mid(fifth)]   # never the root
+        seed = random.Random(self._sec * 29 + (self.bar // 2) * 7)
+        if (self.bar % 2 == 1) or (seed.random() < 0.35):              # sparse: many bars are space
+            return
+        cell = seed.choice([
+            [(6, 2), (10, 2), (13, 3)],
+            [(3, 2), (7, 4)],
+            [(10, 2), (13, 1), (15, 3)],
+            [(6, 3), (11, 4)],
+            [(2, 2), (7, 2), (11, 4)],
+        ])
+        lag = 0.18                                                     # behind the beat
+        ti = seed.randrange(len(targets))
+        for i, (s, du) in enumerate(cell):
+            p = targets[(ti + i) % len(targets)]
+            if seed.random() < 0.4:                                    # bluesy grace slide in
+                D(max(0.0, s - 0.6) + lag, beat * 0.16, p - 1,
+                  0.28 * _LEAD_GLOBAL, CH_LEAD)
+            vel = (0.42 + rnd.uniform(-0.04, 0.05)) * _LEAD_GLOBAL
+            D(s + lag, beat * 0.42 * du, p, vel, CH_LEAD)
+
+    def _che(self, D, beat, rnd, s, du, pit, vel):
+        # humanized chant hit — subtle timing drift + velocity variation so the
+        # vocals GROOVE instead of landing robotically on the grid.
+        D(max(0.0, s + rnd.uniform(-0.06, 0.12)), du, pit,
+          max(0.1, vel * rnd.uniform(0.84, 1.12)), CH_LEAD)
+
+    def _bvx_hit(self, D, beat, rnd, s, pit, vel):
+        # one FULL chant hit; RARELY (6%) preceded by 1-2 quick restart pickups
+        # leading into it (the only "stutter", resolving on the beat). Humanized.
+        if s >= 2 and rnd.random() < 0.06:
+            nrep = rnd.choice([1, 2])
+            for k in range(nrep):
+                self._che(D, beat, rnd, s - (nrep - k), beat * 0.22, pit, vel * 0.8)
+        self._che(D, beat, rnd, s, beat * 1.6, pit, vel)
+
+    def _bounce_vox(self, D, beat, rnd, pid, cmd, ans, dn):
+        # Bounce vocals around an invented dance. `cmd` = buffer slots of the
+        # COMMAND words in order ("do","the",<vibe>,<move>); `ans` = single-word
+        # answer/hype slots. dn = pitch-down (3-5, every sample, never original).
+        # leadChant is mono (each hit restarts the sample). The favourite is
+        # CALL & RESPONSE: chant the command word-by-word RHYTHMICALLY, then a
+        # single-word answer.
+        g = _LEAD_GLOBAL
+        cp = lambda slot: 60 + (slot * 12) + dn
+        move = cmd[-1] if cmd else 0
+        answ = ans[0] if ans else move
+        if pid == 0:                                         # COMMAND word-by-word + single-word answer
+            for i, slot in enumerate(cmd):
+                self._che(D, beat, rnd, i * 3, beat * 0.5, cp(slot), 0.92 * g)
+            self._bvx_hit(D, beat, rnd, 12, cp(answ), 0.85 * g)   # "<move>!" answer on beat 4
+        elif pid == 1:                                       # single-word CALL & RESPONSE (spacious)
+            self._bvx_hit(D, beat, rnd, 0, cp(move), 0.95 * g)
+            self._bvx_hit(D, beat, rnd, 8, cp(answ), 0.9 * g)
+        elif pid == 5:                                       # BUILD-UP: command once, rising -> accent
+            for i, slot in enumerate(cmd):
+                self._che(D, beat, rnd, i * 3, beat * 0.5, cp(slot), (0.72 + i * 0.06) * g)
+            self._bvx_hit(D, beat, rnd, 12, cp(move), 0.92 * g)  # accent the drop
+        elif pid == 6:                                       # LAYERED: command + answer phrase on keys
+            for i, slot in enumerate(cmd):
+                self._che(D, beat, rnd, i * 3, beat * 0.5, cp(slot), 0.85 * g)
+            if self.on.get("keys", True):
+                D(0, beat * 1.7, cp(answ), 0.3, CH_KEYS)     # answer word on the keys voice
+        else:                                                # sparse breather — one single word
+            self._bvx_hit(D, beat, rnd, 0, cp(move), 0.9 * g)
+
+    def _bounce_chant(self, D, rnd, beat):
+        # Bounce vocals: each 8-bar phrase favours CALL & RESPONSE — the invented
+        # dance command chanted WORD-BY-WORD rhythmically ("do the <vibe>
+        # <move>") answered by a single shouted word, with a build-up into each
+        # phrase. Every sample pitched down 3-5 semis (never original tempo).
+        if not self.on.get("lead", True) or self.bar < 2:
+            return
+        cmd_n = max(1, min(4, getattr(self, "_chant_cmd", 4)))
+        tot = max(cmd_n, min(6, getattr(self, "_chant_n", cmd_n)))
+        cmd = list(range(cmd_n))
+        ans = list(range(cmd_n, tot)) or [cmd_n - 1]
+        phrase = self.bar // 8
+        bar_in = self.bar % 8
+        sr = random.Random(self._sec * 53 + phrase)
+        main = sr.choice([0, 1, 1, 6])                       # sparse single-word call-response favored
+        dn = sr.choice([3, 4, 5])
+        if bar_in == 0:
+            pid = sr.choice([0, 1])                          # drop / statement
+        elif bar_in == 7:
+            pid = 5                                          # build-up into the next phrase
+        elif bar_in in (3, 6) and sr.random() < 0.4:
+            pid = 9                                          # breathers for space
+        else:
+            pid = main
+        self._bounce_vox(D, beat, rnd, pid, cmd, ans, dn)
+
+    def _bones_arp(self, D, rnd, beat, ct):
+        # The Triggerman "bones": a bright xylophone/bell ostinato that ascends
+        # and descends. CHORD-AWARE (built from the CURRENT chord's tones, so it
+        # stays consonant with the progression instead of clashing) and QUIET —
+        # it's a texture, not a hook. 8th-note run on the mono bell lead.
+        if not self.on.get("lead", True) or not ct:
+            return
+        vc = self._voicelead(ct[:3], 72)                  # bright register chord tones
+        if not vc:
+            return
+        seq = vc + [vc[0] + 12]                            # up an octave
+        if len(seq) > 2:
+            seq = seq + seq[-2:0:-1]                        # + descending = up/down cycle
+        n = len(seq)
+        for k, s in enumerate(range(0, 16, 2)):            # 8th notes (not every 16th)
+            if rnd.random() < 0.85:
+                p = seq[(self.bar * 8 + k) % n]            # continuous index -> rolls up/down
+                vel = (0.26 + (0.04 if s % 8 == 0 else 0.0)
+                       + rnd.uniform(-0.03, 0.03)) * _LEAD_GLOBAL
+                D(s, beat * 0.4, p, vel, CH_LEAD)
+
     # ---- genre builders (drums = funk research; harmony via helpers) ----
     def _g_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
         if self.on["kick"]:
@@ -1805,36 +2473,11 @@ class CannedSource:
             self._motif(D, rnd, beat, sc, ct)
 
     def _g_minneapolis_funk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
-        # Prince / LinnDrum: punchy SYNCOPATED kick, BIG gated snare LAYERED
-        # with a clap on the backbeat, crisp machine 16th hats + open hat, a
-        # little tambourine sizzle. Bright Oberheim stabs + syncopated synth bass.
-        if self.on["kick"]:
-            D(0, 0.2, KICK, self._acc(rnd), CH_DRUMS, "kick", True)         # the boom
-            if rnd.random() < 0.55 + 0.3 * e:
-                D(10, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick", True)  # & of 3
-            if rnd.random() < 0.35 + 0.3 * e:
-                D(6, 0.18, KICK, self._main(rnd), CH_DRUMS, "kick")         # & of 2
-            if rnd.random() < 0.2:
-                D(3, 0.16, KICK, self._main(rnd) * 0.85, CH_DRUMS, "kick")  # e-of-1 push
-        if self.on["snare"]:
-            for s in (4, 12):                                # gated snare + CLAP (Prince/Linn)
-                D(s, 0.22, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
-                D(s, 0.2, CLAP, 0.82, CH_DRUMS, "snare")
-            self._ghost_sn(D, rnd, e * 0.5)
-            if fill:                                         # machine tom-ish fill
-                for s in (13, 14, 15):
-                    D(s, 0.08, SNARE, 0.55 + 0.06 * s, CH_DRUMS, "snare")
-        if self.on["hat"]:
-            for s in range(16):                              # crisp machine 16ths
-                if rnd.random() < 0.85:
-                    v = (self._main(rnd) if (s % 4 == 0)
-                         else self._ghost(rnd) + (0.1 if s % 2 == 0 else 0.0))
-                    D(s, 0.04, HAT, v * 0.85, CH_DRUMS, "hat")
-            if rnd.random() < 0.4:
-                D(rnd.choice([6, 14]), 0.16, OHAT, 0.4, CH_DRUMS, "hat")
-            for s in (2, 10):                                # tambourine sizzle (LinnDrum)
-                if rnd.random() < 0.3:
-                    D(s, 0.05, PERC, self._ghost(rnd) * 0.8, CH_DRUMS)
+        # Prince / Minneapolis: drums = one of the 10 Ableton grooves (Blouses /
+        # Do U Compute / Paisley Syncopate / Violet Maserati / Pancakes / Slow
+        # Groove / Camille / Ur Limosine / 2 The Funky 1 / 7 Years), randomized
+        # per section. Bright Oberheim stab chords + syncopated synth bass.
+        self._mpls_drums(D, rnd, beat, e, fill)
         if self.on["bass"]:                                  # syncopated synth-bass
             self._funk_bass(D, rnd, beat, ct, cr, nr, e, [2, 3, 6, 10, 11, 14])
         if self.on.get("keys", True):
@@ -2355,3 +2998,348 @@ class CannedSource:
                       self._main(rnd), CH_BASS)
         if self.on["lead"]:
             self._motif(D, rnd, beat, sc, ct)              # scratch (always)
+
+    # ---- 2026-05 expansion: rap / club / dnb / jamaican / soul ----
+    def _g_jerk_rap(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # sexy-drill / Jersey bounce: galloping triplet-ish 808 kick clusters,
+        # claps on beats 3 & 4 (the drill placement), triplet hat stutters, a
+        # bouncy 808 sub, and a chopped-R&B bell hook over a soft chord wash.
+        if self.on["kick"]:
+            D(0, 0.24, KICK, self._acc(rnd), CH_DRUMS, "kick", True)         # stomp on 1
+            for s in (3, 6):                                                 # gallop cluster
+                if rnd.random() < 0.55 + 0.3 * e:
+                    D(s, 0.2, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            D(10, 0.22, KICK, self._acc(rnd), CH_DRUMS, "kick", True)        # the bounce
+            D(11, 0.18, KICK, self._main(rnd) * 0.85, CH_DRUMS, "kick")      # 16th double
+            if rnd.random() < 0.4:
+                D(14, 0.2, KICK, self._main(rnd) * 0.8, CH_DRUMS, "kick")    # pickup
+        if self.on["snare"]:
+            for s in (8, 12):                                                # claps on beats 3 & 4
+                D(s, 0.2, CLAP, self._acc(rnd), CH_DRUMS, "snare", True)
+                D(s, 0.18, SNARE, self._main(rnd), CH_DRUMS, "snare", True)
+            self._ghost_sn(D, rnd, e * 0.4)
+        if self.on["hat"]:
+            for s in range(16):                                              # triplet-feel 16ths
+                if rnd.random() < 0.78:
+                    D(s, 0.03, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd) + 0.05,
+                      CH_DRUMS, "hat")
+            if rnd.random() < 0.45:                                          # stutter roll
+                r = rnd.choice([6, 7, 13, 14])
+                for k in range(3):
+                    D(r + k * 0.5, 0.025, HAT, self._ghost(rnd), CH_DRUMS, "hat")
+        if self.on["bass"]:                                                  # 808 sub, locked + bouncy
+            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (3, 6, 10, 11, 14):
+                if rnd.random() < 0.4 + 0.4 * e:
+                    D(s, beat * 0.34, cr + rnd.choice([0, 0, 12, -5, 7]),
+                      self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            # NOT a melodic lead (jerk avoids that): a sparse, filtered, chord-
+            # aware Rhodes figure evoking the smooth chopped-R&B-vocal bed, over
+            # the keysPad chords + gliding 808.
+            self._soul_motif(D, rnd, beat, ct, cr)
+
+    def _g_cloud_rap(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # hazy + drifting: soft 808 kick, lazy clap backbeat, scattered soft
+        # hats, sustained sub, and a reverb-soaked bell + pad wash. Sparse.
+        if self.on["kick"]:
+            D(0, 0.3, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.45:
+                D(10, 0.26, KICK, self._main(rnd) * 0.7, CH_DRUMS, "kick")
+        if self.on["snare"]:                                                 # soft lazy backbeat
+            for s in (4, 12):
+                D(s, 0.22, CLAP, self._main(rnd) * 0.8, CH_DRUMS, "snare", True)
+        if self.on["hat"]:                                                   # scattered, soft
+            for s in (2, 6, 7, 10, 14):
+                if rnd.random() < 0.45:
+                    D(s, 0.05, HAT, self._ghost(rnd) + 0.05, CH_DRUMS, "hat")
+        if self.on["bass"]:                                                  # mellow sustained sub
+            D(0, beat * 1.6, cr, self._main(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.4:
+                D(10, beat * 0.7, cr, self._ghost(rnd) + 0.2, CH_BASS)
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # ethereal bell fragments (feel space)
+
+    def _g_experimental_rap(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # abrasive / glitchy: blown-out kick, crushed clipped snares, busy hats
+        # with dropouts, a distorted square-bass riff, harsh glitch stabs. The
+        # PROFILE chaos adds off-grid instability.
+        if self.on["kick"]:
+            D(0, 0.26, KICK, 1.0, CH_DRUMS, "kick", True)
+            for s in (4, 7, 10, 11):
+                if rnd.random() < 0.3 + 0.4 * e:
+                    D(s, 0.22, KICK, self._main(rnd), CH_DRUMS, "kick")
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.2, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            for s in (3, 7, 11, 15):                                         # clipped extra snares
+                if rnd.random() < 0.3:
+                    D(s, 0.08, SNARE, self._main(rnd), CH_DRUMS, "snare")
+        if self.on["hat"]:
+            for s in range(16):
+                if rnd.random() < 0.7:
+                    D(s, 0.025, HAT, self._main(rnd) if s % 4 == 0 else self._ghost(rnd),
+                      CH_DRUMS, "hat")
+            if rnd.random() < 0.4:                                           # glitch burst
+                r = rnd.choice([6, 10, 14])
+                for k in range(4):
+                    D(r + k * 0.5, 0.02, HAT, self._ghost(rnd), CH_DRUMS, "hat")
+        if self.on["bass"]:                                                  # distorted square riff
+            riff = [(0, cr), (3, cr), (6, cr + 12), (10, cr), (11, cr + 7), (14, cr)]
+            for s, p in riff:
+                if s == 0 or rnd.random() < 0.5 + 0.4 * e:
+                    D(s, beat * 0.2, p, self._acc(rnd) if s == 0 else self._main(rnd),
+                      CH_BASS, "kick" if s == 0 else "", structural=(s == 0))
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # harsh glitch stabs (feel stab)
+
+    def _g_experimental_electronic(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # IDM / leftfield: irregular kick placement (NOT 4-on-floor), glitchy
+        # snare/clap at shifting positions, intricate hats with gaps + bursts,
+        # a designed FM sub, sparse abstract glitch melody. chaos = off-grid.
+        if self.on["kick"]:
+            D(0, 0.22, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            k2 = rnd.choice([5, 6, 7, 10, 11])                              # shifting 2nd kick
+            if rnd.random() < 0.6:
+                D(k2, 0.2, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.3:
+                D(rnd.choice([3, 13, 14]), 0.18, KICK, self._main(rnd) * 0.8, CH_DRUMS, "kick")
+        if self.on["snare"]:
+            s = rnd.choice([4, 12]) if rnd.random() < 0.7 else rnd.choice([6, 10, 11])
+            D(s, 0.1, CLAP if rnd.random() < 0.5 else SNARE, self._main(rnd), CH_DRUMS, "snare", True)
+            if rnd.random() < 0.4:
+                D(rnd.choice([7, 9, 15]), 0.06, RIM, self._ghost(rnd), CH_DRUMS)
+        if self.on["hat"]:
+            for s in range(16):
+                if rnd.random() < (0.5 if s % 2 else 0.8):
+                    D(s, 0.025, HAT, self._main(rnd) * 0.7 if s % 4 == 0 else self._ghost(rnd) + 0.06,
+                      CH_DRUMS, "hat")
+            if rnd.random() < 0.5:                                           # 32nd glitch burst
+                r = rnd.choice([2, 6, 10, 14])
+                for k in range(rnd.choice([3, 4, 6])):
+                    D(r + k * 0.5, 0.02, HAT, self._ghost(rnd), CH_DRUMS, "hat")
+        if self.on["bass"]:                                                  # designed FM sub
+            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (3, 6, 10, 11, 14):
+                if rnd.random() < 0.35 + 0.35 * e:
+                    D(s, beat * 0.3, cr + rnd.choice([0, 0, 12, 7, -5]),
+                      self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # abstract glitch (feel hypno)
+
+    def _g_future_garage(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # half-time 2-step shuffle (heavy swing from PROFILE), ghost kicks, a
+        # snare on 2 & 4 with an off-grid pushed extra, swung sparse hats, a
+        # warm sine sub, and a foggy chopped-vocal/pad wash. Atmospheric.
+        if self.on["kick"]:                                                  # exact grid: 1 + & of 3
+            D(0, 0.24, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            D(10, 0.2, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.6:                                           # ghost-kick pickup (step 15)
+                D(15, 0.16, KICK, self._ghost(rnd) + 0.2, CH_DRUMS, "kick")
+        if self.on["snare"]:                                                 # backbone on 2 & 4
+            D(4, 0.18, SNARE, self._main(rnd), CH_DRUMS, "snare", True)
+            D(12, 0.18, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+        if self.on["hat"]:                                                   # swung hats 2/5/8/13
+            for s in (2, 5, 8, 13):
+                D(s, 0.04, HAT, self._main(rnd) * 0.6 if s in (2, 8) else self._ghost(rnd) + 0.06,
+                  CH_DRUMS, "hat")
+            for s in (3, 6, 11, 14):                                         # organic shaker / perc
+                if rnd.random() < 0.7:
+                    D(s, 0.05, PERC, self._ghost(rnd) + 0.06, CH_DRUMS, "hat")
+        if self.on["bass"]:                                                  # warm sine sub, breathing
+            D(0, beat * 1.2, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.45 + 0.3 * e:
+                D(10, beat * 0.6, cr + rnd.choice([0, 7, -5]), self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # foggy chopped fragments (feel space)
+
+    def _g_neo_soul(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # neo-soul: drums = one of the 5 grooves (Questlove / Dilla / Badu slow-
+        # burn / neo-funk / modern blend), randomized per section; the lazy
+        # pocket comes from PROFILE snare-drag. Round conversational bass, lush
+        # Rhodes comp + pad, and SPARSE behind-the-beat Rhodes melodic fills that
+        # target chord extensions (3/7/9) — never a static scale or the root.
+        self._neo_soul_drums(D, rnd, beat, e, fill)
+        if self.on["bass"]:                                                  # round, conversational
+            D(0, beat * 0.7, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.6:
+                D(7, beat * 0.5, cr, self._main(rnd), CH_BASS)
+            if rnd.random() < 0.5:
+                D(rnd.choice([10, 11, 14]), beat * 0.45,
+                  cr + rnd.choice([3, 5, 7, -5]), self._main(rnd), CH_BASS)
+        if self.on.get("keys", True):
+            self._comp(D, rnd, beat, ct, [2, 7, 10, 14], oct_shift=0)        # Rhodes soul comp
+        if self.on["lead"]:
+            self._soul_motif(D, rnd, beat, ct, cr)         # sparse chord-aware Rhodes fills
+
+    def _g_bounce(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # New Orleans bounce — the Triggerman ("Drag Rap") groove: the 808 kick
+        # plays the 3-side of the son CLAVE (steps 0, 3, 6 — "boom..b-boom") and
+        # ABANDONS the back half of the bar; a rock-steady BACKBEAT snare on 2 &
+        # 4 anchors it; steady 8th hats + an 808 cowbell; an 808 sub on the
+        # clave kick; and the C-minor "bones" xylophone hook with its signature
+        # TRITONE. The tension between the square snare and the lurching front-
+        # loaded kick IS the bounce. ~98 bpm party music.
+        if self.on["kick"]:                                                  # clave 3-side; back half empty
+            D(0, 0.26, KICK, self._acc(rnd), CH_DRUMS, "kick", True)
+            D(3, 0.22, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            D(6, 0.22, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+        if self.on["snare"]:                                                 # 808 RIMSHOT backbeat (2 & 4)
+            for s in (4, 12):
+                D(s, 0.2, RIM, self._acc(rnd), CH_DRUMS, "snare", True)
+        if self.on["hat"]:                                                   # RELENTLESS bounce percussion
+            for s in range(16):                                              # busy 16th hats
+                D(s, 0.025, HAT, self._main(rnd) * 0.7 if s % 4 == 0 else self._ghost(rnd) + 0.06,
+                  CH_DRUMS, "hat")
+            for s in (2, 6, 10, 14):                                         # 808 cowbell on the offbeats
+                D(s, 0.06, PERC, self._main(rnd) * 0.7, CH_DRUMS)
+            for s in (3, 7, 11, 15):                                         # tambourine on the "a"s
+                if rnd.random() < 0.6:
+                    D(s, 0.04, PERC, self._ghost(rnd) + 0.12, CH_DRUMS)
+            if rnd.random() < 0.4:                                           # extra conga lick
+                r = rnd.choice([4, 8, 12])
+                D(r + 1, 0.05, PERC, self._ghost(rnd) + 0.1, CH_DRUMS)
+            if fill and rnd.random() < 0.6:                                  # the snare-roll fill
+                for k in range(4):
+                    D(12 + k * 0.5, 0.04, SNARE, 0.4 + 0.08 * k, CH_DRUMS, "snare")
+        if self.on["bass"]:
+            # 808 bassline: a low SUB boom on the "one" (with the kick), then a
+            # bouncy melodic figure an OCTAVE UP across the bar — including the
+            # kick-free back half — so the bass is actually HEARD, not buried
+            # under the 808 kick at the same sub frequency on 0/3/6.
+            bb = cr + 12                                                      # audible bass register
+            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)  # sub boom on 1
+            riff = [(3, bb), (6, bb + 7), (8, bb), (10, bb + 12),
+                    (11, bb), (13, bb + 7), (14, bb)]
+            for s, p in riff:
+                if rnd.random() < 0.6 + 0.3 * e:
+                    D(s, beat * 0.4, p, self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            self._bounce_chant(D, rnd, beat)               # TTS rap-chant call & response
+
+    def _g_tropical_house(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # bright MAJOR house: four-on-the-floor kick, claps on the backbeat,
+        # off-beat open hats, a rounded off-beat bass bounce, off-beat chord
+        # plucks, a marimba/steel-pan melody, and a real hand-perc layer.
+        if self.on["kick"]:
+            for s in (0, 4, 8, 12):
+                D(s, 0.22, KICK, self._acc(rnd) if s == 0 else self._main(rnd),
+                  CH_DRUMS, "kick", True)
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.18, CLAP, 0.7, CH_DRUMS, "snare", True)
+            self._ghost_sn(D, rnd, e * 0.4)
+        if self.on["hat"]:
+            for s in (2, 6, 10, 14):                                         # off-beat open hats
+                D(s, 0.14, OHAT, self._main(rnd) * 0.7, CH_DRUMS, "hat")
+            for s in (0, 4, 8, 12):
+                D(s, 0.03, HAT, self._ghost(rnd) + 0.08, CH_DRUMS, "hat")
+        if self.on["bass"]:                                                  # rounded off-beat bounce
+            D(0, beat * 0.4, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (2, 6, 10, 14):
+                if rnd.random() < 0.7:
+                    D(s, beat * 0.34, cr, self._main(rnd), CH_BASS)
+        if self.on.get("keys", True):
+            self._comp(D, rnd, beat, ct, [2, 6, 10, 14], oct_shift=0)        # off-beat plucks
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # marimba melody (feel afromel)
+
+    def _g_uk_jungle(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # ragga jungle: drums = one of the DnB patterns (jungle pool — classic,
+        # amen/breakbeat, halftime, dembow, rollers), randomized per section.
+        # Deep hypnotic dub sub, ragga organ stab skank, dub siren.
+        self._dnb_drums(D, rnd, beat, e, fill, _DNB_POOL["uk_jungle"])
+        if self.on["bass"]:                                                  # deep hypnotic dub sub
+            D(0, beat * 1.2, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            if rnd.random() < 0.45 + 0.3 * e:
+                D(10, beat * 0.6, cr + rnd.choice([0, 7, -5]), self._main(rnd), CH_BASS)
+        if self.on["lead"]:                                                  # ragga organ stab skank
+            self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.6)
+        self._maybe_siren(D, rnd, beat, ct, cr)            # siren only as an occasional FX (2-3x/song)
+
+    def _g_dancefloor_dnb(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # liquid / dancefloor DnB (~174): drums = one of the DnB patterns
+        # (dancefloor pool — classic, stepper, jump-up, dembow, funky, rollers),
+        # randomized per section. Smooth rolling reese/sub, lush pad, melodic
+        # liquid topline.
+        self._dnb_drums(D, rnd, beat, e, fill, _DNB_POOL["dancefloor_dnb"])
+        if self.on["bass"]:                                                  # smooth rolling sub
+            for i in range(8):
+                if i % 2 == 0 or rnd.random() < 0.5 + 0.3 * e:
+                    D(i * 2, beat * 0.42, cr + (12 if i % 4 == 3 else 0),
+                      self._acc(rnd) if i == 0 else self._main(rnd), CH_BASS,
+                      "kick" if i == 0 else "", structural=(i == 0))
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # melodic topline (feel lyric)
+
+    def _g_neurofunk(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # neurofunk (~172): drums = one of the DnB patterns (neuro pool —
+        # stepper, halftime, footwork, funky, neuro-slick), randomized per
+        # section. The modulated reese bass (bassReese, high drive/res) is the
+        # centerpiece and rolls; sparse sci-fi glitch stabs sit on top. Dark.
+        self._dnb_drums(D, rnd, beat, e, fill, _DNB_POOL["neurofunk"])
+        if self.on["bass"]:                                                  # rolling neuro reese
+            D(0, beat * 0.5, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (2, 4, 6, 8, 10, 12, 14):
+                if rnd.random() < 0.4 + 0.4 * e:
+                    D(s, beat * 0.3, cr + rnd.choice([0, 0, 12, 7]),
+                      self._main(rnd), CH_BASS)
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # sci-fi stabs (feel hypno)
+
+    def _g_ska(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # MAJOR ska: backbeat snare on 2 & 4, a shuffle/triplet hat feel, a
+        # jazzy WALKING bass (reused from jazz), the choppy organ SKANK on the
+        # offbeats (the "ands"), and a horn-section melodic line.
+        if self.on["kick"]:
+            D(0, 0.16, KICK, self._main(rnd), CH_DRUMS, "kick", True)
+            if rnd.random() < 0.4:
+                D(8, 0.16, KICK, self._main(rnd) * 0.85, CH_DRUMS, "kick")
+        if self.on["snare"]:
+            for s in (4, 12):
+                D(s, 0.16, SNARE, self._acc(rnd), CH_DRUMS, "snare", True)
+            self._ghost_sn(D, rnd, e * 0.4)
+        if self.on["hat"]:                                                   # shuffle 8ths
+            for s in (0, 2, 4, 6, 8, 10, 12, 14):
+                D(s, 0.04, HAT, self._main(rnd) * 0.7 if s % 4 == 0 else self._ghost(rnd) + 0.08,
+                  CH_DRUMS, "hat")
+            if rnd.random() < 0.3:
+                D(rnd.choice([6, 14]), 0.16, OHAT, 0.38, CH_DRUMS, "hat")
+        if self.on["bass"]:
+            self._walk_bass(D, rnd, beat, ct, cr, nr)                        # jazzy walking bass
+        if self.on.get("keys", True):                                        # the offbeat skank
+            self._skank(D, rnd, beat, ct, [2, 6, 10, 14], 0.85)
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # horn line (feel lyric, leadBrass)
+
+    def _g_eighties_dancehall(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # 80s digital dancehall: drums = one of the 3 dancehall grooves (Dem Bow
+        # / Modern-Pop / Fast-One-Drop), randomized per section. Casio synth-bass
+        # riff, thin Casio stabs, sparse clean synth-bell melody.
+        self._dancehall_drums(D, rnd, beat, e, fill)
+        if self.on["bass"]:                                                  # the Casio bass riff
+            riff = [(0, cr), (3, cr), (6, cr + 7), (8, cr), (11, cr + 12), (14, cr + 7)]
+            for s, p in riff:
+                if s == 0 or rnd.random() < 0.6 + 0.3 * e:
+                    D(s, beat * 0.28, p, self._acc(rnd) if s == 0 else self._main(rnd),
+                      CH_BASS, "kick" if s == 0 else "", structural=(s == 0))
+        if self.on.get("keys", True):
+            self._comp(D, rnd, beat, ct, [6, 14], oct_shift=0)               # thin Casio stabs
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # simple synth melody (feel stab)
+
+    def _g_nineties_dancehall(self, D, rnd, beat, sc, ct, cr, nr, e, fill, sparse):
+        # 90s ragga dancehall (bashment): drums = one of the 3 dancehall grooves
+        # (Dem Bow / Modern-Pop / Fast-One-Drop), randomized per section. Punchy
+        # riddim bass on the kick, brass-stab chords, sparse clean bell melody.
+        self._dancehall_drums(D, rnd, beat, e, fill)
+        if self.on["bass"]:                                                  # punchy riddim bass on the kick
+            D(0, beat * 0.4, cr, self._acc(rnd), CH_BASS, "kick", structural=True)
+            for s in (8, 11, 14):
+                if rnd.random() < 0.5 + 0.3 * e:
+                    D(s, beat * 0.3, cr + rnd.choice([0, 0, 7, 12]),
+                      self._main(rnd), CH_BASS)
+        if self.on.get("keys", True):
+            self._comp(D, rnd, beat, ct, [2, 6, 10, 14], oct_shift=0)        # brass-stab chords
+        if self.on["lead"]:
+            self._motif(D, rnd, beat, sc, ct)              # melodic stabs (feel stab)
