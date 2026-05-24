@@ -20,5 +20,6 @@ SynthDef(\snare909, { |out=0, amp=0.62, tone=0.5, decay=0.16, snap=0.6, crush=0.
 	var bits  = 2 ** (4 + ((1 - crush.clip(0, 1)) * 11));
 	sig = (sig * 1.2).tanh;
 	sig = (sig * bits).round / bits;
+	sig = LPF.ar(sig, 11000);             // dump the bit-crush alias hash
 	Out.ar(out, Pan2.ar(sig * aEnv * amp * Rand(0.96, 1.04), pan));
 }).add;

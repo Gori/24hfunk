@@ -28,6 +28,6 @@ SynthDef(\kick, { |out=0, amp=0.95, freq=49, fmRatio=1.0, fmIndex=1.2, decay=0.3
 	            * EnvGen.kr(Env.perc(0.001, dr * 1.5, 1, -3.5)) * 0.62;
 	var sig;
 	body = (body * (1 + drive)).tanh * 0.4;
-	sig  = LeakDC.ar((sub + body + clk).softclip + thud);
+	sig  = LeakDC.ar((sub + body + clk).tanh + thud);   // tanh: gentler than softclip, less aliasing
 	Out.ar(out, Pan2.ar(sig * aEnv * amp * Rand(0.96, 1.04), pan));
 }).add;

@@ -15,6 +15,6 @@ SynthDef(\hat, { |out=0, amp=0.5, cutoff=9500, decay=0.04, metal=0.6, loose=0.0,
 	var nz   = WhiteNoise.ar * 0.5;
 	var src  = (met * metal) + (nz * (1 - metal));
 	var sig  = HPF.ar(HPF.ar(src, cj), cj);
-	sig = sig.softclip;
+	sig = sig.tanh;                       // gentler than softclip (less brittle metallic alias)
 	Out.ar(out, Pan2.ar(sig * aEnv * amp * Rand(0.92, 1.08), pan));
 }).add;

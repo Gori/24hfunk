@@ -65,12 +65,13 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 // summed master mix.
 ~instGrp   = Group.new(Server.default);
 ~masterBus = Bus.audio(Server.default, 2);
+~duckBus   = Bus.control(Server.default, 1);   // kick->bass sidechain envelope (0=open)
 ~fxBuses   = IdentityDictionary.new;
 ~fxSynths  = IdentityDictionary.new;
 [\drums, \bass, \mel, \perc].do { |g|
 	~fxBuses[g] = Bus.audio(Server.default, 2);
 	~fxSynths[g] = Synth.tail(Server.default, (g == \drums).if(\fxdrum, \fx),
-		[\in, ~fxBuses[g].index, \out, ~masterBus.index]);
+		[\in, ~fxBuses[g].index, \out, ~masterBus.index, \duckBus, ~duckBus.index]);
 };
 ~master = Synth.tail(Server.default, \master,
 	[\in, ~masterBus.index, \out, 0]);
@@ -109,7 +110,7 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	// before. (Was: params \amp appended last -> clobbered \amp=vel for
 	// everything, so per-note lead volume changes had NO effect.)
 	var hasAmp = (p.notNil and: { p[\amp].notNil });
-	var perNoteVol = (def == \leadScratch) or: { def == \leadVox };  // buffer-vocal leads
+	var perNoteVol = (def == \leadScratch) or: { def == \leadVox } or: { def == \leadChant };  // buffer-vocal leads
 	var amp = perNoteVol.if(
 		{ vel * (hasAmp.if({ p[\amp] }, { 1.0 })) },   // per-note velocity controls volume
 		{ hasAmp.if({ p[\amp] }, { vel }) }            // everything else: UNCHANGED
@@ -127,7 +128,7 @@ var visPort = (("VIS_OSC_PORT".getenv) ? "57130").asInteger;
 	};
 	// leadVox (electro robot vocal): same word-slot-in-octave buffer pick +
 	// tempo. drive/cutoff come from the genre lead params (not the scratch artic).
-	if((def == \leadVox) and: { ~scratchBufs.notNil }) {
+	if(((def == \leadVox) or: { def == \leadChant }) and: { ~scratchBufs.notNil }) {
 		var bidx = ((freq.cpsmidi - 60) / 12).floor.clip(0, 5).asInteger;
 		a = a ++ [\buf, ~scratchBufs[bidx].bufnum, \beatHz, (~bpm ? 120) / 60];
 	};
@@ -142,6 +143,9 @@ OSCdef(\noteon, { |msg|
 	if(role.notNil) {
 		freq = pitch.midicps;
 		if(role == \drums) { role = ~drumFor.(pitch) };
+		// kick fires the sidechain duck envelope (bass FX ducks by its per-genre
+		// depth; non-sidechain genres have duck=0 so it's a harmless no-op).
+		if(role == \kick) { Synth(\duckTrig, [\bus, ~duckBus.index], ~instGrp) };
 		def = ~roleMap[role] ? role;                 // genre-chosen variant
 		if(#[\kick, \snare, \hat, \ohat, \clap, \rim, \perc, \ride, \perc2].includes(role)) {
 			Synth(def, ~argsFor.(role, freq, vel), ~instGrp);   // one-shot
